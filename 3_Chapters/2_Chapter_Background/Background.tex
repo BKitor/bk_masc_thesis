@@ -1,0 +1,28 @@
+% Chapter 2 - Background
+
+\glsresetall % reset the glossary to expand acronyms again
+\chapter[Background]{Background}\label{ch:Background}
+\index{Background}
+
+% Background
+\section{Background}
+\begin{itemize}
+	\item{Broad description of subject}
+	\item{Some relevant history}
+	\item{Current implementations in industry}
+	\item{New \& Related Research on the subject}
+\end{itemize}
+
+Citations can be included in your manuscript by referencing them. For example, if I wanted to cite XKCD for a comic (as I have in figure \ref{fig:DEFENCE}), I would just do \cite{xkcdThesis}.
+
+%\subsection{Short name for the top of the page}{Long subsection title to start subsection}
+\subsection[Glossaries]{Glossaries of Terms and Acronyms}
+
+Latex allows you to add words and acronyms to a glossary which is found in \textit{2\_Glossaries/Glossary}. This feature benefits the reader, for when you use strong \gls{diction} in your \gls{lexicon}, the reader can click the hyperlink and see the definition to thus better understand your \gls{prose}.
+
+The glossary also allows you to keep track of acronyms and symbols. In the case of acronyms, LaTex defines the acronym on first use (such as \gls{lol}), then use the acronym afterwards (\gls{lol}). 
+\glsresetall % reset the glossary to expand acronyms again
+Everything is hyperlinked to the glossary page of your thesis, and if you want, you can reset the glossary at any point to make the full definition of an acronym appear again using \textbackslash glsresetall (\gls{lol}). Symbols are not very interesting, but work like this: \gls{mySymbol}. Note the definition is not printed alongside the symbol.
+
+\textbf{Glossaries, Bibliography or Index not showing up?}
+Did you compile them? They are not automatic. You have to manually click \lq Bibliography\rq, \lq Glossary\rq, and \lq index\rq under the TeXstudio \textit{Tools} drop-down menu. 

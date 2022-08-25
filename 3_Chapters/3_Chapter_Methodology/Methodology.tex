@@ -1,0 +1,144 @@
+% Chapter 3 - Methodology
+% With Sample Figures From Kevin Hughes
+
+\glsresetall % reset the glossary to expand acronyms again
+\chapter[Methodology]{Methodology}\label{ch:Methodology}
+\index{Methodology}
+
+% Equations Sets Counter
+% Needed for keeping track of Equations Sets! Include this at the top of each chapter
+\newcounter{EquationCounter}[chapter]
+\numberwithin{EquationCounter}{chapter}
+\numberwithin{equation}{EquationCounter}
+
+% Methodology
+\section{Your Proposed Method}
+\begin{itemize}
+	\item{How does you research work?}
+\end{itemize}
+
+\section[Examples]{Examples of things}
+
+\subsection{Tables}
+Table \ref{tab:testTable} is an example of a table:
+
+% Example Table
+% I recommend using http://truben.no/latex/table/ to help with making tables
+% reference in the text using \ref{tab.testTable}
+\begin{table}[!htbp]
+	\centering
+	\caption{Test Table}
+	\begin{tabular}{|l|l|l|} % options are l,c,r (left, center, right)
+		\hline
+		Things & Other Things & Last Thing \\
+		\hline
+		X & ~ & ~ \\
+		\hline
+		~ & X & ~ \\
+		\hline
+		~ & ~ & X \\
+		\hline
+	\end{tabular}
+	\label{tab:testTable}
+\end{table}
+
+\clearpage
+
+The following is an example of a flow diagram:  
+
+% Sample Flow Diagram
+\begin{figure}[h]
+	\centering
+	
+	\begin{tikzpicture}[->,>=stealth']
+	
+	% Position of INPUT
+	% Use previously defined 'state' as layout (see preamble)
+	% use tabular for content to get columns/rows
+	% parbox to limit width of the listing
+	\node[state] (INPUT) 
+	{
+		\begin{tabular}{l}
+		\textbf{Write Thesis}\\
+		\parbox{5cm}
+		{
+			Involves learning LaTex
+		}
+		\end{tabular}
+	};
+	
+	\node[state,    	% layout (defined above)
+	text width=7cm, 	% max text width
+	%	yshift=1cm, 		% move cm y
+	xshift=7cm,
+	right of=INPUT,
+	%node distance=4cm,
+	anchor=center] (OUTPUT) 
+	{
+		\begin{tabular}{l}
+		\textbf{Defend Thesis}\\
+		\end{tabular}
+	};
+	
+	% draw the paths and and print some Text below/above the graph
+	\path 
+	(INPUT) 	edge[bend left=20]		node[anchor=south,above]{\textcolor{green}{Submit}}	(OUTPUT)
+	(OUTPUT) 	edge[bend left=20]		node[anchor=south,below]{\textcolor{red}{Make Corrections}}	(INPUT)
+	; % END PATH
+	
+	\draw 
+	(INPUT) to [out=150,in=30] 	node[above,midway]{\textcolor{blue}{Add Coffee}} (INPUT)
+	; % END DRAW
+	
+	\end{tikzpicture}
+	\caption{A sample flow diagram} 
+	\label{fig:SampleFlowDiagram}
+\end{figure}
+
+
+NOTE! The syntax for figures is:
+\begin{center}
+{\textbackslash}begin\{figure\}[placement specifier]\\
+	... figure contents ...\\
+{\textbackslash}end\{figure\}\\
+\end{center}
+
+See the wikibook on latex figures to see all the possibilities:\\
+https://en.wikibooks.org/wiki/LaTeX/Floats,\_Figures\_and\_Captions\\
+
+NOTE! There is an easier way to make diagrams than by coding them (as is demonstrated by the flow diagram below). See this website: https://www.draw.io/ will help you create an diagram easily. All you need to do is insert it in as a .jpg file (see the example insertion of a figure in \ref{fig:DEFENCE} (Appendix B)).
+
+\clearpage
+\subsection{Equations}
+
+The following is an example of an equation:
+\addtocounter{EquationCounter}{1} % Increment Equation Set counter
+\setcounter{equation}{0} % Reset equation counter (equations inside set)
+\begin{Equation}
+	\begin{equation}
+		\sqrt{\text{success}} = \text{effort}*\left(\frac{\text{time}+\text{coffee}}{\text{time}}\right)
+		\label{eq:success}
+	\end{equation}
+	\begin{equation}
+		\sqrt{\text{hydration}} = \text{water}-\left(\frac{\text{coffee}}{3}\right)
+		\label{eq:water}
+	\end{equation}
+	\caption{This is a set of equations}
+	\label{eqSet:coffeeWater}
+\end{Equation}
+
+Equation Set \ref{eqSet:coffeeWater} describes proper caffeine and hydration for successful thesis writting. Equation \ref{eq:success} demonstrates that the root of success is effort, enhanced by coffee intake and time. As such, coffee is an academic performance enhancing drug. Please abuse diligently and responsibly by consuming three cups of water per cup of coffee as shown in Equation \ref{eq:water}. This mitigates caffeine migraines as shown in Equation \ref{eq:waterIntake}.  
+
+\begin{equation}
+	\text{Result} = 
+	\begin{cases}
+	\text{hydration} \le 0 & \text{Bad!}\\
+	1 \leq \text{hydration} \leq 6 & \text{Good!}\\
+	\text{hydration} > 6 & \text{Overhydration, purge imminent.} \\
+	\end{cases}
+	\label{eq:waterIntake}
+\end{equation}
+
+The point of all this is to illustrate that equation sets (such as Equation Set \ref{eqSet:coffeeWater}) end up in the List of Equations, while basic equations (such as Equation \ref{eq:waterIntake}) do not. 
+
+NOTE! For equations sets to work properly, don't forget to initialize the counter!! See the top of Methodology.tex for the three commands to apply at the top of each chapter.

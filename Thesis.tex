@@ -1,0 +1,201 @@
+% MASc & PhD Thesis Template
+
+% Department of Electrical & Computer Engineering (ECE)
+% Queen's University 
+
+% Requisitioned By: Professor Michael Greenspan
+% Prepared By: Ian Maquignaz M.Eng, MASc
+
+% Template Version 2.0 - September 2017\9
+
+% >>> OPEN THIS FILE IN TeXstudio TO START WRITTING YOUR THESIS! <<< %
+% Though Note! You should not need to edit this file (asside from section "0.2 - TITLE PAGE"). Edit the individual files that are loaded. 
+% For example, where you see \include{3_Preface/0_Preface/0_Abstract}, this loads your abstract from the file at Thesis/3_Preface/0_Preface/0_Abstract.tex. Open the file 0_Abstract.tex and edit.
+
+% -> FILE DESCRIPTION :: Thesis.tex
+%	This is the master file for your thesis Tex project and will combine all of the files toghether to create your thesis (Thesis.pdf). 
+
+%	Thesis.tex will perform the followign actions:
+%	 1) Import all the supplemental packages
+%	 2) Set the styling for the document
+%	 3) Combine the various chapters, sections and other components of your thesis into one document.
+%	 4) Create LaTex generated sections, such as Table of Contex, Gloassary, and Bibliography  
+
+%*************************************************************************************************************
+% 0.0 - PREAMBLE - DO NOT MODIFY
+%*************************************************************************************************************
+% File containing packages to include. 
+% --> Imports packages using \usepackage and sets basic configuration)
+\input{0_Config/Preamble}
+
+%*************************************************************************************************************
+% 0.1 - DOCUMENT - DO NOT MODIFY
+%*************************************************************************************************************
+\begin{document}
+
+%*************************************************************************************************************
+% 0.2 - TITLE PAGE 
+%*************************************************************************************************************
+%	INSERT THE DETAILS OF YOUR THESIS
+%	REMOVE THE '%' TO UNCOMMENT LINE
+
+\title{So Much Pain}
+\author{Benjamin Kitor}
+\supervisor{Dr. Ahmad Afsahi}
+\dept{Electrical And Computer Engineering}
+\degree{Master of Applied Science}
+\copyrightyear{2022}
+\beforepreface
+
+
+%*******************************************************************************
+% 0.3 - ABSTRACT
+%*******************************************************************************
+\include{2_Preface/0_Abstract}   
+
+%*******************************************************************************
+% 0.4 - ACKNOWLEDGEMENTS
+%*******************************************************************************
+\include{2_Preface/1_Acknowledgements}   
+
+%*******************************************************************************
+% 0.5 - STATEMENT OF ORIGINALITY - (Required for PhD only)
+%*******************************************************************************
+\include{2_Preface/2_StatementOfOriginality}   
+
+%*******************************************************************************
+% 0.6.1 - Table of Contents
+%*******************************************************************************
+% Print the Table of Contents 
+\PageContentstrue
+
+% To disable, use the following:
+%\PageContentsfalse
+
+%*******************************************************************************
+% 0.6.2 - List of Tables
+%*******************************************************************************
+% Print the List of Tables
+\PageTablestrue
+
+% To disable, use the following:
+%\PageTablesfalse
+
+%*******************************************************************************
+% 0.6.3 - List of Figures
+%*******************************************************************************
+% Print the List of Figures
+\PageFigurestrue
+
+% To disable, use the following:
+%\PageFiguresfalse
+
+
+%*******************************************************************************
+% 0.6.4 - List of Code Snippets
+%*******************************************************************************
+% Print the List of Code Snippets
+\PageCodeSnippetstrue
+
+% To disable, use the following:
+%\PageCodeSnippetsfalse
+
+%*******************************************************************************
+% 0.6.5 - List of Equations
+%*******************************************************************************
+% Print a list of all equations
+\PageEquationstrue
+
+% To disable, use the following:
+%\PageEquationsfalse
+
+%*******************************************************************************
+% 0.6.6 - Glossary
+%*******************************************************************************
+% The Glossary 
+\PageGlossariestrue
+
+% To disable, use the following:
+%\PageGlossariesfalse
+
+% Include Glossary
+\include{1_Glossaries/Glossary}
+
+% This line forces all entries into glossary, even if they have not been referenced
+% UNCOMMENT THIS LINE TO INCLUDE ALL GLOSSARY ITEMS (Not just those referenced)
+%\glsaddall
+
+% UNCOMMENT INDIVIDUAL GLOSSARIES TO BE PRINTED (IF not using \PageGlossariestrue) %
+%\printglossaries % Prints ALL glossaries.
+%\printglossary % Print the terms glossary
+%\printglossary[title = Glossary of Terms] % Print the terms glossary
+%\printglossary[type=symbol, title=Glossary of Symbols] % Prints the acronym glossary
+%\printglossary[type=\acronymtype,title=Glossary of Abbreviations] % Prints the abbreviation glossary
+
+%*******************************************************************************
+% 0.6.x - Apply Apply After Preface - DO NOT MODIFY
+%*******************************************************************************
+% Create afterpreface sections
+\afterpreface
+
+
+%*******************************************************************************
+% 0.7 - CHAPTERS
+%*******************************************************************************
+% Include Chapters. Chapters are kept separated to make editing easier.
+\singlespacing \doublespacing
+
+\include{3_Chapters/1_Chapter_Introduction/Introduction}
+\include{3_Chapters/2_Chapter_Background/Background}
+\include{3_Chapters/3_Chapter_Methodology/Methodology}
+\include{3_Chapters/4_Chapter_ExperimentalResults/ExperimentalResults}
+\include{3_Chapters/5_Chapter_Conclusions/Conclusions}
+
+%*******************************************************************************
+% 0.8 - BIBLIOGRAPHY
+%*******************************************************************************
+
+% Put in \nocite{*} so all entries in the bibliography are included
+\nocite{*}
+
+% Print Bibliogrpahy
+\phantomsection
+
+% Uncomment for a plain bibliography else use IEEE style below
+%\bibliographystyle{plain}
+%\bibliography{4_References/References}
+
+% IEEE Bibliography
+\bibliographystyle{IEEEtran}
+\bibliography{IEEEabrv,4_References/References}
+
+\clearpage
+
+%*******************************************************************************
+% 0.9.1 - APPENDICES
+%*******************************************************************************
+
+\appendix
+
+% Appendix A
+\updatechaptername
+\input{5_Appendices/Appendix_A/Appendix_A}
+
+% Appendix B
+\updatechaptername
+\input{5_Appendices/Appendix_B/Appendix_B}
+
+
+%*******************************************************************************
+% 0.9.2 - INDEX
+%*******************************************************************************
+% Creates the index
+% Uncomment if an INDEX should be created
+
+\printindex
+
+
+%*************************************************************************************************************
+% 1.0 - END OF DOCUMENT
+%*************************************************************************************************************
+\end{document}
