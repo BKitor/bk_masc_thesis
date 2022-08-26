@@ -18,58 +18,373 @@
 %		3. Manual Entry
 
 % Everything outside a bibtex "block" is a comment so none of this text affects the file. Use this to your advantage write your notes about papers in here right after the bibtex block!
-	
------------------------------------------------------------------------------
-Websites:
 
-@misc{xkcdThesis,
-author = {},
-title = {xkcd: Thesis Defense},
-howpublished = {\url{https://xkcd.com/1403/}},
-month = {},
-year = {},
-note = {(Accessed on 10/20/2017)}
+@manual{mpi40,
+    author = "{Message Passing Interface Forum}",
+    title  = "{MPI}: A Message-Passing Interface Standard Version 4.0",
+    url    = "https://www.mpi-forum.org/docs/mpi-4.0/mpi40-report.pdf",
+    year   = 2021,
+    month  = jun
 }
 
-@misc{BigBang,
-	author = {},
-	title = {Big Bang - Warm Kitty, Soft Kitty (Sheldon's Lullaby Sick Song) Instrumental Version Lyrics | MetroLyrics},
-	howpublished = {\url{http://www.metrolyrics.com/warm-kitty-soft-kitty-sheldons-lullaby-sick-song-instrumental-version-lyrics-big-bang.html?ModPagespeed=noscript}},
-	month = {},
-	year = {},
-	note = {(Accessed on 10/20/2017)}
+ @InProceedings{gabriel2004OpenMPI,
+  author       = {Edgar Gabriel and Graham E. Fagg and George Bosilca
+                  and Thara Angskun and Jack J. Dongarra and Jeffrey
+                  M. Squyres and Vishal Sahay and Prabhanjan Kambadur
+                  and Brian Barrett and Andrew Lumsdaine and Ralph
+                  H. Castain and David J. Daniel and Richard L. Graham
+                  and Timothy S. Woodall },
+  title        = {Open {MPI}: Goals, Concept, and Design of a Next
+                  Generation {MPI} Implementation},
+  booktitle    = {Proceedings, 11th European PVM/MPI Users' Group
+                  Meeting},
+  year         = 2004,
+  address      = {Budapest, Hungary},
+  pages        = {97--104},
+  month        = {September}
+} 
+
+@misc{MPICH,
+    title={{MPICH}: a high performance and widely portable implementation of the Message Passing Interface (MPI) standard.},
+    url={https://mpich.org/}
 }
 
------------------------------------------------------------------------------
-Papers:
+@misc{libfabric,
+    title={OpenFabrics Interface},
+    url={https://ofiwg.github.io/libfabric/}
+}
 
-@inproceedings{shaw2003writing,
-  title={Writing good software engineering research papers},
-  author={Shaw, Mary},
-  booktitle={Software Engineering, 2003. Proceedings. 25th International Conference on},
-  pages={726--736},
-  year={2003},
+@inproceedings{shamis2015ucx,
+  title={{UCX}: an open source framework for HPC network APIs and beyond},
+  author={Shamis, Pavel and Venkata, Manjunath Gorentla and Lopez, M Graham and Baker, Matthew B and Hernandez, Oscar and Itigin, Yossi and Dubman, Mike and Shainer, Gilad and Graham, Richard L and Liss, Liran and others},
+  booktitle={2015 IEEE 23rd Annual Symposium on High-Performance Interconnects},
+  pages={40--43},
+  year={2015},
   organization={IEEE}
 }
 
-@article{paltridge2002thesis,
-  title={Thesis and dissertation writing: an examination of published advice and actual practice},
-  author={Paltridge, Brian},
-  journal={English for Specific Purposes},
-  volume={21},
-  number={2},
-  pages={125--143},
-  year={2002},
-  publisher={Elsevier}
+@article{Ben-Nun2019DemystifyDL,
+  author     = {Ben-Nun, Tal and Hoefler, Torsten},
+  title      = {Demystifying Parallel and Distributed Deep Learning: An In-Depth Concurrency Analysis},
+  year       = {2019},
+  issue_date = {September 2019},
+  publisher  = {Association for Computing Machinery},
+  address    = {New York, NY, USA},
+  volume     = {52},
+  number     = {4},
+  issn       = {0360-0300},
+  url        = {https://doi.org/10.1145/3320060},
+  doi        = {10.1145/3320060},
+  journal    = {ACM Comput. Surv.},
+  month      = aug,
+  articleno  = {65},
+  numpages   = {43},
+  keywords   = {Deep learning, distributed computing, parallel algorithms}
 }
 
+@article{Sergeev2018Horovod,
+  author    = {Sergeev, Alexander  and
+               Del Balso, Mike },
+  title     = {Horovod: fast and easy distributed deep learning in TensorFlow},
+  journal   = {CoRR},
+  volume    = {abs/1802.05799},
+  year      = {2018},
+  url       = {http://arxiv.org/abs/1802.05799},
+  eprinttype = {arXiv},
+  eprint    = {1802.05799},
+  timestamp = {Mon, 13 Aug 2018 16:46:12 +0200},
+  biburl    = {https://dblp.org/rec/journals/corr/abs-1802-05799.bib},
+  bibsource = {dblp computer science bibliography, https://dblp.org}
+}
+
+----------------------------------------------------------------------
+Topo-Awareness Papers:
+
+@inproceedings{Mirsadeghi2016TopoAwareCollRR,
+  author    = {Mirsadeghi, Seyed H. and Afsahi, Ahmad},
+  booktitle = {2016 IEEE International Parallel and Distributed Processing Symposium Workshops (IPDPSW)},
+  title     = {Topology-Aware Rank Reordering for MPI Collectives},
+  year      = {2016},
+  pages     = {1759-1768},
+  doi       = {10.1109/IPDPSW.2016.139}
+}
+
+@inproceedings{Mercer2011ImprvMPIWithRR,
+  author    = {Mercier, Guillaume and Jeannot, Emmanuel},
+  editor    = {Cotronis, Yianni and Danalis, Anthon and Nikolopoulos, Dimitrios S. and Dongarra, Jack},
+  title     = {Improving MPI Applications Performance on Multicore Clusters with Rank Reordering},
+  booktitle = {Recent Advances in the Message Passing Interface},
+  year      = {2011},
+  publisher = {Springer Berlin Heidelberg},
+  address   = {Berlin, Heidelberg},
+  pages     = {39--49},
+  isbn      = {978-3-642-24449-0}
+}
+
+@inproceedings{Subramoni2011SpeedAwareBcast,
+  author    = {Subramoni, H. and Kandalla, K. and Vienne, J. and Sur, S. and Barth, B. and Tomko, K. and Mclay, R. and Schulz, K. and Panda, D.K.},
+  booktitle = {2011 IEEE International Conference on Cluster Computing},
+  title     = {Design and Evaluation of Network Topology-/Speed- Aware Broadcast Algorithms for InfiniBand Clusters},
+  year      = {2011},
+  pages     = {317-325},
+  doi       = {10.1109/CLUSTER.2011.43}
+}
+
+@inproceedings{Galvez2017AutoTopoMap,
+  author    = {Galvez, Juan J. and Jain, Nikhil and Kale, Laxmikant V.},
+  title     = {Automatic Topology Mapping of Diverse Large-Scale Parallel Applications},
+  year      = {2017},
+  isbn      = {9781450350204},
+  publisher = {Association for Computing Machinery},
+  address   = {New York, NY, USA},
+  url       = {https://doi-org.proxy.queensu.ca/10.1145/3079079.3079104},
+  doi       = {10.1145/3079079.3079104},
+  booktitle = {Proceedings of the International Conference on Supercomputing},
+  articleno = {17},
+  numpages  = {10},
+  keywords  = {network topology, profiling, automated mapping, topology aware mapping},
+  location  = {Chicago, Illinois},
+  series    = {ICS '17}
+}
+
+@inproceedings{Awan2016NCCLBcast,
+  author    = {Awan, A. A. and Hamidouche, K. and Venkatesh, A. and Panda, D. K.},
+  title     = {Efficient Large Message Broadcast Using NCCL and CUDA-Aware MPI for Deep Learning},
+  year      = {2016},
+  isbn      = {9781450342346},
+  publisher = {Association for Computing Machinery},
+  address   = {New York, NY, USA},
+  url       = {https://doi-org.proxy.queensu.ca/10.1145/2966884.2966912},
+  doi       = {10.1145/2966884.2966912},
+  booktitle = {Proceedings of the 23rd European MPI Users' Group Meeting},
+  pages     = {15–22},
+  numpages  = {8},
+  location  = {Edinburgh, United Kingdom},
+  series    = {EuroMPI 2016}
+}
+
+@inproceedings{Broquedis2010hwloc,
+  author    = {Broquedis, Francois and Clet-Ortega, Jérôme and Moreaud, Stéphanie and Furmento, Nathalie and Goglin, Brice and Mercier, Guillaume and Thibault, Samuel and Namyst, Raymond},
+  booktitle = {2010 18th Euromicro Conference on Parallel, Distributed and Network-based Processing},
+  title     = {hwloc: A Generic Framework for Managing Hardware Affinities in HPC Applications},
+  year      = {2010},
+  volume    = {},
+  number    = {},
+  pages     = {180-186},
+  doi       = {10.1109/PDP.2010.67}
+}
+
+@incollection{Pellegrini2012SCOTCH,
+  title       = {{Scotch and PT-Scotch Graph Partitioning Software: An Overview}},
+  author      = {Pellegrini, Fran{\c c}ois},
+  url         = {https://hal.inria.fr/hal-00770422},
+  booktitle   = {{Combinatorial Scientific Computing}},
+  editor      = {Uwe Naumann, Olaf Schenk},
+  publisher   = {{Chapman and Hall/CRC}},
+  pages       = {373-406},
+  year        = {2012},
+  doi         = {10.1201/b11644-15},
+  hal_id      = {hal-00770422},
+  hal_version = {v1}
+}
+
+@article{Jeannot2014ProcPlacementInMulticoreClusters,
+  title       = {{Process Placement in Multicore Clusters: Algorithmic Issues and Practical Techniques}},
+  author      = {Jeannot, Emmanuel and Mercier, Guillaume and Tessier, Fran{\c c}ois},
+  url         = {https://hal.inria.fr/hal-00921605},
+  journal     = {{IEEE Transactions on Parallel and Distributed Systems}},
+  publisher   = {{Institute of Electrical and Electronics Engineers}},
+  volume      = {25},
+  number      = {4},
+  pages       = {993 - 1002},
+  year        = {2014},
+  doi         = {10.1109/TPDS.2013.104},
+  hal_id      = {hal-00921605},
+  hal_version = {v1}
+}
+
+@article{Gropp2019CartTopoMapping,
+  title    = {Using node and socket information to implement MPI Cartesian topologies},
+  journal  = {Parallel Computing},
+  volume   = {85},
+  pages    = {98-108},
+  year     = {2019},
+  issn     = {0167-8191},
+  doi      = {https://doi.org/10.1016/j.parco.2019.01.001},
+  url      = {https://www.sciencedirect.com/science/article/pii/S0167819118303156},
+  author   = {William D. Gropp},
+  keywords = {Message passing, MPI, Process topology, Cartesian process topology},
+}
+
+@inproceedings{Hoefler2011GenericTopoMappingStrats,
+  author    = {Hoefler, Torsten and Snir, Marc},
+  title     = {Generic Topology Mapping Strategies for Large-Scale Parallel Architectures},
+  year      = {2011},
+  isbn      = {9781450301022},
+  publisher = {Association for Computing Machinery},
+  address   = {New York, NY, USA},
+  url       = {https://doi.org/10.1145/1995896.1995909},
+  doi       = {10.1145/1995896.1995909},
+  booktitle = {Proceedings of the International Conference on Supercomputing},
+  pages     = {75–84},
+  numpages  = {10},
+  keywords  = {topology mapping, mpi graph topologies},
+  location  = {Tucson, Arizona, USA},
+  series    = {ICS '11}
+}
+
+@inproceedings{Faraji2016TopoAwareGPUSelection,
+  author    = {Faraji, Iman and Mirsadeghi, Seyed H. and Afsahi, Ahmad},
+  booktitle = {2016 IEEE International Parallel and Distributed Processing Symposium Workshops (IPDPSW)},
+  title     = {Topology-Aware GPU Selection on Multi-GPU Nodes},
+  year      = {2016},
+  volume    = {},
+  number    = {},
+  pages     = {712-720},
+  doi       = {10.1109/IPDPSW.2016.44}
+}
+
+@inproceedings{Mirsadeghi2016MAGC,
+  author    = {Mirsadeghi, Seyed H. and Faraji, Iman and Afsahi, Ahmad},
+  booktitle = {2016 28th International Symposium on Computer Architecture and High Performance Computing (SBAC-PAD)},
+  title     = {MAGC: A Mapping Approach for GPU Clusters},
+  year      = {2016},
+  pages     = {50-58},
+  doi       = {10.1109/SBAC-PAD.2016.15}
+}
+
+@inproceedings{Mirsadeghi2016PTRAM,
+  author    = {Mirsadeghi, Seyed H. and Afsahi, Ahmad},
+  booktitle = {2016 IEEE International Parallel and Distributed Processing Symposium Workshops (IPDPSW)},
+  title     = {PTRAM: A Parallel Topology-and Routing-Aware Mapping Framework for Large-Scale HPC Systems},
+  year      = {2016},
+  pages     = {386-396},
+  doi       = {10.1109/IPDPSW.2016.146}
+}
+
+
+----------------------------------------------------------------------
+PAP-Awareness Papers:
+
+@article{Thakur2005OptMPICH,
+    author = {Rajeev Thakur and Rolf Rabenseifner and William Gropp},
+    title ={Optimization of Collective Communication Operations in MPICH},
+    journal = {The International Journal of High Performance Computing Applications},
+    volume = {19},
+    number = {1},
+    pages = {49-66},
+    year = {2005},
+    doi = {10.1177/1094342005051521},
+    URL = {https://doi.org/10.1177/1094342005051521},
+    eprint = {https://doi.org/10.1177/1094342005051521},
+}
+
+@InProceedings{Qian2009ProcArrivalSHMA2AIB,
+    author="Qian, Ying and Afsahi, Ahmad",
+    editor="Ropo, Matti
+    and Westerholm, Jan
+    and Dongarra, Jack",
+    title="Process Arrival Pattern and Shared Memory Aware Alltoall on InfiniBand",
+    booktitle="Recent Advances in Parallel Virtual Machine and Message Passing Interface",
+    year="2009",
+    publisher="Springer Berlin Heidelberg",
+    address="Berlin, Heidelberg",
+    pages="250--260",
+    isbn="978-3-642-03770-2"
+}
+
+@inproceedings{Parsons2015ExpProcImbMPICollHierarcialSys,
+    author = {Parsons, Benjamin S. and Pai, Vijay S.},
+    title = {Exploiting Process Imbalance to Improve MPI Collective Operations in Hierarchical Systems},
+    year = {2015},
+    isbn = {9781450335591},
+    publisher = {Association for Computing Machinery},
+    address = {New York, NY, USA},
+    url = {https://doi.org/10.1145/2751205.2751242},
+    doi = {10.1145/2751205.2751242},
+    booktitle = {Proceedings of the 29th ACM on International Conference on Supercomputing},
+    pages = {57–66},
+    numpages = {10},
+    keywords = {collective communication, mpi, hpc, process imbalance},
+    location = {Newport Beach, California, USA},
+    series = {ICS '15}
+}
+
+@INPROCEEDINGS{Patarasuk2008EffBcastDifProcArr,
+    author={Patarasuk, Pitch and Yuan, Xin},
+    booktitle={2008 IEEE International Symposium on Parallel and Distributed Processing},   
+    title={Efficient MPI Bcast across different process arrival patterns},   
+    year={2008},  
+    volume={},  
+    number={},  
+    pages={1-11},  
+    doi={10.1109/IPDPS.2008.4536308},
+}
+
+@article{Faraj2008StudyProcArrivalMPIColl,
+    author={Faraj, Ahmad and Patarasuk, Pitch and Yuan, Xin},
+    title={A Study of Process Arrival Patterns for MPI Collective Operations.},
+    journal={Int J Parallel Prog},
+    volume={36}, 
+    year={2008},
+    pages={543–570},
+    doi={10.1007/s10766-008-0070-9},
+}
+
+@article{Proficz2021AllGatherResilientToImbPAP,
+    author = {Proficz, Jerzy},
+    title = {All-Gather Algorithms Resilient to Imbalanced Process Arrival Patterns},
+    year = {2021},
+    issue_date = {December 2021},
+    publisher = {Association for Computing Machinery},
+    address = {New York, NY, USA},
+    volume = {18},
+    number = {4},
+    issn = {1544-3566},
+    url = {https://doi.org/10.1145/3460122},
+    doi = {10.1145/3460122},
+    journal = {ACM Trans. Archit. Code Optim.},
+    month = {jul},
+    articleno = {41},
+    numpages = {22},
+    keywords = {background sorted linear synchronized tree with broadcast, All-gather, process arrival pattern, MPI, background disseminated ring}
+}
+
+@article{Proficz2018ImprvAllReduceForImbPAP,
+    author={Proficz, Jerzy},
+    title={Improving All-Redyuce Collective Operations for Imbalanced Process Arrival Patterns},
+    journal={The Jounal of Supercomputing},
+    volume={47},
+    pages={3071-3092},
+    year={2018},
+    doi={10.1007/s11227-018-2356-z},
+}
+
+@article{Proficz2020PAPAwareScatterGather,
+    author={Proficz, Jerzy},
+    title={Process arrival pattern aware algorithms for acceleration of scatter and gather operations},
+    journal={Cluster Computing},
+    volume={23},
+    pages={2735-2751},
+    year={2020},
+    doi={10.1007/s10586-019-03040-x},
+}
+
+@inproceedings{Luo2018ADAPT,
+    author = {Luo, Xi and Wu, Wei and Bosilca, George and Patinyasakdikul, Thananon and Wang, Linnan and Dongarra, Jack},
+    title = {ADAPT: An Event-Based Adaptive Collective Communication Framework},
+    year = {2018},
+    isbn = {9781450357852},
+    publisher = {Association for Computing Machinery},
+    address = {New York, NY, USA},
+    url = {https://doi.org/10.1145/3208040.3208054},
+    doi = {10.1145/3208040.3208054},
+    booktitle = {Proceedings of the 27th International Symposium on High-Performance Parallel and Distributed Computing},
+    pages = {118–130},
+    numpages = {13},
+    keywords = {system noise, heterogeneous system, event-driven, collectives operations, MPI, GPU},
+    location = {Tempe, Arizona},
+    series = {HPDC '18}
+}
 
 -----------------------------------------------------------------------------
-Books:
-
-@book{eco2015write,
-  title={How to write a thesis},
-  author={Eco, Umberto},
-  year={2015},
-  publisher={MIT Press}
-}

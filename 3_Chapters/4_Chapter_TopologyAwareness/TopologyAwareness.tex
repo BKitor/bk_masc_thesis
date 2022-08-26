@@ -1,0 +1,30 @@
+% Chapter 4 - Topology Awareness
+
+\glsresetall % reset the glossary to expand acronyms again
+\chapter[Topology]{Topology Awareness}\label{ch:TopologyAwareness}
+\index{Topology Awareness}
+
+% Topology Awareness
+
+\begin{itemize}
+    \item Background on Topology-Awareness
+    \begin{itemize}
+        \item Graph mapping of communication pattern to host topology
+        \item is an NP hard problem, most-often heuristics are used
+        \item exsisting methods to apply topo-awareness
+        \begin{itemize}
+            \item general \cite{Hoefler2011GenericTopoMappingStrats, Mirsadeghi2016TopoAwareCollRR, Mirsadeghi2016MAGC}
+            \item comm-topo \cite{Gropp2019CartTopoMapping}
+            \item collectives \cite{Mercer2011ImprvMPIWithRR, Mirsadeghi2016TopoAwareCollRR}
+        \end{itemize}
+    \end{itemize}
+    \item Reordering and Caching Algorithm
+    \item Reordering algs for RSA, Binary-tree, Knomial-tree
+    \item Evaluation
+    \begin{itemize}
+        \item Microbenchmark Data
+        \item SCOTCH \cite{Pellegrini2012SCOTCH}
+        \item Horovod, even though there's barely any improvement?
+    \end{itemize}
+\end{itemize}
+
