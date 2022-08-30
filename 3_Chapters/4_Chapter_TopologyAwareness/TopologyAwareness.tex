@@ -18,7 +18,7 @@
             \item collectives \cite{Mercer2011ImprvMPIWithRR, Mirsadeghi2016TopoAwareCollRR}
         \end{itemize}
     \end{itemize}
-    \item Reordering and Caching Algorithm
+    \item Reordering and Caching method
     \item Reordering algs for RSA, Binary-tree, Knomial-tree
     \item CPU vs GPU kernel
     \item System topology using hwloc and ibnetdiscover
@@ -31,51 +31,86 @@
 \end{itemize}
 
 The frist thechnique investigated to improve MPI collectives performance is topology-awareness.
-The overarching idea is to accelerate computation speed by leveraging knoledge of the underlying hardware.
+The overarching idea is to accelerate computation by leveraging knoledge of the underlying hardware.
 Topology-awareness is often-used tequnique applided to many areas in both MPI and the greater HPC ecosystem.
-After outlining existing methods for applying topology awareness within MPI, a method of accelerating MPI collectives is proposed, and implemented targeting multiple MPI\_Allreduce and MPI\_Bcast algorithms.
+This chapter will start by outlining existing methods for applying topology awareness within MPI.
+Next we propose a method of accelerating MPI collectives, and build an implementation targeting multiple MPI\_Allreduce and MPI\_Bcast algorithms.
 Our work is evaluated in both CPU and GPU environments, and can see up to 80\% improvement in certain scenarios.
 
-\section{Modivation}
+\section{Motivation}
 MPI provides a programming model so that processes on a distributed memory system can share data and work together.
 MPI users are made to assume that any messages exchanged between any two ranks will have the same communicatoin characteristics no matter what their ranks are. 
 This abstraction provdes a convinient programing environment allowing users to focus on building their application without worrying about the underlying hardware. 
 The simplicity of it also has the benifit of making portability easier, disuading users from tying their application to a specific architecture.
 But in reality, this assumption is false because modern computers are anything but simple. 
 Compute nodes have expansive memory hierarchies spanning multiple caches, NUMA domains, and even GPU memory.
-Furthurmore, modern fabric interconnects have complex topologies with variable performance depeding on node location.
+Furthurmore, modern fabric interconnects have complex network topologies with variable performance depeding on node location.
 So, in reality, the hardware topology of the system has an outiszed impact on message performance, which has a knock-on affect on overall application performance. 
 
-MPI Applications tend to have consistant data-transer patterns, meaning ranks will most likely send and recive the same set of messages from the same ranks on consecutive runs of the application.
-Since data-transfer patterns are predictable, and the programming model doesn't bind processes to specific locations, MPI implementations can try map ranks to processing elements as to make most optimal use of the underlying hardware.
-
-Conseptualy, this problem can be treated as a graph mapping problem. 
-The MPI application is modeld as weighted graph $G=(V_G, w_G)$, where verticeis are processes and weights are the amount of communication between processes.
-The host topology is also models as a weighted graph $H=(V_h, w_H)$, where vertices are processing elements and weights represent the capacity of the interconnect between any two processing elements.
-% $G$ and $H$ are both fully connected graphs, and $|V_G| = |V_H|$.
-When running the application, the grpah $G$ is mapped to $H$ so that each rank in $V_G$ is overlayed on a processing element in $V_H$, and communication weights in $w_G$ are tied to a hardware link $w_H$.
-Lastly, a mathematical metric is defined to estimate the performance of the mapping.
-So the goal of topology-awareness is to find a mapping from $G$ to $H$ that minimized/maximized a defined metric.
-The issue is, this problem is Is NP-hard, so finding optimal solutions for large scale instances of this problem is not feasable \cite{Hoefler2011GenericTopoMappingStrats}.
-Solutions used in practice often rely on heuristics to find near-optimal solutions in a reasonable amount of time.
+MPI applications tend to have consistant data-transer patterns, meaning ranks will most likely send and recive the same set of messages from the same ranks on consecutive runs of the application.
+Since data-transfer patterns are predictable, and the programming model doesn't bind processes to specific locations, this gives MPI implementations the flexibility to map ranks to processing elements as to make most optimal use of the underlying hardware.
+This problem of mapping ranks to processing elements can be formalized as an instance of a graph-embedding problem, however preveous work has shown this to be an NP-Hard problem \cite{Hoefler2011GenericTopoMappingStrats}. 
+Solving this problem at scale (on the order of millions of processes) is not feasable, therefore heuristics and simplifications are often used instead.
 
 Collectives are structured as a series of point to point communications which can be interpreted as their own communication graph.
 The structure of the graph is dependent on the underlying algorithm, i.e. ring, recursive doubling, knomial-tree, etc...
 So in this work, we evaluate the efficacy of mapping collective communication graphs to the underlying hardware topology on-the-fly during application runtime.
 
+
+% Conseptualy, this problem can be treated as a graph mapping problem. 
+% The MPI application is modeld as weighted graph $G=(V_G, w_G)$, where verticeis are processes and weights are the amount of communication between processes.
+% The host topology is also models as a weighted graph $H=(V_h, w_H)$, where vertices are processing elements and weights represent the capacity of the interconnect between any two processing elements.
+% % $G$ and $H$ are both fully connected graphs, and $|V_G| = |V_H|$.
+% When running the application, the grpah $G$ is mapped to $H$ so that each rank in $V_G$ is overlayed on a processing element in $V_H$, and communication weights in $w_G$ are tied to a hardware link $w_H$.
+% Lastly, a mathematical metric is defined to estimate the performance of the mapping.
+% So the goal of topology-awareness is to find a mapping from $G$ to $H$ that minimized/maximized a defined metric.
+% This problem, which is a subset of graph-embedding, is NP-hard, so finding optimal solutions for large scale instances of this problem is not feasable \cite{Hoefler2011GenericTopoMappingStrats}.
+% Solutions used in practice often rely on heuristics to find near-optimal solutions in a reasonable amount of time.
+
+
 \section{Background}
 Topology-awareness is a commonly used technique for accelerating MPI applications. 
-Within MPI, there are many scenarios where topology information can be applied to accelerate communication.
-At the highest level, topology awareness can be applied to the entire communicatoin graph \cite{Hoefler2011GenericTopoMappingStrats, Mirsadeghi2016PTRAM, Faraji2016TopoAwareGPUSelection, Mirsadeghi2016MAGC, Galvez2017AutoTopoMap}.
-These strategies start by profiling the entire application to build a communicatoin graph for a specific instance of the application.
+Within MPI, there are many scenarios and methods, varrying from the entire application to specific MPI functions, where topology information can be applied to accelerate communication.
+At the highest level, topology awareness can be applied to the application's entire communication graph \cite{Hoefler2011GenericTopoMappingStrats, Mirsadeghi2016PTRAM, Faraji2016TopoAwareGPUSelection, Mirsadeghi2016MAGC, Galvez2017AutoTopoMap}.
+These strategies require profiling the entire application and to build the communication graph.
 This communication graph is then used in future runs of the application to devise a mapping for each job allocation.
-These strategies can varry on the metric used to evaluate mappings, the mapping algorithm itself, and the types of systems mappings are supported for.
+The efficiency of a mapping is evaluated using metrics such as hop-bytes or congestion.
+So to achive the best application performance mapping algorithms try to minimize/maximize their chosen metric.
+There are multiple research fronts with this strategy, and efforts have gone into optimizing the metrics used, the mapping algorithm itself, and the types of systems mappings are supported for.
 
 Heofler and Snir \cite{Hoefler2011GenericTopoMappingStrats} propose a general process mapping tool targeting CPU clusters.
 They evaluate 3 algorithms, a greedy algorithm based on vertecie weights, a recusive bisecting that makes minimum weighted edge-cuts, and a graph similarity mapping using the Reverse Cuthill McKee algorithm. 
-They use these algorithms, along with a \textit{Threshold Accepting} optimizatoin step, to minimize congestion and dilation on large scale SMP clusters.
+They use these algorithms, along with a \textit{Threshold Accepting} optimization step, to minimize congestion and dilation on large scale SMP clusters.
 
-Mirsadeghi and Afsahi \cite{Mirsadeghi2016PTRAM} propose a hybrid metric
+Mirsadeghi and Afsahi \cite{Mirsadeghi2016PTRAM} propose a system targeting large scale Infiniband clusters.
+Their system leverages the network topology plus Infiniband's static routing tables to furthur reduce congestion.
+They propose a hybrid metric which is a linear combinaiton of hop-bytes and 3 types of congestion statistics. 
+The mapping, allong with furthur refinements, are calculated using a parallel greedy algorithm.
+
+Faraji et all \cite{Faraji2016TopoAwareGPUSelection} focus their efforts on building a system targeting intranode GPU communication.
+While their system only works on a single node, and relies on SCOTCH's \cite{Pellegrini2012SCOTCH} graph bisecting method to perform the mapping, Mirsadehi et al \cite{Mirsadeghi2016MAGC} expand the work to a full cluster.
+The complete system uses a 3-step processes, first mapping ranks to nodes to minimize network communication, then ranks to core to optimize intranode communicatoin, and lastly the gpu-to-rank step for optimal GPU-to-GPU communications.
+
+Exsisting systems struggle to manage collective communications.
+The profiling stage is often built on top of the PMPI profiling interface, which can intercept MPI calls, but doesn't break collectives into their constituent point to point messages.
+Galvez et al \cite{Galvez2017AutoTopoMap} identify this problem and propose a profiler that groups types of communications into weighted classes, 
+Their system leverages a parallel algorithm that uses the communication classes, along with a set of weighted metrics, to calculate a near ideal mapping.
+While a step in the right direction, their solution still treats collective communications as black-box, focusing on the collective's communicator and not dissasebling the collective into it's constituant point to point messages.
+
+In order to decompose collectives into point to point messagers Bosilica et al \cite{Bosilica2017OnlineMonitoringMPI} implemented a monitoring layer in OpenMPI.
+This provides much more granuler profiling for point to point messages, which allowed Jeannot and Sartori \cite{Jeannot2020ImprvMPICommMonitoring} to propose a rank reordering method for applications with itterative compute.
+Their solution is required to be implemented within users application. 
+So while it can provide automatic remapping, there is a burden on application developers to implement it within their software.
+
+One of the common shortcoming most these systems have is common is the required application profiling.
+
+
+\cite{Jeannot2014ProcPlacementInMulticoreClusters}
+
+
+\cite{Mercer2011ImprvMPIWithRR} \cite{Gropp2019CartTopoMapping}
+
+
 
 \section{Method}
 \section{Results}
