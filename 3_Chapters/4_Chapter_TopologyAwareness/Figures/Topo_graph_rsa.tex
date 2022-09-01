@@ -1,0 +1,27 @@
+% RSA
+\begin{figure}
+    \centering
+    \begin{tikzpicture}
+        \def\mycircleofnodes{C0}
+        \foreach \x in {0,1,...,7}
+            {
+                \node[circle,draw,inner sep=2pt] (C\x) at (\x*45:3) {\x} ;
+                \ifnum\x>0\relax\xdef\mycircleofnodes{\mycircleofnodes,C\x}\fi
+            }
+
+        \foreach \x/\y in {0/1, 2/3, 4/5, 6/7}
+            {
+                \draw (C\x) -- (C\y) node [above, midway] {$n$};
+            }
+        \foreach \x/\y in {0/2, 3/1, 4/6, 7/5}
+            {
+                \draw (C\x) -- (C\y) node [above, near start] {$n/2$};
+            }
+        \foreach \x/\y in {0/4, 5/1, 6/2, 3/7}
+            {
+                \draw (C\x) -- (C\y) node [above, near start] {$n/4$};
+            }
+    \end{tikzpicture}
+    \caption{Eight process reduce scatter allgather, where message size is $n$.}
+    \label{fig:graph-rsa}    
+\end{figure}

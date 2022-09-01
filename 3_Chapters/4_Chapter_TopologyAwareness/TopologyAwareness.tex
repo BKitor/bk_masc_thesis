@@ -33,6 +33,12 @@
 The first technique investigated to improve MPI collective communication performance is topology awareness.
 The overarching idea is to accelerate computation by leveraging the knowledge of the underlying hardware.
 Topology awareness is an often-used technique applied to many areas in both MPI and the greater HPC ecosystem.
+
+This chapter builds on work by Mirsadeghi and Afsahi \cite{Mirsadeghi2016TopoAwareCollRR}, where the authors propose a method for applying topology awareness to allgather and broadcast.
+Their work relies on the notion that collective algorithms have an implicit communication pattern, and that the ranks in a communicator can be reordered as to better fit the communication pattern to the host topology.
+We start by extend their work to multiple new algorithms, in allreduce and broadcast.
+Microbenchmark evaluation shows that we can see up to 80\% performance improvement under certain scenarios, and that we can outperformed the SCOTCH graph partitioning library \cite{Pellegrini2012SCOTCH}.
+
 This chapter will start by outlining existing methods for applying topology awareness within MPI.
 Next, we propose a method of accelerating MPI collectives and build an implementation targeting multiple MPI\_Allreduce and MPI\_Bcast algorithms.
 Our work is evaluated in both CPU and GPU environments and can see up to 80\% improvement in certain scenarios.
@@ -140,4 +146,63 @@ We also propose mapping algorithms for reduce-scatter-allgather, knomial and bin
 
 
 \section{Method}
+
+When applying topology awareness to collectives there are two common stategies.
+Either build a communication pattern that is designed to fit the hardware, or take an existing pattern and map it to the hardware.
+This work uses the latter strategy, we take the collective algorithm selected by the implementation and silently renumber the processes so as to better adapt it to the hardware.
+When a collective is called, the MPI library selects an algorithm based on the message size and number of processes.
+The communication pattern is implicit to the collective algorithm, so we define a heuristic tailored to each algorithm that calculates how ranks should be renumbered.
+To make the calculation efficient and scalable each proposed remapping heuristic leverages a greedy strategy, an outline of the general strategy is given in Listing \ref{lst:topo-generic-strategy}.
+The basic structure starts with a reference rank, all process remappings will try to use hardware as close to the reference rank as possible.
+Then the heuristic loops through the ranks, selecting the next rank to map based on the communication patern, and updating the reference rank on occasion.
+
+The mapping is enforced by creating a new communicator, each process calls MPI\_Comm\_split() and requests their new rank, and the specified algorithm is run on the resulting communicator.
+Since communicator creartion is an expensive operation, this shadow communicator is cached so that it can be used again if the same communicator uses the same algorithm.
+
+This structure is flexible, and alows us to evaluate multiple types of collectives.
+In order to accelerate large message allreduce, we propose a reordering heuristic for reduce-scatter-allgather allreduce.
+Furthurmore, since broadcast can be used as a component in allreudce, we also propose heuristics for two broadcast algorithms, knomial and binary tree broadcast.
+
+\lstset{style = bklstc}
+\lstset{label = lst:topo-generic-strategy}
+\lstset{caption = General greedy heuristic for topology-aware rank reordering.}
+\lstinputlisting[float=!htbp]{3_Chapters/4_Chapter_TopologyAwareness/Figures/TopoRR_strat.c}
+
+\subsection{Reduce-Scatter-Allgather Allreduce}
+
+Reduce-scatter-allgather (RSA) allreduce, also known as Rabenseifner's algorithm, is a popular algorithm implemented in most MPI implementations, and even used in external collective libraries.
+The algorithm starts with each processess performing a recursive-vector halving reduce-scatter, distributing segments of the reduction vector accross all ranks.
+After the reduce scatter, each rank will have a completly reduce segment of the final output, so a recursive doubling allgather is performed to gather the final result.
+RSA is used for large message allreduce because it is bandiwth optimal.
+For an allreduce with $p$ processes on $n$ bytes of data, each rank sends $2((p-1)/p)n\beta$ bytes of data.
+Since both phases rely on a recusive pattern, data is only exchanged with ranks that are a power of 2 distance away.
+The other important feature of RSA is that more data is exchanged with closer processes.
+Figure \ref{fig:graph-rsa} demonstrates this phenomona with 8 processes.
+The most data is exchanged with immediate neighbours, this accounts for the first stage of reduce-scatter and the stage of the allgather.
+
+
+\input{3_Chapters/4_Chapter_TopologyAwareness/Figures/Topo_graph_rsa}
+\lstset{label = lst:topo-rsa}
+\lstset{caption = Heuristic for rank reordering the reduce-scatter-allgather algorithm.}
+\lstinputlisting[float=!htbp]{3_Chapters/4_Chapter_TopologyAwareness/Figures/Topo_RSA.c}
+
+\subsection{Binary Tree Broadcast}
+\input{3_Chapters/4_Chapter_TopologyAwareness/Figures/Topo_graph_bintree}
+\lstset{label = lst:topo-bintree}
+\lstset{caption = Heuristic for rank reordering binary trees.}
+\lstinputlisting[float=!htbp]{3_Chapters/4_Chapter_TopologyAwareness/Figures/Topo_BinTree.c}
+
+\subsection{Knomial Broadcast}
+\input{3_Chapters/4_Chapter_TopologyAwareness/Figures/Topo_graph_knomial}
+\lstset{label = lst:topo-knomial}
+\lstset{caption = Heuristic for rank reordering knomial trees.}
+\lstinputlisting[float=!htbp]{3_Chapters/4_Chapter_TopologyAwareness/Figures/Topo_Knomial.c}
+
+\subsection{Implementation}
+
+Built into OMPI v4.0.5
+Intranode information with HWLOC
+Internode info with ibnetdiscover/opareport -> python script to derrive distance matrix -> .txt file in home directory
+
 \section{Results}
+
