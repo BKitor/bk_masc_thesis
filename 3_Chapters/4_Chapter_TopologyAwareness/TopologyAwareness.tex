@@ -147,14 +147,19 @@ We also propose mapping algorithms for reduce-scatter-allgather, knomial and bin
 
 \section{Method}
 
+\lstset{style = bklstc}
+\lstset{label = lst:topo-generic-strategy}
+\lstset{caption = General greedy heuristic for topology-aware rank reordering.}
+\lstinputlisting[float=!htbp]{3_Chapters/4_Chapter_TopologyAwareness/Figures/TopoRR_strat.c}
+
 When applying topology awareness to collectives there are two common stategies.
-Either build a communication pattern that is designed to fit the hardware, or take an existing pattern and map it to the hardware.
+Either build a communication pattern that is designed to fit the hardware, or take an existing pattern and map it to better fit the hardware.
 This work uses the latter strategy, we take the collective algorithm selected by the implementation and silently renumber the processes so as to better adapt it to the hardware.
 When a collective is called, the MPI library selects an algorithm based on the message size and number of processes.
-The communication pattern is implicit to the collective algorithm, so we define a heuristic tailored to each algorithm that calculates how ranks should be renumbered.
+The communication pattern is implicit to the collective algorithm, so we define a heuristic tailored to specific algorithms that calculates how ranks should be renumbered.
 To make the calculation efficient and scalable each proposed remapping heuristic leverages a greedy strategy, an outline of the general strategy is given in Listing \ref{lst:topo-generic-strategy}.
 The basic structure starts with a reference rank, all process remappings will try to use hardware as close to the reference rank as possible.
-Then the heuristic loops through the ranks, selecting the next rank to map based on the communication patern, and updating the reference rank on occasion.
+Then the heuristic loops through the ranks, selecting the next rank to map based on the communication patern, updating the reference rank when required.
 
 The mapping is enforced by creating a new communicator, each process calls MPI\_Comm\_split() and requests their new rank, and the specified algorithm is run on the resulting communicator.
 Since communicator creartion is an expensive operation, this shadow communicator is cached so that it can be used again if the same communicator uses the same algorithm.
@@ -163,46 +168,88 @@ This structure is flexible, and alows us to evaluate multiple types of collectiv
 In order to accelerate large message allreduce, we propose a reordering heuristic for reduce-scatter-allgather allreduce.
 Furthurmore, since broadcast can be used as a component in allreudce, we also propose heuristics for two broadcast algorithms, knomial and binary tree broadcast.
 
-\lstset{style = bklstc}
-\lstset{label = lst:topo-generic-strategy}
-\lstset{caption = General greedy heuristic for topology-aware rank reordering.}
-\lstinputlisting[float=!htbp]{3_Chapters/4_Chapter_TopologyAwareness/Figures/TopoRR_strat.c}
-
 \subsection{Reduce-Scatter-Allgather Allreduce}
-
-Reduce-scatter-allgather (RSA) allreduce, also known as Rabenseifner's algorithm, is a popular algorithm implemented in most MPI implementations, and even used in external collective libraries.
-The algorithm starts with each processess performing a recursive-vector halving reduce-scatter, distributing segments of the reduction vector accross all ranks.
-After the reduce scatter, each rank will have a completly reduce segment of the final output, so a recursive doubling allgather is performed to gather the final result.
-RSA is used for large message allreduce because it is bandiwth optimal.
-For an allreduce with $p$ processes on $n$ bytes of data, each rank sends $2((p-1)/p)n\beta$ bytes of data.
-Since both phases rely on a recusive pattern, data is only exchanged with ranks that are a power of 2 distance away.
-The other important feature of RSA is that more data is exchanged with closer processes.
-Figure \ref{fig:graph-rsa} demonstrates this phenomona with 8 processes.
-The most data is exchanged with immediate neighbours, this accounts for the first stage of reduce-scatter and the stage of the allgather.
-
 
 \input{3_Chapters/4_Chapter_TopologyAwareness/Figures/Topo_graph_rsa}
 \lstset{label = lst:topo-rsa}
 \lstset{caption = Heuristic for rank reordering the reduce-scatter-allgather algorithm.}
 \lstinputlisting[float=!htbp]{3_Chapters/4_Chapter_TopologyAwareness/Figures/Topo_RSA.c}
 
+Reduce-scatter-allgather (RSA) allreduce, also known as Rabenseifner's algorithm, is a popular algorithm implemented in most MPI implementations, and even used in external collective libraries like UCC \cite{UCC}.
+The algorithm starts with each processess performing a recursive-vector halving reduce-scatter, this distributs a segment of the fully reduced vector to each rank.
+At this point, each rank need to gather the other reduced segments from the other ranks, this is acheived thorugh a recursive doubling allgather.
+RSA is used for large message allreduce because it is bandiwth efficient.
+For an allreduce with $p$ processes on $n$ bytes of data, each rank sends $2((p-1)/p)n\beta$ bytes of data, linear scaling with message size is ideal for large message collectives.
+In terms of structure, since both phases rely on a recusive pattern data is only exchanged with ranks that are a power of 2 distance away.
+The other important feature of RSA is that more data is exchanged with numericly closer ranks.
+Figure \ref{fig:graph-rsa} demonstrates this phenomona with 8 processes.
+The most data is exchanged with immediate neighbours, this accounts for the first stage of reduce-scatter and the stage of the allgather.
+
+So while designing our heuristic, we want to map communicating pairs that are a power of two distance away, with a focus on small distances first.
+With these goals in mind, we propose the heuristic in Listing \ref{lst:topo-rsa} to target the RSA algorithm.
+This heuristics starts by mapping rank 0 (line 14), then walks to the power of 2 communication graph mapping processes that have not been mapped yet (lines 18-24). 
+While looping throug all the ranks, the reference rank is updated every two mappings(lines 25-31), this ensures that communicating pairs that are distance 1 away are mapped as close as possible. 
+
+
 \subsection{Binary Tree Broadcast}
+
 \input{3_Chapters/4_Chapter_TopologyAwareness/Figures/Topo_graph_bintree}
 \lstset{label = lst:topo-bintree}
 \lstset{caption = Heuristic for rank reordering binary trees.}
 \lstinputlisting[float=!htbp]{3_Chapters/4_Chapter_TopologyAwareness/Figures/Topo_BinTree.c}
 
+Binary tree benifit from it's simplicity.
+Ranks recieve 1 message, and forward it to 2 child ranks.
+The tree structure provides logarithmic scaling to the number of messages sent, so binary trees are often used for smaller message sizes. 
+A typical structure for a binary tree is provided in Figure \ref{fig:graph-bin-tree}.
+For a rank $r$, the height in the tree can be calculated as $h_r = \lfloor log_2(r+1) \rfloor$, and ranks will send messages to $r + 2^{h_r}$ and $r + 2^{h_r + 1}$
+This leads to a structure where processes furthur down the tree are sending to ranks furthur and furthur away.
+Furthurmore, Binary trees are constructued slightly lopsided, nodes are added to the left side of the tree before the right side. 
+This can lead to situations where one direction has slightly more nodes than the other, this should be accounted for when desiging the heuristic.
+
+In order to ensure that rank's reside on the same node as their children, we propose a depth-first-traversal heuristic, with the code provided in Listing \ref{lst:topo-bintree}.
+We employ a recusive function to traverse the tree in an efficient manor. 
+We start by mapping the root of the tree (line 38) and passing it in as the reference rank to the recursive function.
+The recursive function starts by calculating the reference rank's height and child processes (lines 13). 
+The, depending on if the child processes are in the communicator, we bind them close to the reference rank and recuse with them as the new reference rank.
+To account for a potentialy lopsided tree, the heuristics traverses the potentialy smaller side first by mapping the larger child first, (lines 27-23).
+We found that this does a more consistant job of mapping the tree to common system architectures.
+
+
 \subsection{Knomial Broadcast}
+
 \input{3_Chapters/4_Chapter_TopologyAwareness/Figures/Topo_graph_knomial}
 \lstset{label = lst:topo-knomial}
 \lstset{caption = Heuristic for rank reordering knomial trees.}
 \lstinputlisting[float=!htbp]{3_Chapters/4_Chapter_TopologyAwareness/Figures/Topo_Knomial.c}
+
+Knomial is a generalization of a binomial tree and it's structure can be defined inductively.
+For a knomial tree $T_{k,h}$ of height $h$ and radix $k$, if $h=0$ then $T_{k,h}$ is a single node, for $h>0$ $T_{k,h}$ is build from $k$ coppies of $T_{k,h-1}$, where the root of the first copy is the parent node of the other $k-1$ coppies.
+While the structue of the tree is lopsided, in theory this provides the opertunity to overlap message transferts lower in the tree with transfers higher in the tree.
+Due to the inductive definitions, high $k$ value trees will have a lot of leaf nodes, as each subtree will contain of $k-1$ subtrees with $h=1$.
+
+In Listing \ref{lst:topo-knomial}, we propose another depth frist traversal algorithm, with a focus on mapping smaller subtrees first.
+By focusing on subtrees we are trying to group bunches of leaf nodes on the same node as their parent.
+Since this is a depth first traversal, we use another recurisve function to traverse the tree. 
+Once again, we start by mapping the root of the tree (line 42) and passing it in as the reference rank of the recursive function.
+In the recusive function, we immidiatly map the $k-1$ subtrees of height 0 (lines 14-17).
+Then we use a while loop to calculate the values for subtrees that are furthur away (lines 18-34).
+If the root of a subtree does exist in the communicator, we map it as close as possible to the reference rank (line 28), calculate it's depth (line 30), and recurse on it as the reference rank (line 30).
+
+Figure \ref{fig:graph-knomial}
 
 \subsection{Implementation}
 
 Built into OMPI v4.0.5
 Intranode information with HWLOC
 Internode info with ibnetdiscover/opareport -> python script to derrive distance matrix -> .txt file in home directory
+
+data-transfer for bcast
+Don't support \_ reductions
+
+While any value of $k$ can be used, in OpenMPI $k$ is usualy set to 4.
+
+Cosmoflow?
 
 \section{Results}
 

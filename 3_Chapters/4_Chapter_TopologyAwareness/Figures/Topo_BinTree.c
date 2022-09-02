@@ -10,21 +10,21 @@ void recursive_bintree_map(int ref_rank, int comm_size,
                            int* topo_info, int* mapping){
     // calculate ref_rank's position in the tree, along with it's 
     // child ranks
-    int level = log(ref_rank+1);
-    int delta = pow(2, level);
-    child_1 = ref_rank + delta;
-    child_2 = ref_rakn + 2*delta;
-    if(child_1 < comm_size){
-        // if child_1 is in the tree,
-        // map it and set it as the new ref_rank
-        mapping[child_1] = find_closest_core(ref_rank, topo_info);
-        recursive_bintree_map(child_1, comm_size,
-                              topo_info, mapping);
-    }
-    // same as above, but for child 2
+    int height = log(ref_rank+1);
+    int delta = pow(2, height);
+    int child_1 = ref_rank + delta;
+    int child_2 = ref_rakn + 2*delta;
     if(child_2 < comm_size){
+        // if child_2 is in the tree,
+        // map it and set it as the new ref_rank
         mapping[child_2] = find_closest_core(ref_rank, topo_info);
         recursive_bintree_map(child_2, comm_size,
+                              topo_info, mapping);
+    }
+    if(child_1 < comm_size){
+        // same as above, but for child_1
+        mapping[child_1] = find_closest_core(ref_rank, topo_info);
+        recursive_bintree_map(child_1, comm_size,
                               topo_info, mapping);
     }
 }
