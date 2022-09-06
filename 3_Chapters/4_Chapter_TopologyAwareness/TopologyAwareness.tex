@@ -7,25 +7,9 @@
 % Topology Awareness
 
 \begin{itemize}
-    \item Background on Topology-Awareness
-    \begin{itemize}
-        \item Graph mapping of communication pattern to host topology
-        \item is an NP-hard problem, most-often heuristics are used
-        \item existing methods to apply topo-awareness
-        \begin{itemize}
-            \item general \cite{Hoefler2011GenericTopoMappingStrats, Mirsadeghi2016TopoAwareCollRR, Mirsadeghi2016MAGC}
-            \item comm-topo \cite{Gropp2019CartTopoMapping}
-            \item collectives \cite{Mercer2011ImprvMPIWithRR, Mirsadeghi2016TopoAwareCollRR}
-        \end{itemize}
-    \end{itemize}
-    \item Reordering and Caching method
-    \item Reordering algs for RSA, Binary-tree, Knomial-tree
     \item CPU vs GPU kernel
-    \item System topology using hwloc and ibnetdiscover
-    \item Evaluation
     \begin{itemize}
         \item Microbenchmark Data
-        \item SCOTCH \cite{Pellegrini2012SCOTCH}
         \item Horovod, even though there's barely any improvement?
     \end{itemize}
 \end{itemize}
@@ -178,7 +162,7 @@ Furthurmore, since broadcast can be used as a component in allreudce, we also pr
 Reduce-scatter-allgather (RSA) allreduce, also known as Rabenseifner's algorithm, is a popular algorithm implemented in most MPI implementations, and even used in external collective libraries like UCC \cite{UCC}.
 The algorithm starts with each processess performing a recursive-vector halving reduce-scatter, this distributs a segment of the fully reduced vector to each rank.
 At this point, each rank need to gather the other reduced segments from the other ranks, this is acheived thorugh a recursive doubling allgather.
-RSA is used for large message allreduce because it is bandiwth efficient.
+RSA is used for large message allreduce because it makes efficient use of system bandiwth.
 For an allreduce with $p$ processes on $n$ bytes of data, each rank sends $2((p-1)/p)n\beta$ bytes of data, linear scaling with message size is ideal for large message collectives.
 In terms of structure, since both phases rely on a recusive pattern data is only exchanged with ranks that are a power of 2 distance away.
 The other important feature of RSA is that more data is exchanged with numericly closer ranks.
@@ -212,7 +196,7 @@ We employ a recusive function to traverse the tree in an efficient manor.
 We start by mapping the root of the tree (line 38) and passing it in as the reference rank to the recursive function.
 The recursive function starts by calculating the reference rank's height and child processes (lines 13). 
 The, depending on if the child processes are in the communicator, we bind them close to the reference rank and recuse with them as the new reference rank.
-To account for a potentialy lopsided tree, the heuristics traverses the potentialy smaller side first by mapping the larger child first, (lines 27-23).
+To account for a potentialy lopsided tree, the heuristics traverses the potentialy smaller side first by mapping the numericly greater child first, (lines 27-23).
 We found that this does a more consistant job of mapping the tree to common system architectures.
 
 
@@ -224,9 +208,11 @@ We found that this does a more consistant job of mapping the tree to common syst
 \lstinputlisting[float=!htbp]{3_Chapters/4_Chapter_TopologyAwareness/Figures/Topo_Knomial.c}
 
 Knomial is a generalization of a binomial tree and it's structure can be defined inductively.
-For a knomial tree $T_{k,h}$ of height $h$ and radix $k$, if $h=0$ then $T_{k,h}$ is a single node, for $h>0$ $T_{k,h}$ is build from $k$ coppies of $T_{k,h-1}$, where the root of the first copy is the parent node of the other $k-1$ coppies.
-While the structue of the tree is lopsided, in theory this provides the opertunity to overlap message transferts lower in the tree with transfers higher in the tree.
-Due to the inductive definitions, high $k$ value trees will have a lot of leaf nodes, as each subtree will contain of $k-1$ subtrees with $h=1$.
+For a knomial tree $T_{k,h}$ of height $h$ and radix $k$, if $h=0$ then $T_{k,h}$ is a single node. For $h>0$, $T_{k,h}$ is build from $k$ coppies of $T_{k,h-1}$, where the root of the first copy is the parent node of the other $k-1$ coppies.
+Figure \ref{fig:graph-knomial} provides a example of a knomial tree with radix 4 and 16 processes.
+While any value of $k$ can be used, implementatinos commonly use either 2 (binomial tree) or 4. 
+While the structue of the tree is heavily lopsided, in theory this provides the opertunity to overlap message transfers at lower layers of the tree with transfers higher in higher layers.
+Due to the inductive definitions, high $k$ value trees will have a lot of leaf nodes, as each subtree will contain of $k-1$ subtrees with $h=0$.
 
 In Listing \ref{lst:topo-knomial}, we propose another depth frist traversal algorithm, with a focus on mapping smaller subtrees first.
 By focusing on subtrees we are trying to group bunches of leaf nodes on the same node as their parent.
@@ -236,20 +222,54 @@ In the recusive function, we immidiatly map the $k-1$ subtrees of height 0 (line
 Then we use a while loop to calculate the values for subtrees that are furthur away (lines 18-34).
 If the root of a subtree does exist in the communicator, we map it as close as possible to the reference rank (line 28), calculate it's depth (line 30), and recurse on it as the reference rank (line 30).
 
-Figure \ref{fig:graph-knomial}
 
 \subsection{Implementation}
 
-Built into OMPI v4.0.5
-Intranode information with HWLOC
-Internode info with ibnetdiscover/opareport -> python script to derrive distance matrix -> .txt file in home directory
+We evaluated our work on two herogenous clusters, Cedar and Beluga, both provided by Compute Canada. 
+Cedar is OmniPath based, with a fat-tree topology configured with 2:1 blocking and adadaptive routing enabled.
+Cedar's CPU allocation has dual socket 24-core Xeon Platinum 8260 Cascade Lake processors, while the GPU nodes have two 20-core Xeon Silver 4216 Cascade Lake processors hosting four v100s GPUs interconnected by NVLink.
+Beluga, on the other hand, is Infiniband based, with a 5:1 blocking fat-tree topology with static routing.  
+The CPU nodes have dual socket Xeon Gold 6148 Skylake processors, and the GPU nodes use the same processors attached to 4 V100s fully connected with NVLink.
 
-data-transfer for bcast
-Don't support \_ reductions
+We modified OpenMPI v4.0.5 \cite{gabriel2004OpenMPI} in order to evaluate our heuristics, this let us leverage the existing collective implementations as well as the algorithm selection mechanism.
 
-While any value of $k$ can be used, in OpenMPI $k$ is usualy set to 4.
+We leverages existing system topology detection tools to generate the host topology matrix.
+Hwloc \cite{Broquedis2010hwloc} is a tool for gathering on node topology information, including NUMA domaains and cache hierarchies.
+To extract network topology information, we started by collecting topology information using each clusters provided tools, ibnetdiscovee for Beluga's infiniband netowrk and opareport for Cedar's OmniPath fabric.
+We then processed both file into a common format that could be read at MPI\_Init().
 
-Cosmoflow?
+There are some caviats with collective rank reordering.
+By default, MPI\_Allreduce doesn't enfore communtativity, a user can still request it. 
+Allreduce algorithms needs to be carfuly designed in order to suport communtativity, and renumbering processes breaks that careful design, therefore this work does not support commutative operations.
+Furthurmore, both broadcast heuristics assume rank 0 is the root which is not always true. 
+So when rank 0 isn't the broadcast root, it needs to recive the data from the real root before it can start the broadcast on the shadow-communicator.
+In retrospect, a smarter desing would have been to assign virtual ranks by shifting each rank by the root's value, making the root 0, but I last looked at the code for remaping a year ago and the performance difference provided by this step would be negligable.
+
+The rank reordering strategy finds performance impovements by rearanging the process to core bindings, which implies that any performance improvements are dependant on the initial process to core bindings.
+In Open MPI initial bindings are made in a round-robin fashion dictated by a specific resoruce. 
+Figure \ref{fig:init-mappings} provides an example outlining the differences between the initial mappings we evaluated.
+The default inital mapping is by-package, this takes a node and fills it with processes alternating between packages until the node is full, it then repeats this on the next node untill all processes are bound.
+By-core mapping places processes to consecutivly numbered cores filling up a node befor moving to the next, and by-node scatters processes accross nodes by cycling through nodes placing proecsses one at a time.
+
+In order to compare our proposed heuristics against an established topology mapping tool, we also intragrated the SCOTCH graph embeding tool \cite{Pellegrini2012SCOTCH}.
+SCOTCH uses a graph bisecting method to perform graph partitioning and embedding, and it has been used in preveous work to incorporate topology-awareness.
+
+While OpenMPI does support CUDA memory transfers, the implementation coppies the data to a temporary host buffer, performs a CPU-based allreudce, then coppies the data back up to the GPU.
+While this does fufill the MPI specification, it negelcst to make use of the available GPU hardware, both kernel reduction, as well as GPU to GPU NVLinks.
+So we modified OpenMPI's RSA algorithm to make use of GPU hardware, this is also more in line with how modern collective libraries like NCCL and UCC implement allreduce \cite{UCC, NCCL}.
 
 \section{Results}
 
+\input{3_Chapters/4_Chapter_TopologyAwareness/Figures/init_mapping}
+
+\input{3_Chapters/4_Chapter_TopologyAwareness/Figures/ac_frac_imprv_small}
+
+\input{3_Chapters/4_Chapter_TopologyAwareness/Figures/bc_frac_imprv_small}
+
+\input{3_Chapters/4_Chapter_TopologyAwareness/Figures/dual_64_1024}
+
+Microbenchmakrs
+
+SCOTCH
+
+Horovod? Cosmoflow?

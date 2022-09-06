@@ -1,0 +1,72 @@
+\begin{figure*}
+    \centering
+    \begin{tikzpicture}
+        \begin{groupplot}[group style={
+                        group size=2 by 3,
+                        xlabels at=edge bottom,
+                        ylabels at=edge left,
+                        xticklabels at=edge bottom,
+                        yticklabels at=edge left,
+                        vertical sep=1.3cm,
+                    },
+                height=5.7cm,
+                width=7.5cm,
+                xlabel={Message Size (Bytes)},
+                ylabel={Speedup},
+                legend style={at={(-0.2, -0.3)}, anchor=north},
+                legend columns=4,
+                ymin = -1,
+                ymax = 1,
+                xmin = 1,
+                xmax = 1073741824,
+            ]
+
+            \nextgroupplot[xmode=log, title=GPU By Socket]
+            \addplot[blue, mark=*] table[x=msize, y=tt_pdif] {3_Chapters/4_Chapter_TopologyAwareness/Figures/data/beluga/mandm/data/ar_gpu_bysoc_64.dat};
+            \addplot[dashed, blue, mark=star] table[x=msize, y=s_pdif] {3_Chapters/4_Chapter_TopologyAwareness/Figures/data/beluga/mandm/data/ar_gpu_bysoc_64.dat};
+            \addplot[red, mark=*] table[x=msize, y=tt_pdif] {3_Chapters/4_Chapter_TopologyAwareness/Figures/data/beluga/mandm/data/bc_gpu_bysoc_64.dat};
+            \addplot[dashed, red, mark=star] table[x=msize, y=s_pdif] {3_Chapters/4_Chapter_TopologyAwareness/Figures/data/beluga/mandm/data/bc_gpu_bysoc_64.dat};
+
+            \nextgroupplot[xmode=log, title=CPU By Socket]
+            \addplot[blue, mark=*] table[x=msize, y=remap_pdif] {3_Chapters/4_Chapter_TopologyAwareness/Figures/data/beluga/mandm/data/cpu/ar_bysoc.dat};
+            \addplot[blue, mark=star] table[x=msize, y=scotch_pdif] {3_Chapters/4_Chapter_TopologyAwareness/Figures/data/beluga/mandm/data/cpu/ar_bysoc.dat};
+            \addplot[red, mark=*] table[x=msize, y=remap_pdif] {3_Chapters/4_Chapter_TopologyAwareness/Figures/data/beluga/mandm/data/cpu/bc_bysoc.dat};
+            \addplot[red, mark=star] table[x=msize, y=scotch_pdif] {3_Chapters/4_Chapter_TopologyAwareness/Figures/data/beluga/mandm/data/cpu/bc_bysoc.dat};
+
+            \nextgroupplot[xmode=log, title=GPU By Core]
+            \addplot[blue, mark=*] table[x=msize, y=tt_pdif] {3_Chapters/4_Chapter_TopologyAwareness/Figures/data/beluga/mandm/data/ar_gpu_bycore_64.dat};
+            \addplot[dashed, blue, mark=star] table[x=msize, y=s_pdif] {3_Chapters/4_Chapter_TopologyAwareness/Figures/data/beluga/mandm/data/ar_gpu_bycore_64.dat};
+            \addplot[red, mark=*] table[x=msize, y=tt_pdif] {3_Chapters/4_Chapter_TopologyAwareness/Figures/data/beluga/mandm/data/bc_gpu_bycore_64.dat};
+            \addplot[dashed, red, mark=star] table[x=msize, y=s_pdif] {3_Chapters/4_Chapter_TopologyAwareness/Figures/data/beluga/mandm/data/bc_gpu_bycore_64.dat};
+            
+            \nextgroupplot[xmode=log, title=CPU By Core]
+            \addplot[blue, mark=*] table[x=msize, y=remap_pdif] {3_Chapters/4_Chapter_TopologyAwareness/Figures/data/beluga/mandm/data/cpu/ar_bycore.dat};
+            \addplot[blue, mark=star] table[x=msize, y=scotch_pdif] {3_Chapters/4_Chapter_TopologyAwareness/Figures/data/beluga/mandm/data/cpu/ar_bycore.dat};
+            \addplot[red, mark=*] table[x=msize, y=remap_pdif] {3_Chapters/4_Chapter_TopologyAwareness/Figures/data/beluga/mandm/data/cpu/bc_bycore.dat};
+            \addplot[red, mark=star] table[x=msize, y=scotch_pdif] {3_Chapters/4_Chapter_TopologyAwareness/Figures/data/beluga/mandm/data/cpu/bc_bycore.dat};
+            
+            \nextgroupplot[xmode=log, title=GPU By Node, xticklabels={1B, 10kB, 100kB, 10MB, 1GB}]
+            \addplot[blue, mark=*] table[x=msize, y=tt_pdif] {3_Chapters/4_Chapter_TopologyAwareness/Figures/data/beluga/mandm/data/ar_gpu_bynode_64.dat};
+            \addplot[dashed, blue, mark=star] table[x=msize, y=s_pdif] {3_Chapters/4_Chapter_TopologyAwareness/Figures/data/beluga/mandm/data/ar_gpu_bynode_64.dat};
+            \addplot[red, mark=*] table[x=msize, y=tt_pdif] {3_Chapters/4_Chapter_TopologyAwareness/Figures/data/beluga/mandm/data/bc_gpu_bynode_64.dat};
+            \addplot[dashed, red, mark=star] table[x=msize, y=s_pdif] {3_Chapters/4_Chapter_TopologyAwareness/Figures/data/beluga/mandm/data/bc_gpu_bynode_64.dat};
+
+            \nextgroupplot[xmode=log, title=CPU By Node, xticklabels={1B, 10kB, 100kB, 10MB, 1GB}]
+            \addplot[blue, mark=*] table[x=msize, y=remap_pdif] {3_Chapters/4_Chapter_TopologyAwareness/Figures/data/beluga/mandm/data/cpu/ar_bynode.dat};
+            \addplot[blue, mark=star] table[x=msize, y=scotch_pdif] {3_Chapters/4_Chapter_TopologyAwareness/Figures/data/beluga/mandm/data/cpu/ar_bynode.dat};
+            \addplot[red, mark=*] table[x=msize, y=remap_pdif] {3_Chapters/4_Chapter_TopologyAwareness/Figures/data/beluga/mandm/data/cpu/bc_bynode.dat};
+            \addplot[red, mark=star] table[x=msize, y=scotch_pdif] {3_Chapters/4_Chapter_TopologyAwareness/Figures/data/beluga/mandm/data/cpu/bc_bynode.dat};
+            
+            \addlegendentry{Allreduce remap}
+            \addlegendentry{Allreduce SCOTCH}
+            \addlegendentry{Bcast remap}
+            \addlegendentry{Bcast SCOTCH}
+
+        \end{groupplot}
+    \end{tikzpicture}
+    \caption{Perforamce improvement over out-of-the-box OpenMPI on 16 GPU nodes, and 32 CPU nodes. 
+    Red lines are MPI\_Allreduce, blue lines are MPI\_Bcast.
+    Solid lines are reordered with proposed heuristics, and dashed lines are reordered with scotch.
+    }
+    \label{fig:beluga-mandm-dual-64-1024}
+\end{figure*}

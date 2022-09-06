@@ -1,0 +1,63 @@
+\begin{figure*}
+    \centering
+    \begin{tikzpicture}
+        \begin{groupplot}[group style={
+                        group size=2 by 3,
+                        xlabels at=edge bottom,
+                        ylabels at=edge left,
+                        xticklabels at=edge bottom,
+                        yticklabels at=edge left,
+                        vertical sep=1.5cm,
+                    },
+                height=5.7cm,
+                width=7.5cm,
+                xlabel={Message Size (Bytes)},
+                ylabel={Speedup},
+                legend style={at={(-0.1,-0.3)}, anchor=north},
+                legend columns=3,
+                ymin = -0.5,
+                ymax = 1,
+                xmin = 1,
+                xmax = 1073741824
+            ]
+            \nextgroupplot[xmode=log, title=GPU By Socket]
+            \addplot table[x=msize, y=k_dif] {3_Chapters/4_Chapter_TopologyAwareness/Figures/data/beluga/bc/bysoc_gpu.dat};
+            \addplot table[x=msize, y=bin_dif] {3_Chapters/4_Chapter_TopologyAwareness/Figures/data/beluga/bc/bysoc_gpu.dat};
+            \addplot table[x=msize, y=scag_dif] {3_Chapters/4_Chapter_TopologyAwareness/Figures/data/beluga/bc/bysoc_gpu.dat};
+            
+            \nextgroupplot[xmode=log, title=CPU By Socket]
+            \addplot table[x=msize, y=k_dif] {3_Chapters/4_Chapter_TopologyAwareness/Figures/data/beluga/bc/bysoc_cpu.dat};
+            \addplot table[x=msize, y=bin_dif] {3_Chapters/4_Chapter_TopologyAwareness/Figures/data/beluga/bc/bysoc_cpu.dat};
+            \addplot table[x=msize, y=scag_dif] {3_Chapters/4_Chapter_TopologyAwareness/Figures/data/beluga/bc/bysoc_cpu.dat};
+            
+            \nextgroupplot[xmode=log, title=GPU By Core]
+            \addplot table[x=msize, y=k_dif] {3_Chapters/4_Chapter_TopologyAwareness/Figures/data/beluga/bc/bycore_gpu.dat};
+            \addplot table[x=msize, y=bin_dif] {3_Chapters/4_Chapter_TopologyAwareness/Figures/data/beluga/bc/bycore_gpu.dat};
+            \addplot table[x=msize, y=scag_dif] {3_Chapters/4_Chapter_TopologyAwareness/Figures/data/beluga/bc/bycore_gpu.dat};
+            
+            \nextgroupplot[xmode=log, title=CPU By Core, legend]
+            \addplot table[x=msize, y=k_dif] {3_Chapters/4_Chapter_TopologyAwareness/Figures/data/beluga/bc/bycore_cpu.dat};
+            \addplot table[x=msize, y=bin_dif] {3_Chapters/4_Chapter_TopologyAwareness/Figures/data/beluga/bc/bycore_cpu.dat};
+            \addplot table[x=msize, y=scag_dif] {3_Chapters/4_Chapter_TopologyAwareness/Figures/data/beluga/bc/bycore_cpu.dat};
+            
+            \nextgroupplot[xmode=log, title=GPU By Node, xticklabels={1B, 10kB, 100kB, 10MB, 1GB}]
+            \addplot table[x=msize, y=k_dif] {3_Chapters/4_Chapter_TopologyAwareness/Figures/data/beluga/bc/bynode_gpu.dat};
+            \addplot table[x=msize, y=bin_dif] {3_Chapters/4_Chapter_TopologyAwareness/Figures/data/beluga/bc/bynode_gpu.dat};
+            \addplot table[x=msize, y=scag_dif] {3_Chapters/4_Chapter_TopologyAwareness/Figures/data/beluga/bc/bynode_gpu.dat};
+            
+            
+            \nextgroupplot[xmode=log, title=CPU By Node, xticklabels={1B, 10kB, 100kB, 10MB, 1GB}]
+            \addplot table[x=msize, y=k_dif] {3_Chapters/4_Chapter_TopologyAwareness/Figures/data/beluga/bc/bynode_cpu.dat};
+            \addplot table[x=msize, y=bin_dif] {3_Chapters/4_Chapter_TopologyAwareness/Figures/data/beluga/bc/bynode_cpu.dat};
+            \addplot table[x=msize, y=scag_dif] {3_Chapters/4_Chapter_TopologyAwareness/Figures/data/beluga/bc/bynode_cpu.dat};
+            
+            \addlegendentry{Knomial}
+            \addlegendentry{Bin-Tree}
+            \addlegendentry{SCAG}
+        \end{groupplot}
+    \end{tikzpicture}
+    \caption{Fractional improvement of Broadcast heuristics on Beluga. 
+    CPU and GPU were evaluated with by-socket, by-core and by-node initial mappings.
+    Messages varry from 1B to 128MB.}
+    \label{fig:beluga-bc-frac-imprv}
+\end{figure*}
