@@ -222,54 +222,59 @@ In the recusive function, we immidiatly map the $k-1$ subtrees of height 0 (line
 Then we use a while loop to calculate the values for subtrees that are furthur away (lines 18-34).
 If the root of a subtree does exist in the communicator, we map it as close as possible to the reference rank (line 28), calculate it's depth (line 30), and recurse on it as the reference rank (line 30).
 
+\subsection{Evaluation}
 
-\subsection{Implementation}
-
-We evaluated our work on two herogenous clusters, Cedar and Beluga, both provided by Compute Canada. 
-Cedar is OmniPath based, with a fat-tree topology configured with 2:1 blocking and adadaptive routing enabled.
-Cedar's CPU allocation has dual socket 24-core Xeon Platinum 8260 Cascade Lake processors, while the GPU nodes have two 20-core Xeon Silver 4216 Cascade Lake processors hosting four v100s GPUs interconnected by NVLink.
-Beluga, on the other hand, is Infiniband based, with a 5:1 blocking fat-tree topology with static routing.  
-The CPU nodes have dual socket Xeon Gold 6148 Skylake processors, and the GPU nodes use the same processors attached to 4 V100s fully connected with NVLink.
-
-We modified OpenMPI v4.0.5 \cite{gabriel2004OpenMPI} in order to evaluate our heuristics, this let us leverage the existing collective implementations as well as the algorithm selection mechanism.
-
-We leverages existing system topology detection tools to generate the host topology matrix.
-Hwloc \cite{Broquedis2010hwloc} is a tool for gathering on node topology information, including NUMA domaains and cache hierarchies.
-To extract network topology information, we started by collecting topology information using each clusters provided tools, ibnetdiscovee for Beluga's infiniband netowrk and opareport for Cedar's OmniPath fabric.
-We then processed both file into a common format that could be read at MPI\_Init().
-
-There are some caviats with collective rank reordering.
-By default, MPI\_Allreduce doesn't enfore communtativity, a user can still request it. 
-Allreduce algorithms needs to be carfuly designed in order to suport communtativity, and renumbering processes breaks that careful design, therefore this work does not support commutative operations.
+There are some caviats with collective rank reordering as not all collectives can support it seamlessly.
+By default MPI\_Allreduce doesn't enfore communtativity, a user can still request an operation to be commutative in the order of processor ranks. 
+In order to support commutativity, Allreduce algorithms needs to be carfuly designed to ensure operations are applied in the correct order, and renumbering processes breaks that careful design.
+Therefore, this work does not support commutative operations.
 Furthurmore, both broadcast heuristics assume rank 0 is the root which is not always true. 
 So when rank 0 isn't the broadcast root, it needs to recive the data from the real root before it can start the broadcast on the shadow-communicator.
-In retrospect, a smarter desing would have been to assign virtual ranks by shifting each rank by the root's value, making the root 0, but I last looked at the code for remaping a year ago and the performance difference provided by this step would be negligable.
+In retrospect, a smarter desing would have been to assign virtual ranks by shifting each rank according to the root's value, this would make the root 0.
+But I last looked at the code for remaping a year ago and the performance difference provided by this step would be negligable, furthurmore OMB only calls bcast w/ root 0 and Horovod doesn't use bcast.
 
+We leverages existing system topology detection tools to generate the host topology matrix.
+Hwloc \cite{Broquedis2010hwloc} is a tool for gathering on intranode topology information, this includes NUMA domaains and cache hierarchies.
+To extract the network topology, we started by collecting topology information using each clusters provided tools, ibnetdiscovee for Beluga's infiniband netowrk and opareport for Cedar's OmniPath fabric.
+We then transformed both file into a common format and saved it to disk.
+When creating a topology matrix each node is responsible for generating the row coresponding to it's rank, this is done by indexing to the topology file, and checking neighboring ranks with Hwloc, then an allgather is performed to gather the final results.
+This method is not necicarly that scalable as the memory requirements are on the order of $O(n^2)$ with the number of processes.
+
+We implemented our method within OpenMPI v4.0.5 \cite{gabriel2004OpenMPI}.
+Building on top of OpenMPI let us leverage the existing collective implementations as well as the algorithm selection mechanism.
+OpenMPI also has suport for Hwloc intrgrated within the runtime, making topology detection easier.
+
+While OpenMPI does support CUDA memory transfers, the implementation of CUDA-based allreduce coppies the data to a temporary host buffer, performs a CPU-based allreudce, then coppies the data back up to the GPU.
+While this does fufill the MPI specification, it neglects to make use of the available GPU hardware, both kernel reduction, as well as GPU to GPU NVLinks.
+So we modified OpenMPI's RSA algorithm to make use of GPU hardware, this is also more in line with how modern collective libraries like NCCL and UCC implement allreduce \cite{UCC, NCCL}.
+
+In order to compare our proposed heuristics against an established topology mapping tool, we also intragrated the SCOTCH graph embeding tool \cite{Pellegrini2012SCOTCH} into the rank reordering method.
+SCOTCH uses a graph bisecting method to perform graph partitioning and embedding, and it has been used in preveous work to incorporate topology-awareness \cite{Mirsadeghi2016TopoAwareCollRR}.
+
+We evaluated our work on two herogenous clusters, Beluga and Cedar, both provided by Compute Canada. 
+Beluga is Infiniband based, structured as a 5:1 blocking fat-tree with static routing.  
+The CPU nodes have dual socket Xeon Gold 6148 Skylake processors, and the GPU nodes use the same processors attached to 4 V100s fully connected with NVLink.
+Cedar, on the other hand, is OmniPath based.
+It also has a fat-tree topology configured, bus it configured with 2:1 blocking and has adadaptive routing.
+Cedar's CPU allocation has dual socket 24-core Xeon Platinum 8260 Cascade Lake processors, while the GPU nodes have two 20-core Xeon Silver 4216 Cascade Lake processors hosting four v100s GPUs interconnected by NVLink.
+
+We used OSU-Microbenchamrks v5.7 \cite{Bureddy2012OMB} to evaluate the performance of our proposed method. 
+This tool performs 1000 loops over MPI\_Allreduce, measures the runtime of each function call, and outputs the average latency. 
+It also provides the optinion to locate the data buffer in either CPU memory or GPU memory.
+
+\input{3_Chapters/4_Chapter_TopologyAwareness/Figures/init_mapping}
 The rank reordering strategy finds performance impovements by rearanging the process to core bindings, which implies that any performance improvements are dependant on the initial process to core bindings.
-In Open MPI initial bindings are made in a round-robin fashion dictated by a specific resoruce. 
-Figure \ref{fig:init-mappings} provides an example outlining the differences between the initial mappings we evaluated.
+At job launch, processes are bound to a specified resource in a round-robin fashion.
+Figure \ref{fig:init-mappings} provides an example outlining three initial mappings we evaluated.
 The default inital mapping is by-package, this takes a node and fills it with processes alternating between packages until the node is full, it then repeats this on the next node untill all processes are bound.
 By-core mapping places processes to consecutivly numbered cores filling up a node befor moving to the next, and by-node scatters processes accross nodes by cycling through nodes placing proecsses one at a time.
 
-In order to compare our proposed heuristics against an established topology mapping tool, we also intragrated the SCOTCH graph embeding tool \cite{Pellegrini2012SCOTCH}.
-SCOTCH uses a graph bisecting method to perform graph partitioning and embedding, and it has been used in preveous work to incorporate topology-awareness.
+% \input{3_Chapters/4_Chapter_TopologyAwareness/Figures/ac_frac_imprv_small}
 
-While OpenMPI does support CUDA memory transfers, the implementation coppies the data to a temporary host buffer, performs a CPU-based allreudce, then coppies the data back up to the GPU.
-While this does fufill the MPI specification, it negelcst to make use of the available GPU hardware, both kernel reduction, as well as GPU to GPU NVLinks.
-So we modified OpenMPI's RSA algorithm to make use of GPU hardware, this is also more in line with how modern collective libraries like NCCL and UCC implement allreduce \cite{UCC, NCCL}.
+% \input{3_Chapters/4_Chapter_TopologyAwareness/Figures/bc_frac_imprv_small}
 
-\section{Results}
-
-\input{3_Chapters/4_Chapter_TopologyAwareness/Figures/init_mapping}
-
-\input{3_Chapters/4_Chapter_TopologyAwareness/Figures/ac_frac_imprv_small}
-
-\input{3_Chapters/4_Chapter_TopologyAwareness/Figures/bc_frac_imprv_small}
-
-\input{3_Chapters/4_Chapter_TopologyAwareness/Figures/dual_64_1024}
+% \input{3_Chapters/4_Chapter_TopologyAwareness/Figures/dual_64_1024}
 
 Microbenchmakrs
-
-SCOTCH
 
 Horovod? Cosmoflow?

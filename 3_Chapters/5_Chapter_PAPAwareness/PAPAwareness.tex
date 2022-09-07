@@ -15,13 +15,16 @@
             \item RDMA addr as notification mechanism \cite{Qian2009ProcArrivalSHMA2AIB}
             \item Dynamicly Assemble Bcast w/ msg header \cite{Patarasuk2008EffBcastDifProcArr}
             \item PAP estimition with notification fn \cite{Proficz2018ImprvAllReduceForImbPAP, Proficz2020PAPAwareScatterGather, Proficz2021AllGatherResilientToImbPAP}
+            \item \cite{Parsons2015ExpProcImbMPICollHierarcialSys}
+            \item \cite{Faraj2008StudyProcArrivalMPIColl}
+            \item \cite{Luo2018ADAPT}
         \end{itemize}
     \end{itemize}
     \item Theoretical modeling
     \item Implementation
     \begin{itemize}
         \item Syncstructue, setup on process 0, modified through RMA operations
-        \item UCX used due to low syncronization overhead
+        \item UCX used due to low syncronization overhead - MPI\_Win\_Fence is collective, defeats purpose
         \item Background thread to recv messages before the process has arrived 
         \item Hierarchical alg 
     \end{itemize}
