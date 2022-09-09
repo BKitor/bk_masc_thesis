@@ -15,27 +15,54 @@
             \item RDMA addr as notification mechanism \cite{Qian2009ProcArrivalSHMA2AIB}
             \item Dynamicly Assemble Bcast w/ msg header \cite{Patarasuk2008EffBcastDifProcArr}
             \item PAP estimition with notification fn \cite{Proficz2018ImprvAllReduceForImbPAP, Proficz2020PAPAwareScatterGather, Proficz2021AllGatherResilientToImbPAP}
-            \item \cite{Parsons2015ExpProcImbMPICollHierarcialSys}
-            \item \cite{Faraj2008StudyProcArrivalMPIColl}
-            \item \cite{Luo2018ADAPT}
+            \item Reduce/Bcast/Allotall, hierarchical, remove barrier inbetween hierarchical stages \cite{Parsons2015ExpProcImbMPICollHierarcialSys}
+            \item Measure and monitor oclls and select est one, targets different call sights in an app \cite{Faraj2008StudyProcArrivalMPIColl}
+            \item Identify syncronizatoin/data dependencies, porpose solution to syncronizaiotn dependencies using callbacks \cite{Luo2018ADAPT}
         \end{itemize}
     \end{itemize}
     \item Theoretical modeling
-    \item Implementation
+    \item Methods
     \begin{itemize}
         \item Syncstructue, setup on process 0, modified through RMA operations
-        \item UCX used due to low syncronization overhead - MPI\_Win\_Fence is collective, defeats purpose
+        \item UCX used due to low syncronization overhead - MPI RMA ops require proper access epochs, which add tons of overhead
+        \begin{itemize}
+            \item "Concurrent accumulate operations with different origin and target pairs are
+not ordered. Thus, there is no guarantee that the entire call to an accumulate operation is
+executed atomically."(32-34 page 618)
+        \end{itemize}
         \item Background thread to recv messages before the process has arrived 
         \item Hierarchical alg 
     \end{itemize}
     \item Evaluation
     \begin{itemize}
         \item Micro-Benchmark
+            \begin{itemize}
+                \item Outline method of applying pap-awareness? or just link preveous paper?
+            \end{itemize}
         \item Horovod? Cosmoflow?
     \end{itemize}
 \end{itemize}
 
 \section{Modivation}
+
+This chapter approaches allreduce collective design throught the lesne of processs arrival pattern (PAP) awareness. 
+When desinging collecive alaogirhtms developers often assume that all processes arrive at the same time, but this is not a safe assumption.
+The order and timing that processes enter the collective can have an impact on the algorithm's performance, and this work tries to leverage the arrival imbalance to improve the overall collective performance.
+
+There are preveously proposed methods and algorithms that leverage PAP awareness to accelerate collectives, this chapter starts by surveying existing work.
+We propose a cluster-wide method of sharing PAP information along with an allreduce algorithm based on this method that performs better than existing algorithms under a large processes arrival imbalance.
+We evaluate our work with using an imbalance factor inducing benchmark, and show that we can see \_\% imrpovement over state of the art algorithms.  
+(Horovod or Cosmoflow?)
+
 \section{Background}
+
+Faraj et al. \cite{Faraj2008StudyProcArrivalMPIColl} evaluate process arrival imbalance at collectives accross a handful of MPI kernels.
+The PMPI profiling interface was used to introspect on the kernel runtime and collect PAP statistics on two different clusters.
+The authors determine that process imbalance in unavoidable, even if the workload is perfectly ballanced at the applictaoin level, the complexity of these massive systems will inevitably lead to diffrerencess at arrival time. 
+They also measure the affect of processes imbalance on specific algorithms for broadcast and alltoall outlining how processes imbalance can be an important factor on algorithm selection.
+
 \section{Method}
+
+
 \section{Results}
+
