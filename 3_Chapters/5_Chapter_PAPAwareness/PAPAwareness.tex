@@ -59,7 +59,22 @@ We evaluate our work with using an imbalance factor inducing benchmark, and show
 Faraj et al. \cite{Faraj2008StudyProcArrivalMPIColl} evaluate process arrival imbalance at collectives accross a handful of MPI kernels.
 The PMPI profiling interface was used to introspect on the kernel runtime and collect PAP statistics on two different clusters.
 The authors determine that process imbalance in unavoidable, even if the workload is perfectly ballanced at the applictaoin level, the complexity of these massive systems will inevitably lead to diffrerencess at arrival time. 
+But, regular imbalance patterns do emerge during application runtime, specific collective callsites will exebit the same imbalance multiple times during excecution.
 They also measure the affect of processes imbalance on specific algorithms for broadcast and alltoall outlining how processes imbalance can be an important factor on algorithm selection.
+The authors propose a method for PAP-Aware dynamic algorithm selection, bsed on STAR-MPI \cite{Faraj2006StarMPI}.
+This method monitors collective excecution at each method invocatoin, and selects an optimal algorithm based on observed PAP Imbalance. 
+
+Patarsuk and Yuan \cite{Patarasuk2008EffBcastDifProcArr} investigate the impacts of PAP on broadcast algorithms.
+Through modeling, they show how all existing algorithms can suffer from substancial performance loss to process imbalance. 
+The authors propose a new broadcast algorithm that dynamicly assembles sub-groups to perform the broadcast operation.
+
+Qian and Afsahi \cite{Qian2009ProcArrivalSHMA2AIB} propose a method for applying PAP-Awareness to alltoall in Infiniband Clusters.
+They modify a direct alltoall algorithm so that data exchanges are not ordered.
+The algorithm is built on top of infiniband's RDMA semantics, which means processes need to share destination addresses that peers can write data into. 
+Their method relies on using the RDMA address as a notification mechanism alerting processes of when their peers have arrived, and where to write relevant data.
+They also extend this idea to a hierarchical type algorithm, alowing them to leverage shared memory for intranode transfers.
+
+
 
 \section{Method}
 
