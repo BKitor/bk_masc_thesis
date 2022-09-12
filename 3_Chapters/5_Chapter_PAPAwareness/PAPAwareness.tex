@@ -43,7 +43,7 @@ executed atomically."(32-34 page 618)
     \end{itemize}
 \end{itemize}
 
-\section{Modivation}
+\section{Motivation}
 
 This chapter approaches allreduce collective design throught the lesne of processs arrival pattern (PAP) awareness. 
 When desinging collecive alaogirhtms developers often assume that all processes arrive at the same time, but this is not a safe assumption.
@@ -55,6 +55,10 @@ We evaluate our work with using an imbalance factor inducing benchmark, and show
 (Horovod or Cosmoflow?)
 
 \section{Background}
+
+Mamidala et al. \cite{Mamidala2004BarrierAllreduceIBAdaptive} propose a tree based barrier and allreduce algorithm with PAP awareness. 
+Their method invovles rebalanceing a k-ary tree by passing a token when $k-1$ child processes have arrived.
+They also leverage Infiniband multicast in order to accelerate the barrier release.
 
 Faraj et al. \cite{Faraj2008StudyProcArrivalMPIColl} evaluate process arrival imbalance at collectives accross a handful of MPI kernels.
 The PMPI profiling interface was used to introspect on the kernel runtime and collect PAP statistics on two different clusters.
@@ -74,6 +78,13 @@ The algorithm is built on top of infiniband's RDMA semantics, which means proces
 Their method relies on using the RDMA address as a notification mechanism alerting processes of when their peers have arrived, and where to write relevant data.
 They also extend this idea to a hierarchical type algorithm, alowing them to leverage shared memory for intranode transfers.
 
+Parsons and Pai \cite{Parsons2015ExpProcImbMPICollHierarcialSys} study process imbalance their Cray XE6 in a similar way to Faraj et al. \cite{Faraj2008StudyProcArrivalMPIColl}.
+They go a bit more in depth by investigating performance counters using PAPI \cite{Mucci1999PAPI}, but they arrive at the same conclusion that the systme is to complex and that none of the observable counters strongly corelate to process imbalance. 
+The authors propose a dynamic leader selection method to build hierarchical pap-aware algorithms for reduce, broadcast.
+They use a shared memory structure for intranode communications, where the last/first processes to arive is selected as the leader for the reduce/broadcast algortihm respectivly. 
+Since any rank could be dynamicly selected as a leader, parent/child relationships for the internode binomial tree are established using controll messaged with MPI\_ANY\_SOURCE. 
+They also propose an alltoall algorthm, but they found that the overhead of the controll messages is to great so they impose a static multileader hierarchicla pattern.
+In order to take advantage of arrival patterns, the authrors propose \textit{oppertunistic message fragmentation}, a criteria that leaders can to to select chunks of data to send before all processes have arrived.
 
 
 \section{Method}
