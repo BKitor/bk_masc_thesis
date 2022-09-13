@@ -44,7 +44,7 @@ The algorithmic implementation of a collective specifies a pattern of data excha
 MPI providers will often include multiple algorithms for different collectives with common patterns, including ring, recursive doubling, knomial-tree, etc...
 This gives MPI implementations the flexibility to select a performant algorithm depending on the collective's parameters like message size and the number of processes.
 This framework for algorithm selection neglects the host topology, but there is room to incorporate it.
-The collective algorithm defines the pattern to disseminate data, but the value of the ranks in the graph often  does not matter (there are some algorithms where this does matter, like allgather, alltoall and non-commutative allreduce, but these can be accounted for).
+The collective algorithm defines the pattern to disseminate data, but the value of the ranks in the graph often  does not matter (there are some algorithms where this does matter, like allgather, alltoall and commutative allreduce, but these can be accounted for).
 So in this work, we evaluate the efficacy of mapping collective communication graphs to the underlying hardware topology on-the-fly during application runtime.
 
 
@@ -222,9 +222,9 @@ If the root of a subtree does exist in the communicator, we map it as close as p
 \subsection{Evaluation}
 
 There are some caviats with collective rank reordering as not all collectives can support it seamlessly.
-By default MPI\_Allreduce doesn't enfore communtativity, a user can still request an operation to be commutative in the order of processor ranks. 
-In order to support commutativity, Allreduce algorithms needs to be carfuly designed to ensure operations are applied in the correct order, and renumbering processes breaks that careful design.
-Therefore, this work does not support commutative operations.
+By default MPI\_Allreduce algorithms assume operations are communtative, but a user can specify a operation to be non-commutative, with respect to processe's ranks. 
+In order to support non-commutative operatoins, Allreduce algorithms needs to be carfuly designed to ensure operations are applied in the correct order, and renumbering processes breaks that careful design.
+Therefore, this work does onlu supports commutative operations.
 Furthurmore, both broadcast heuristics assume rank 0 is the root which is not always true. 
 So when rank 0 isn't the broadcast root, it needs to recive the data from the real root before it can start the broadcast on the shadow-communicator.
 In retrospect, a smarter desing would have been to assign virtual ranks by shifting each rank according to the root's value, this would make the root 0.

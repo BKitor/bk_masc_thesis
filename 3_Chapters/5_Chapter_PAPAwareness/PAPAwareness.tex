@@ -9,14 +9,7 @@
     \begin{itemize}
         \item Maximum/Average Imbalance Factor and EQs
         \item Allreduce with MIF Micro-Benchmark and code-snippet
-        \item Existing methods
         \begin{itemize}
-            \item Mitigation through Alg selection
-            \item RDMA addr as notification mechanism \cite{Qian2009ProcArrivalSHMA2AIB}
-            \item Dynamicly Assemble Bcast w/ msg header \cite{Patarasuk2008EffBcastDifProcArr}
-            \item PAP estimition with notification fn \cite{Proficz2018ImprvAllReduceForImbPAP, Proficz2020PAPAwareScatterGather, Proficz2021AllGatherResilientToImbPAP}
-            \item Reduce/Bcast/Allotall, hierarchical, remove barrier inbetween hierarchical stages \cite{Parsons2015ExpProcImbMPICollHierarcialSys}
-            \item Measure and monitor oclls and select est one, targets different call sights in an app \cite{Faraj2008StudyProcArrivalMPIColl}
             \item Identify syncronizatoin/data dependencies, porpose solution to syncronizaiotn dependencies using callbacks \cite{Luo2018ADAPT}
         \end{itemize}
     \end{itemize}
@@ -56,9 +49,25 @@ We evaluate our work with using an imbalance factor inducing benchmark, and show
 
 \section{Background}
 
-Mamidala et al. \cite{Mamidala2004BarrierAllreduceIBAdaptive} propose a tree based barrier and allreduce algorithm with PAP awareness. 
-Their method invovles rebalanceing a k-ary tree by passing a token when $k-1$ child processes have arrived.
-They also leverage Infiniband multicast in order to accelerate the barrier release.
+\subsection{One Sided Operations}
+
+\begin{itemize}
+    \item Traditional MPI has two-side scemantics, p2p operations, easy to understand and debug
+    \item One-sided operatoins, processes don't syncronize, one process acceses another process' memory unbenownced to the target process
+    \item High level libraries include: MPI2-RMA, Chappel, SHMEM. Provide high level interfaces tailored to building apps and hiding complexity. Hallmarks include datatypes, process management, syncronizatoin models.
+    \item Under the hood, implementations target a transport focued layer to run the hardware. Libfabric or UCX. Provides balance between portability and performance. More flexible interface designed to make full use of available hardware, not ment to be used by Physisits and Chemists.
+    \item MPI syncronizatoin is to tight, requiring an access epoch in order to modify shared memory.
+    
+\end{itemize}
+
+
+
+\subsection{Related Work}
+
+Mamidala et al. \cite{Mamidala2004BarrierAllreduceIBAdaptive} propose a PAP-Aware tree based algorithm that can be applied to barrier and allreduce collectives.
+Their method invovles rebalanceing a k-ary tree by passing a token between ranks.
+For the process holding the token, when $k-1$ child processes have arrived, the token is passed to the $k^{th}$ child thorugh an RDMA write.
+If an arriving process is holding the token and all it's child processes have arrived, it knows it's the last to arrive, so it trigers a multicast releasing all ranks from the barrier. 
 
 Faraj et al. \cite{Faraj2008StudyProcArrivalMPIColl} evaluate process arrival imbalance at collectives accross a handful of MPI kernels.
 The PMPI profiling interface was used to introspect on the kernel runtime and collect PAP statistics on two different clusters.
@@ -86,6 +95,19 @@ Since any rank could be dynamicly selected as a leader, parent/child relationshi
 They also propose an alltoall algorthm, but they found that the overhead of the controll messages is to great so they impose a static multileader hierarchicla pattern.
 In order to take advantage of arrival patterns, the authrors propose \textit{oppertunistic message fragmentation}, a criteria that leaders can to to select chunks of data to send before all processes have arrived.
 
+Omer et al. \cite{Arap2015AdaptiveRDForCC} propose a method for decoupling the syncronization between rounds of a recurisve doubling allreduce algorithm. 
+This is accomplished by removing the strict ordering imposed through rounds of communicatoin, and instead managing messages through tag values.
+They evaluated their work on a NetFPGA platform \cite{Lockwood2007NetFPGA}, alowing them to fully offload their collective algorithm, exploit network level optimizatoins like multicast, but limited their work to only use min/max operations.
+
+Marendic et al. \cite{Marendic2016Clairvoyant} propose a PAP-aware reduction algorithm.
+Through theoreticla analysis, they identify a lower bound for PAP-Aware reduction, demonstrating that no matter the PAP, any algorithm is bound by the times it takes for 2 processs to do a reduction, so they focus their effor on doing that step as fast as possible. 
+Their solution is a greedy algorithm to build reduction schedule, but they have no method of detecting the PAP and assume it is know beforehand.
+
+Proficz published a series of algorithsm for different collectives all based on a process arrrival estimation method \cite{Proficz2018ImprvAllReduceForImbPAP, Proficz2020PAPAwareScatterGather, Proficz2021AllGatherResilientToImbPAP}.
+Their method targest a bulk-syncronus parallel type application, where there are distinct computation and communication phases.
+In order to estimate a processe's arrival time, application developers embed an callback to notify a background process when the computation phase is almost complete.
+This background thread uses this information to reorder processes in a collective algorithm as to make more optimal use of arrival imbalance.
+The author proposes methods of reordering direct, ring, and binomial algorithms to accelerate allreduce, scatter, gather and allgather collectives.
 
 \section{Method}
 
