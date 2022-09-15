@@ -1,0 +1,23 @@
+\begin{figure}
+    \centering
+    \begin{tikzpicture}
+        \begin{semilogxaxis}[
+        % \begin{loglogaxis}[
+            title={Syncronization Method Comparison},
+            xlabel={Number of Processes},
+            ylabel={Sync time ($\mu s$)},
+            legend entries={MPI, UCX},
+            legend style={anchor=north, at={(0.5, -0.3)}},
+            legend columns=2,
+            xticklabels={32, 64, 128, 256, 512, 1024},
+            xtick={32, 64, 128, 256, 512, 1024},
+            % nodes near coords,
+        ]
+        \addplot table[x=ranks, y=mpirma] {3_Chapters/5_Chapter_PAPAwareness/Figs/bk_eval_ss_32n.dat};
+        \addplot table[x=ranks, y=ucp] {3_Chapters/5_Chapter_PAPAwareness/Figs/bk_eval_ss_32n.dat};
+        \end{semilogxaxis}
+        % \end{loglogaxis}
+    \end{tikzpicture}
+    \caption{Comparison of rma syncronization methods with 32 nodes on Narval.}
+    \label{fig:sync_bmark_32n}
+\end{figure}
