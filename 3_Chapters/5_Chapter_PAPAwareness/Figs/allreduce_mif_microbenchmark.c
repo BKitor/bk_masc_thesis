@@ -14,14 +14,14 @@ int bk_mif_allreduce(float *sendbuf, float *recvbuf, size_t msgsize
     for (int i=0; i < iterations + warmups; i++) {
         if(0 == mpi_rank)
             imbalance_factor = 0;
-        else if(1 == mpi_rank)
+        else if(mpi_size - 1 == mpi_rank)
             imbalance_factor = max_imbalance_factor;
         else
             imbalance_factor = ((double)rand()/(double)RAND_MAX)
                                 * max_imbalance_factor;
-        MPI_Barrier(MPI_COMM_WORLD);
-        
         int64_t sleep_time = (p2p_lat * imbalance_factor * 1e6);
+        
+        MPI_Barrier(MPI_COMM_WORLD);
         usleep(sleep_time);
         
         t_start = MPI_Wtime();

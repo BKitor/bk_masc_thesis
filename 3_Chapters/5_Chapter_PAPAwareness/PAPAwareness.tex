@@ -8,37 +8,22 @@
     \item Background on Process Arrival Pattern Awareness
     \begin{itemize}
         \item Maximum/Average Imbalance Factor and EQs
-        \item Allreduce with MIF Micro-Benchmark and code-snippet
         \begin{itemize}
             \item Identify synchronization/data dependencies, propose a solution to synchronization dependencies using callbacks \cite{Luo2018ADAPT}
         \end{itemize}
     \end{itemize}
-    \item Theoretical modelling
     \item Methods
     \begin{itemize}
-        \item Syncstructue, setup on process 0, modified through RMA operations
-        \item UCX used due to low synchronization overhead - MPI RMA ops require proper access epochs, which add tons of overhead
+        \item 
         \begin{itemize}
             \item "Concurrent accumulate operations with different origin, and target pairs are
 not ordered. Thus, there is no guarantee that the entire call to an accumulate operation is
-executed atomically."(32-34 page 618)
+executed atomically."(MPI-4 standard, lines 32-34 page 618)
         \end{itemize}
-        \item still requires some controll messages... 
         \item Background thread to receive messages before the process has arrived 
-        \item Hierarchical alg 
     \end{itemize}
     \item Evaluation
     \begin{itemize}
-        \item Should I microbenchmark existing synchronization mechanisms?
-        \begin{itemize}
-            \item Proposed solution
-            \item Proposes solution w/ MPI RMA instead of UCX
-            \item Similar solution w/ MPI p2p \cite{Parsons2015ExpProcImbMPICollHierarcialSys, Patarasuk2008EffBcastDifProcArr}
-        \end{itemize}
-        \item Micro-Benchmark
-            \begin{itemize}
-                \item Outline method of applying pap-awareness? or just link the previous paper?
-            \end{itemize}
         \item Horovod? Cosmoflow?
     \end{itemize}
 \end{itemize}
@@ -56,6 +41,62 @@ We evaluate our work with using an imbalance factor-inducing benchmark and show 
 (Horovod or Cosmoflow?)
 
 \section{Background}
+
+\subsection{Process arrival imbalance}
+As defined in \cite{Faraj2008StudyProcArrivalMPIColl}, for processes $(p_0, p_1,...,p_n)$ participating in a collective operation, each process has an arrival time denoted by $a_i$ and an exit time at $f_n$.
+Therefore, each collective call has an arrival patterns $(a_0, a_1, ..., a_n)$ and an exit pattern $(f_0, f_1, ..., f_n)$.
+Each node spends $e_i = f_i - a_i$ time in the collective, where total collective time can be expresses as $e_0 + e_1 + ... + e_n$ and the average collective time is $\bar{e} = (e_0 + e_1 + ... + e_n)/n$, we can use these two terms to evaluate the performance of the overall collective.
+In order to quantify the difference between processs arrivals, let $\delta_i$ be the absolute time difference between a processes arrival and the average arrival time, i.e. $\delta_i = |\bar{a} - a_i|$. 
+We can then define the average arrival imbalance as $\bar{\delta}=(\delta_0 + \delta_i + ... + \delta_n)/n$, and the maximum imballance time as $\omega = max_i{a_i}-min_i{a_i}$, as well as 
+When using average/max imbalance in practice, it is often easier to normalize it by the message transmision time.
+If the time to send a messages of $n$ bytes is $T$, then the \textit{maximum imbalance factor} is of that message is $\omega/T$, and the \textit{average imbalance factor} is $\bar{\delta}/T$
+
+
+\subsection{Synchronization Mechanism}
+
+One of the predominant issues with PAP-Awareness is actually determining the order of process arrival.
+Each process needs some level of arrival information to determine the steps it needs to perform within the collective algorithm. 
+One strategy for inter-node PAP-awareness can include exchanging control messages using MPI point-to-point routines leveraging MPI\_Any\_Source \cite{Patarasuk2008EffBcastDifProcArr}.
+These strategies aren't ideal, as these mechanisms require the active participation of some leader processes.
+This is often delegated to the root in one-to-many or many-to-one collectives but doesn't map as easily to many-to-many collectives.
+Further, this adds overhead and worsens workload imbalance as one process spends considerably more cycles orchestrating process arrival information.
+There is also the issue of processes stalling before the root has arrived, as no work can be done before PAP information is exchanged.
+Some proposed work fixes this by delegating PAP management to a background thread \cite{Proficz2018ImprvAllReduceForImbPAP, Proficz2020PAPAwareScatterGather, Proficz2021AllGatherResilientToImbPAP, Faraj2008StudyProcArrivalMPIColl}, but this solution can add more imbalance due to thread scheduling, as well as a burden on application developers to manage resources of background threads.
+
+Other internode solutions rely on non-portable interfaces like RDMA on Infiniband \cite{Qian2009ProcArrivalSHMA2AIB}, but this is promising as PAP information can be exchanged in a one-sided manner.
+Since processes don't synchronize, they can exchange PAP information before other processes have arrived, and without some central process managing the entire collective. 
+To provide more portability, we want to leverage a higher-level programming interface, and our first choice would be MPI's one-sided communications, but the problem with MPI is that the synchronization model is too burdensome. 
+In order to access a target process' memory, the origin processes need to synchronize through an access epoch. 
+Active target communication is out of the question as one of our goals is to minimize the amount of synchronization, and MPI\_Win\_Fence is a collective, so it also defeats the purpose, this leaves  MPI\_Win\_lock/MPI\_Win\_unlock as the only viable synchronization mechanism.
+On the other hand, we could try to ignore synchronization by starting an access epoch with MPI\_Win\_Fence at MPI\_Init, and imposing order through MPI\_Fetch\_and\_op, but MPI's memory model doesn't guarantee that public/private windows will be updated unless synchronization occurs, so that means we still need MPI\_Win\_lock/MPI\_Win\_unlock synchronization.
+
+Alternatively, there are deeper layers in the MPI stack. 
+Under the hood, MPI implementations will target a transport-focused layer to drive the network hardware, this design choice is done for portability purposes as the transport layer can support multiple types of hardware, and different programming models can target the transport layer APIs.
+The two most used layers are Libfabric and UCX \cite{libfabric, shamis2015ucx}.
+These APIs are designed to provide a wrapper around network resources, with a balance between portability and performance.
+Since they are designed to emulate hardware, they do not have the same syncronization challenges that MPI imposed on users.  
+Neither library has the notion of public/private memory, and the completion of one-sided operations can be tracked on a per-operation basis. 
+Operations in Libfabric relies on completion queues.
+Communication operations are associated with a completoin queue, and applicatoins poll the queueu to check 
+
+\subsection{Non-PAP-Aware Algorithms}
+
+This work is targeting large message allreduce with the hope of accelerating model paralle distributed DL training.
+When performing a large messages allreduce, the most optimal algorithms are either ring or reduce-scatter-allgather.
+These are the algorithms most often used in practice, with Open MPI, MPICH, and UCC chosing to use reudce-scatter-allgather, and NCCL leveraging a ring-based strategy optimized for their hardware topology \cite{gabriel2004OpenMPI, MPICH, UCC, NCCL}.
+The dominance of these models can be easily explained thorugh modeling used by Thakur et al. \cite{Thakur2005OptMPICH}.
+They leverage Hockney's model \cite{Hockney1994HockenyModel} where a send operation of $n$ bytes can be represented as $\alpha+n\beta$.
+$\alpha$ represents the overhead cost (seconds) and $\beta$ is inverse bandwidth (seconds per byte).
+They also add a $\gamma$ term which represents the time to perform a reduction in seconds per flop. 
+When dealing with large data tranfers, we tend to see $n\beta>>\alpha$ and $n\gamma>>\alpha$ 
+
+For a communicator of $p$ processes, the cost of performing a ring allreduce is $T_{ring} = 2(p-1)\alpha + 2((p-1)/p)n\beta + ((p-1)/p)n\gamma$, and the cost of performing RSA is $T_{rsa} = 2\log(p)\alpha + 2((p-1)/p)n\beta + ((p-1)/p)n\gamma$.
+The common factor between both models is how the $\beta$ and $\gamma$ terms scale linearly w.r.t message size, and sublinearly w.r.t communicator size.
+This is acheived by dividing the reduction vector into segments and distributing partial reductions of all segments accross all the ranks.
+This is explicitly done with the reduce-scatter phase of the RSA algorithm, but is also implicitly done during the first half of ring allreduce.
+When performing one of these algorithms on a communicator, each processes in the communicator needs to send the same amount of data.
+This is useful for load balancing if you assume all processes arrive at the same time, but when processes arrive out of order the entire communicator is delayed by the time it takes for the last process to performe the entire collective.
+In other words, for large message allreduce, the time of the last process can be described as $T_{last\_proc}=2((p-1)/p)n\beta + ((p-1)/p)n\gamma$.
 
 \subsection{Related Work}
 
@@ -110,53 +151,6 @@ Mohammadalizadehbakhtevari \cite{Mohammadalizadehbakhtevari2021Thesis} presented
 The author proposed two methods, targeting both small and large messages, for handeling arrival syncronization and message exchanges within a node.
 The proposed work relies on shared memory, but they also evalute the efficacy of extending to a hierarchical algorithm to handle cluster-wide collectives.
 
-\subsection{Synchronization Mechanism}
-
-One of the predominant issues with PAP-Awareness is actually determining the order of process arrival.
-Each process needs some level of arrival information to determine the steps it needs to perform within the collective algorithm. 
-One strategy for inter-node PAP-awareness can include exchanging control messages using MPI point-to-point routines leveraging MPI\_Any\_Source \cite{Patarasuk2008EffBcastDifProcArr}.
-These strategies aren't ideal, as these mechanisms require the active participation of some leader processes.
-This is often delegated to the root in one-to-many or many-to-one collectives but doesn't map as easily to many-to-many collectives.
-Further, this adds overhead and worsens workload imbalance as one process spends considerably more cycles orchestrating process arrival information.
-There is also the issue of processes stalling before the root has arrived, as no work can be done before PAP information is exchanged.
-Some proposed work fixes this by delegating PAP management to a background thread \cite{Proficz2018ImprvAllReduceForImbPAP, Proficz2020PAPAwareScatterGather, Proficz2021AllGatherResilientToImbPAP, Faraj2008StudyProcArrivalMPIColl}, but this solution can add more imbalance due to thread scheduling, as well as a burden on application developers to manage resources of background threads.
-
-Other internode solutions rely on non-portable interfaces like RDMA on Infiniband \cite{Qian2009ProcArrivalSHMA2AIB}, but this is promising as PAP information can be exchanged in a one-sided manner.
-Since processes don't synchronize, they can exchange PAP information before other processes have arrived, and without some central process managing the entire collective. 
-To provide more portability, we want to leverage a higher-level programming interface, and our first choice would be MPI's one-sided communications.
-The problem with MPI is that the synchronization model is too burdensome. 
-In order to access a target process' memory, the origin processes need to synchronize through an access epoch. 
-Active target communication is out of the question as one of our goals is to minimize the amount of synchronization, and MPI\_Win\_Fence is a collective, so it also defeats the purpose, this leaves  MPI\_Win\_lock/MPI\_Win\_unlock as the only viable synchronization mechanism.
-On the other hand, we could try to ignore synchronization by starting an access epoch with MPI\_Win\_Fence at MPI\_Init, and imposing order through MPI\_Fetch\_and\_op, but MPI's memory model doesn't guarantee that public/private windows will be updated unless synchronization occurs, so that means we still need MPI\_Win\_lock/MPI\_Win\_unlock synchronization.
-
-Alternatively, there are deeper layers in the MPI stack. 
-Under the hood, MPI implementations will target a transport-focused layer to drive the network hardware, this design choice is done for portability purposes as the transport layer can support multiple types of hardware, and different programming models can target the transport layer APIs.
-The two most used layers are Libfabric and UCX \cite{libfabric, shamis2015ucx}.
-These APIs are designed to provide a wrapper around network resources, with a balance between portability and performance.
-Since they are designed to emulate hardware, they do not have the same syncronization challenges that MPI imposed on users.  
-Neither library has the notion of public/private memory, and the completion of one-sided operations can be tracked on a per-operation basis. 
-Operations in Libfabric relies on completion queues.
-Communication operations are associated with a completoin queue, and applicatoins poll the queueu to check 
-
-\subsection{Non-PAP-Aware Algorithms}
-
-This work is targeting large message allreduce with the hope of accelerating model paralle distributed DL training.
-When performing a large messages allreduce, the most optimal algorithms are either ring or reduce-scatter-allgather.
-These are the algorithms most often used in practice, with Open MPI, MPICH, and UCC chosing to use reudce-scatter-allgather, and NCCL leveraging a ring-based strategy optimized for their hardware topology \cite{gabriel2004OpenMPI, MPICH, UCC, NCCL}.
-The dominance of these models can be easily explained thorugh modeling used by Thakur et al. \cite{Thakur2005OptMPICH}.
-They leverage Hockney's model \cite{Hockney1994HockenyModel} where a send operation of $n$ bytes can be represented as $\alpha+n\beta$.
-$\alpha$ represents the overhead cost (seconds) and $\beta$ is inverse bandwidth (seconds per byte).
-They also add a $\gamma$ term which represents the time to perform a reduction in seconds per flop. 
-When dealing with large data tranfers, we tend to see $n\beta>>\alpha$ and $n\gamma>>\alpha$ 
-
-For a communicator of $p$ processes, the cost of performing a ring allreduce is $T_{ring} = 2(p-1)\alpha + 2((p-1)/p)n\beta + ((p-1)/p)n\gamma$, and the cost of performing RSA is $T_{rsa} = 2\log(p)\alpha + 2((p-1)/p)n\beta + ((p-1)/p)n\gamma$.
-The common factor between both models is how the $\beta$ and $\gamma$ terms scale linearly w.r.t message size, and sublinearly w.r.t communicator size.
-This is acheived by dividing the reduction vector into segments and distributing partial reductions of all segments accross all the ranks.
-This is explicitly done with the reduce-scatter phase of the RSA algorithm, but is also implicitly done during the first half of ring allreduce.
-When performing one of these algorithms on a communicator, each processes in the communicator needs to send the same amount of data.
-This is useful for load balancing if you assume all processes arrive at the same time, but when processes arrive out of order the entire communicator is delayed by the time it takes for the last process to performe the entire collective.
-In other words, for large message allreduce, the time of the last process can be described as $T_{last\_proc}=2((p-1)/p)n\beta + ((p-1)/p)n\gamma$.
-
 \section{Method}
 
 In order to evaluate the difference between MPI and UCX, we wrote a benchmark to evaluate the overhead of one-sided operations and synchronization, the outline of the MPI benchmark is given in listing \ref{lst:mpi_sync_bmark}, and the UCX benchmark is in lising \ref{lst:ucx_sync_bmark}.
@@ -171,11 +165,6 @@ The benchmark time of UCX scales linearly with the number of processes from 10$\
 MPI has more overhead, as with 32 processes, it still takes 312$\mu s$, and scales exponentially to 453737$\mu s$ at 1024 processes.
 Therefore, we decided to use UCX to build our PAP management mechanism, as UCX provides wrappers around the nececary RDMA and atomic network operations, there is no enforced synchronization model, and there are strong guarantees on operation completion. 
 
-We propose a syncronization method similar to the large-message structure proposed by Mohammadalizadehbakhtevari \cite{Mohammadalizadehbakhtevari2021Thesis}.
-The structure consists of a counter for arrival position, and an array for arrival-to-rank translations.
-When a process arrives at the collective, it atomicly fetch-and-increments the couter using ucp\_op\_nbx(), and then calls ucp\_put\_nbx() to write its rank into the arrival array index by it's arrival position.
-The atomicity of ucp\_op\_nbx() gaurentees that each process is assigned a unique arrival position, and the arrival-to-rank array allows later arriving process to send messages to ranks that have already arrived.
-
 \lstset{style = bklstc}
 \lstset{label = lst:mpi_sync_bmark}
 \lstset{caption = Benchmark to evaluate the overhead of MPI for one-sided operations}
@@ -187,15 +176,35 @@ The atomicity of ucp\_op\_nbx() gaurentees that each process is assigned a uniqu
 
 \input{3_Chapters/5_Chapter_PAPAwareness/Figs/eval_sync_bmark}
 
-Our approach to algorithm desing is to minimize the amount of time the last process needs to take, so that all processes can leave the collective faster.
-For reduce, we can set up an algorithm where the last process to arrive simply has to send a message to the root, i.e. $T_{last\_proc\_reduce}=n(\beta+\gamma)$.
-To extned this to an allreduce, we can append a bcast after the root's final reduction, where $T_{last\_proc\_reduce}=n(\beta+\gamma) + T_{bcast}$.
-To overlap as much work as possible we can use a pipelined chain broadcast, overlapping the final recieve, the final reduction, as well as all the data transfers.
-When the last process arrives, it should be able to execute in $k\alpha+n(\beta+\gamma)$, roughly half the time of ring or recusive doubling.
+We propose a syncronization method similar to the large-message structure proposed by Mohammadalizadehbakhtevari \cite{Mohammadalizadehbakhtevari2021Thesis}, but the shared data structure is located on rank 0 and exposed to every process accross the network.
+The structure consists of a counter for arrival position, and an array for arrival-to-rank translations.
+When a process arrives at the collective, it atomicly fetch-and-increments the couter using ucp\_op\_nbx(), and then calls ucp\_put\_nbx() to write its rank into the arrival array indexed by it's arrival position.
+The atomicity of ucp\_op\_nbx() gaurentees that each process is assigned a unique arrival position, and the arrival-to-rank array allows process to determine which ranks have already arrived.
+
+This setups allows us to build reduction/broadcast trees in terms of process' arrvial posittion, performing an arrival-to-rank translation and sending the data thorugh MPI.
+One sticking point is that later arriving ranks can easily know the rank of earlier processes, but earlier processes won't know the value of later ranks untill they've arrived.
+MPI ranks must know the destination before they can send their data, so if an early ranks needs to send data to a later rank it can either poll that rank's location in remote memory (an unadvisable choice unless you want your sysadmin to dislike you), or the late rank can notify the earlier process of its rank once arrived.
+While this does provide a litle overhead, it's still negligbale compared to the transfer time of large messages.
+
+In desinging an algorithm to outperform ring/rsa, our approach to is to minimize the amount of time the last arriving process needs to take.
+The minimum amout of work invovles performing a local reduction and triggering a broadcast.
+Therefore, out proposed solution involves the last arriving process recieving the fully reduce data of the other $n-1$ ranks before it arrives, and then triggering a pipelined local reduce/broadcast to distribute the data as efficiently as possible. 
+Theoreticly, the last proces only needs to reuduce and send one message divided accross $k$ segments, i.e. $T_{last\_proc\_reduce}=k\alpha+n(\beta+\gamma)$.
+This is roughly half of ring and rsa bandwith requirements.
+When the last process arrives it needs to have already recieved everyone else's data, soeach process pre-posting a recieve with a specific tag for the last arrival.
+
+To ensure scalability, we embed our method in a hierarchical algorithm. 
+Ranks perform an intranode reduction to a local leader process, then the leader processes perform the PAP-Aware inter-node allreduce, the intra-node bcast is also incorporated into the pipeline used to distribute the data at the end of the collective. 
+The intranode reduction/bcast is a binary-tree, while the internode reduction and broadcast are based on a linear-tree where arrival $r$ recieved data from $r-1$ and sends data to $r+1$.
+
 
 \section{Results}
 
 We evaluated the PAP impact using a microbenchmark similar to \cite{Faraj2008StudyProcArrivalMPIColl}, presentied in listing \ref{lst:mif_ar_microbmark}.
+The benchmark evaluates allreduce performance for different maximum imbalance factors. 
+It does this by applying a random delay to each process, with process 0 recieving no delay and process $n-1$ recievein the full delay (lines 15-21).
+The delay is applied through a call to usleep (line 25).
+In preveous work \cite{Faraj2008StudyProcArrivalMPIColl, Alizadeh2022PAPCollDL} delays were applied thorugh a random computation, this work opted to use usleep as it provides a more percise controll.
 
 
 \begin{itemize}
@@ -210,3 +219,8 @@ We evaluated the PAP impact using a microbenchmark similar to \cite{Faraj2008Stu
 \lstset{label = lst:mif_ar_microbmark}
 \lstset{caption = MIF microbenchmark}
 \lstinputlisting[float=!htbp]{3_Chapters/5_Chapter_PAPAwareness/Figs/allreduce_mif_microbenchmark.c}
+
+
+\section{I can't belive it's not a conclusion ™}
+High level recap
+

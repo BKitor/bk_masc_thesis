@@ -5,25 +5,24 @@
 \index{Background}
 
 % Background
-\section{Background}
-\subsection{High level}
-\begin{itemize}
-	\item{Broad description of subject}
-	\item{Some relevant history}
-	\item{Current implementations in industry}
-	\item{New \& Related Research on the subject}
-\end{itemize}
+% \section{Background}
+% \subsection{High level}
+% \begin{itemize}
+% 	\item{Broad description of subject}
+% 	\item{Some relevant history}
+% 	\item{Current implementations in industry}
+% 	\item{New \& Related Research on the subject}
+% \end{itemize}
 
-\subsection{Specific topics}
-\begin{itemize}
-    \item Target system architecture, Multi-GPU node, high speed interconnect
-    \begin{itemize}
-        \item what is a node (CPU/GPU/memory)
-        \item what is a fabric (IB/Dragonfly/Fat-Tree)
-    \end{itemize}
-    \item Communication libraries MPI/UCX, p2p, Collectives, one-sided/atomic operations \cite{mpi40, gabriel2004OpenMPI, MPICH, shamis2015ucx}
-    \item Data-Parallel Deeplearning, (Mini-batch SGD), distributed-deep learning, HOROVOD \cite{Ben-Nun2019DemystifyDL, Sergeev2018Horovod}
-\end{itemize}
+    \section{Target system architecture, Multi-GPU node, high speed interconnect}
+        \subsection{what is a node (CPU/GPU/memory)}
+        \subsection{what is a fabric (IB/Dragonfly/Fat-Tree)}
+    \section{Communication libraries MPI/UCX, p2p, Collectives, one-sided/atomic operations \cite{mpi40, gabriel2004OpenMPI, MPICH, shamis2015ucx}}
+        \subsection{UCX/Libfabric}
+        \subsection{MPI p2p}
+        \subsection{MPI-One-sided}
+        \subsection{Collective communications (+hierarchical)}
+    \section{ Data-Parallel Deeplearning, (Mini-batch SGD), distributed-deep learning, HOROVOD \cite{Ben-Nun2019DemystifyDL, Sergeev2018Horovod}}
 
 \clearpage
 % Citations can be included in your manuscript by referencing them. For example, if I wanted to cite XKCD for a comic (as I have in figure \ref{fig:DEFENCE}), I would just do \cite{xkcdThesis}.
