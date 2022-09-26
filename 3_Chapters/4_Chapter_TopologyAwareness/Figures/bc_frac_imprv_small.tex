@@ -18,7 +18,8 @@
                 ymin = -0.5,
                 ymax = 1,
                 xmin = 1,
-                xmax = 1073741824
+                xmax = 1073741824,
+                grid=both,
             ]
             \nextgroupplot[xmode=log, title=GPU By Socket]
             \addplot table[x=msize, y=k_dif] {3_Chapters/4_Chapter_TopologyAwareness/Figures/data/beluga/bc/bysoc_gpu.dat};

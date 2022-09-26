@@ -198,8 +198,9 @@ Ranks perform an intranode reduction to a local leader process, then the leader 
 The intranode reduction/bcast is a binary-tree, while the internode reduction and broadcast are based on a linear-tree where arrival $r$ recieved data from $r-1$ and sends data to $r+1$.
 
 
-\section{Results}
+\section{Evaluation}
 
+\subsection{Software}
 We evaluated the PAP impact using a microbenchmark similar to \cite{Faraj2008StudyProcArrivalMPIColl}, presentied in listing \ref{lst:mif_ar_microbmark}.
 The benchmark evaluates allreduce performance for different maximum imbalance factors. 
 It does this by applying a random delay to each process, with process 0 recieving no delay and process $n-1$ recievein the full delay (lines 15-21).
@@ -220,6 +221,10 @@ In preveous work \cite{Faraj2008StudyProcArrivalMPIColl, Alizadeh2022PAPCollDL} 
 \lstset{caption = MIF microbenchmark}
 \lstinputlisting[float=!htbp]{3_Chapters/5_Chapter_PAPAwareness/Figs/allreduce_mif_microbenchmark.c}
 
+\subsection{Hardware}
+Evaluated on two clusters, Beluga and Narval.
+Beluga's architecture is defined in \ref{sec:topo-eval-hardware}.
+Narval's architecture is nuts.
 
 \section{I can't belive it's not a conclusion ™}
 High level recap
