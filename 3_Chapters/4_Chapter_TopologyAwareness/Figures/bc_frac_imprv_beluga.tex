@@ -12,7 +12,7 @@
                 height=5.7cm,
                 width=7.5cm,
                 xlabel={Message Size (Bytes)},
-                ylabel={Speedup},
+                ylabel={Fractional Improvement},
                 legend style={at={(-0.1,-0.3)}, anchor=north},
                 legend columns=3,
                 ymin = -0.5,
@@ -41,13 +41,13 @@
             \addplot table[x=msize, y=bin_dif] {3_Chapters/4_Chapter_TopologyAwareness/Figures/data/beluga/bc/bycore_cpu.dat};
             \addplot table[x=msize, y=scag_dif] {3_Chapters/4_Chapter_TopologyAwareness/Figures/data/beluga/bc/bycore_cpu.dat};
             
-            \nextgroupplot[xmode=log, title=GPU By Node, xticklabels={1B, 10kB, 100kB, 10MB, 1GB}]
+            \nextgroupplot[xmode=log, title=GPU By Node, xticklabels={8B, 1kB, 64kB, 8MB}]
             \addplot table[x=msize, y=k_dif] {3_Chapters/4_Chapter_TopologyAwareness/Figures/data/beluga/bc/bynode_gpu.dat};
             \addplot table[x=msize, y=bin_dif] {3_Chapters/4_Chapter_TopologyAwareness/Figures/data/beluga/bc/bynode_gpu.dat};
             \addplot table[x=msize, y=scag_dif] {3_Chapters/4_Chapter_TopologyAwareness/Figures/data/beluga/bc/bynode_gpu.dat};
             
             
-            \nextgroupplot[xmode=log, title=CPU By Node, xticklabels={1B, 10kB, 100kB, 10MB, 1GB}]
+            \nextgroupplot[xmode=log, title=CPU By Node, xticklabels={8B, 1kB, 64kB, 8MB}]
             \addplot table[x=msize, y=k_dif] {3_Chapters/4_Chapter_TopologyAwareness/Figures/data/beluga/bc/bynode_cpu.dat};
             \addplot table[x=msize, y=bin_dif] {3_Chapters/4_Chapter_TopologyAwareness/Figures/data/beluga/bc/bynode_cpu.dat};
             \addplot table[x=msize, y=scag_dif] {3_Chapters/4_Chapter_TopologyAwareness/Figures/data/beluga/bc/bynode_cpu.dat};

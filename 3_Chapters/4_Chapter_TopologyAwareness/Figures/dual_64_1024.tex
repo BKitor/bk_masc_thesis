@@ -12,7 +12,7 @@
                 height=5.7cm,
                 width=7.5cm,
                 xlabel={Message Size (Bytes)},
-                ylabel={Speedup},
+                ylabel={Fractional Improvement},
                 legend style={at={(-0.2, -0.3)}, anchor=north},
                 legend columns=4,
                 ymin = -1,
@@ -46,13 +46,13 @@
             \addplot[red, mark=*] table[x=msize, y=remap_pdif] {3_Chapters/4_Chapter_TopologyAwareness/Figures/data/beluga/mandm/data/cpu/bc_bycore.dat};
             \addplot[red, mark=star] table[x=msize, y=scotch_pdif] {3_Chapters/4_Chapter_TopologyAwareness/Figures/data/beluga/mandm/data/cpu/bc_bycore.dat};
             
-            \nextgroupplot[xmode=log, title=GPU By Node, xticklabels={1B, 10kB, 100kB, 10MB, 1GB}]
+            \nextgroupplot[xmode=log, title=GPU By Node, xticklabels={8B, 1kB, 64kB, 8MB}]
             \addplot[blue, mark=*] table[x=msize, y=tt_pdif] {3_Chapters/4_Chapter_TopologyAwareness/Figures/data/beluga/mandm/data/ar_gpu_bynode_64.dat};
             \addplot[dashed, blue, mark=star] table[x=msize, y=s_pdif] {3_Chapters/4_Chapter_TopologyAwareness/Figures/data/beluga/mandm/data/ar_gpu_bynode_64.dat};
             \addplot[red, mark=*] table[x=msize, y=tt_pdif] {3_Chapters/4_Chapter_TopologyAwareness/Figures/data/beluga/mandm/data/bc_gpu_bynode_64.dat};
             \addplot[dashed, red, mark=star] table[x=msize, y=s_pdif] {3_Chapters/4_Chapter_TopologyAwareness/Figures/data/beluga/mandm/data/bc_gpu_bynode_64.dat};
 
-            \nextgroupplot[xmode=log, title=CPU By Node, xticklabels={1B, 10kB, 100kB, 10MB, 1GB}]
+            \nextgroupplot[xmode=log, title=CPU By Node, xticklabels={8B, 1kB, 64kB, 8MB}]
             \addplot[blue, mark=*] table[x=msize, y=remap_pdif] {3_Chapters/4_Chapter_TopologyAwareness/Figures/data/beluga/mandm/data/cpu/ar_bynode.dat};
             \addplot[blue, mark=star] table[x=msize, y=scotch_pdif] {3_Chapters/4_Chapter_TopologyAwareness/Figures/data/beluga/mandm/data/cpu/ar_bynode.dat};
             \addplot[red, mark=*] table[x=msize, y=remap_pdif] {3_Chapters/4_Chapter_TopologyAwareness/Figures/data/beluga/mandm/data/cpu/bc_bynode.dat};

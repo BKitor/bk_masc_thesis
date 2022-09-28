@@ -1,0 +1,16 @@
+\begin{algorithm}
+    \caption{General Mapping Heuristic Strategy}
+    \label{alg:toporr-strat}
+    \begin{algorithmic}[1]
+        \Require Number of Processes $p$, physical topology distance matrix $D$
+        \Ensure  Mapping array $M$ representing the new rank for each process
+        \State Bind rank 0 to its current core
+        \State Set rank 0 as the reference rank
+        \While{There are processes to map}
+            \State Select the target rank to map
+            \State Find an unmapped core with the minimum distance to the reference core  
+            \State Bind the target rank to the selected core
+            \State Optionally update the reference core
+        \EndWhile
+    \end{algorithmic}
+\end{algorithm}

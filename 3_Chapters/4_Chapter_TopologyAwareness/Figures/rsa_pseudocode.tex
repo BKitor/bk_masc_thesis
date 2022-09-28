@@ -1,0 +1,24 @@
+\begin{algorithm}
+  \caption{Reduce Scatter Allgather Heuristic}
+  \label{alg:rsa}
+  \begin{algorithmic}[1]
+    \Require Number of processes p, physical topology distance matrix D
+    \Ensure  Mapping array M representing the new rank for each process
+
+    \State M[0] = 0;
+    \State ref\_rank = 0;
+    \State mask = 1;
+    \While {\textit{there exist more processes to map}}
+      \While {\textit{ ref\_rank $\oplus$ mask is already mapped }}
+        \State mask *= 2;
+      \EndWhile
+      \State new\_rank = mask $\oplus$ ref\_rank;
+      \State target\_core = find\_closest\_core(ref\_rank, D);
+      \State M[new\_rank] = target\_core;
+      \If {\textit{two processes have been mapped close to ref\_rank}}
+        \State ref\_rank = new\_rank;
+        \State mask = 1;
+      \EndIf
+      \EndWhile
+  \end{algorithmic}
+\end{algorithm}

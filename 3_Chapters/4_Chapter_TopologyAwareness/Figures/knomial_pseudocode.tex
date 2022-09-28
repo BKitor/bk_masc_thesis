@@ -1,0 +1,31 @@
+\begin{algorithm}
+  \caption{Knomial Heuristic}
+  \label{alg:knomial}
+  \begin{algorithmic}[1]
+    \Require Number of Processes p, physical topology distance matrix D, knomial fan-out k
+    \Ensure  Mapping array M representing the new rank for each process
+
+    \State M[0] = 0;
+    \State REC\_KNOM\_MAP(0, p)
+
+    \Procedure{rec\_knom\_map}{ref\_rank, upper\_lim}
+    \For{\textit{i from ref\_rank + 1 to ref\_rank + k - 1}}
+    \State M[i] = find\_closest\_to(ref\_rank, D);
+    \EndFor
+    \State mask = 1
+    \While{\textit{(mask*k) $<$ upper\_lim}}
+    \For{\textit{i from 1 to k}}
+    \State new\_rank = ref\_rank + (mask * k * i)
+    \If {\textit{new\_rank $\geq$ upper\_lim}}
+    \State \textbf{break};
+    \EndIf
+    \State M[new\_rank] = closest\_core(ref\_rank, D);
+    \State new\_lim = ref\_rank + k * mask
+    \State REC\_KNOM\_MAP(new\_rank, new\_lim)
+    \EndFor
+    \State mask *= k
+    \EndWhile
+    \EndProcedure
+
+  \end{algorithmic}
+\end{algorithm}
