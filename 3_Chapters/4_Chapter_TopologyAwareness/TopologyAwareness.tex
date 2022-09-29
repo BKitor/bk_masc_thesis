@@ -113,8 +113,8 @@ We also propose mapping algorithms for reduce-scatter-allgather, knomial and bin
 
 \section{Method}
 When applying topology awareness to collectives there are two common strategies.
-Either build a communication pattern that is designed to fit the hardware, or take an existing pattern and efficiently map it to the hardware.
-This work uses the latter strategy, we take the collective algorithm selected by the implementation and silently renumber the processes to better utilze communication resources.
+Either build a communication pattern that is designed to fit the hardware or take an existing pattern and efficiently map it to the hardware.
+This work uses the latter strategy, we take the collective algorithm selected by the implementation and silently renumber the processes to better utilize communication resources.
 When a collective is called, the MPI library selects an algorithm based on the message size and number of processes.
 The communication pattern is implicit to the collective algorithm, so we define a heuristic tailored to specific algorithms that calculate how ranks should be renumbered.
 To make the calculation efficient and scalable, each proposed remapping heuristic leverages a greedy strategy, and an outline of the general strategy is given in algorithm \ref{alg:toporr-strat}.
@@ -160,12 +160,12 @@ While looping through all the ranks, the reference rank is updated every two map
 \input{3_Chapters/4_Chapter_TopologyAwareness/Figures/rsa_pseudocode}
 
 \subsection{Binary Tree Broadcast}
-Binary trees benefit from its simplicity.
+Binary trees benefit from their simplicity.
 Ranks receive one message and forward it to two child ranks.
 The tree structure provides logarithmic scaling to the number of messages sent, so binary trees are often used for smaller message sizes. 
 A typical structure for a binary tree is provided in Figure \ref{fig:graph-bin-tree}.
 For a rank $r$, the height in the tree can be calculated as $h_r = \lfloor log_2(r+1) \rfloor$, and ranks will send messages to $r + 2^{h_r}$ and $r + 2^{h_r + 1}$
-This leads to a structure where processes further down the tree are sending to ranks further and further away.
+This leads to a structure where processes further down the tree are send messages to ranks further and further away.
 Furthermore, binary trees are constructed slightly lopsided,  as nodes are added to the left side of the tree before the right side. 
 This can lead to situations where one direction has slightly more nodes than the other, this should be accounted for when designing the heuristic.
 
@@ -218,7 +218,7 @@ It's similar to our proposed RSA heuristic but focuses on the last rounds of com
 Recursive doubling allreduce and allgather share the same communication pattern, but while the message sizes double each round in allgather,  it remains fixed in allreduce.
 So migrating the heuristic to allreduce might not see the same performance gains, but it will ensure that most communications take an efficient path.
 
-We also evaluated the preveously proposed recursive doubling allgather heuristic in the context of the scatter-allgather broadcast.
+We also evaluated the previously proposed recursive doubling allgather heuristic in the context of the scatter-allgather broadcast.
 Scatter-allgather, also known as Van de Geijn's algorithm, is often used for large message broadcasts as it is incredibly bandwidth efficient, 
 This is achieved by splitting the message up into segments, scattering the segments across the communicator with a binomial algorithm, and then reconstructing the message with an allgather of the segments.
 The recursive doubling allgather has already been studied in \cite{Mirsadeghi2016TopoAwareCollRR}, it has an even communication pattern where the last stages of the algorithm have the largest message sizes.
@@ -243,32 +243,34 @@ Therefore, this work only supports commutative operations.
 Furthermore, both broadcast heuristics assume rank 0 is the root which is not always true. 
 So when rank 0 isn't the broadcast root, it needs to receive the data from the real root before it can start the broadcast on the shadow-communicator.
 In retrospect, a smarter design would have been to assign virtual ranks by shifting each rank according to the root's value, this would make the root 0.
-But I last looked at the code for remapping a year ago, and the performance difference provided by this step would be negligible, furthermore, OMB only calls bcast w/ root 0, and Horovod doesn't use bcast.
+But I last looked at the code for remapping a year ago, and the performance difference provided by this step would be negligible; furthermore, OMB only calls bcast w/ root 0, and Horovod doesn't use bcast.
 
 We leverage existing system topology detection tools to generate the host topology matrix.
 Hwloc \cite{Broquedis2010hwloc} is a tool for gathering intranode topology information, this includes NUMA domains and cache hierarchies.
 To extract the network topology, we started by collecting topology information using cluster-provided tools, ibnetdiscovee for Beluga's InfiniBand network and Opareport for Cedar's OmniPath fabric.
 We then transformed both files into a common format and saved them to disk.
-When creating a topology matrix, each node is responsible for generating the row corresponding to its rank, this is done by indexing to the topology file, and checking neighbouring ranks with Hwloc, then an allgather is performed to gather the final results.
-This method is not nearly that scalable as the memory requirements are on the order of $O(n^2)$ with the number of processes.
+When creating a topology matrix, each node is responsible for generating the row corresponding to its rank, this is done by indexing to the topology file and checking neighbouring ranks with Hwloc, then an allgather is performed to combine all processes' node information and generate the final results.
+This method can require is not scalable as the memory requirements are on the order of $O(n^2)$ with respect to the number of processes, but it is viable for the scale we're running at.
 
-While OpenMPI does support CUDA memory transfers, the implementation of CUDA-based allreduce copies the data to a temporary host buffer performs a CPU-based allreudce, then copies the data back up to the GPU.
+OpenMPI does support CUDA memory transfers, but their implementation is not efficient. 
+When allreduce is called on GPU memory, the data is copied to a temporary host buffer, then a CPU-based allreudce is performed and the final result is copied back up to the GPU.
 While this does fulfill the MPI specification, it neglects to use the available GPU hardware like compute kernel reduction or GPU to GPU data transfers with NVLinks.
 So we modified OpenMPI's RSA algorithm to make use of GPU hardware, this is also more in line with how modern collective libraries like NCCL and UCC implement allreduce \cite{UCC, NCCL}.
 
 To compare our proposed heuristics against an established topology mapping tool, we also integrated the SCOTCH graph embedding tool \cite{Pellegrini2012SCOTCH} into the rank reordering method.
 SCOTCH uses a graph bisecting method to perform graph partitioning and embedding, and it has been used in previous work to incorporate topology awareness \cite{Mirsadeghi2016TopoAwareCollRR}.
 
-\input{3_Chapters/4_Chapter_TopologyAwareness/Figures/init_mapping}
 The rank reordering strategy finds performance improvements by rearranging the process to core bindings, which implies that any performance improvements are dependent on the initial process to core bindings.
 MPI implementations provide flags for users to specify how processes should be distributed at job launch. 
-While often not exhaustive, this interface does provide a starting point for users to optimize the process to node mappings.
-Our method can calculate more complicated mappings, as well as mappings for subsets of processes for when applications use subcommunicators.  
+While not exhaustive, this interface does provide a starting point for users to optimize the process to node mappings.
+Our method can calculate more complicated mappings, as well as mappings for subsets of processes for when an application uses subcommunicators.  
 
 In OpenMPI, users can specify a resource and processes are bound to that resource in a round-robin fashion.
 Figure \ref{fig:init-mappings} provides an example outlining the three initial mappings we evaluated.
 The default initial mapping is by-package, this takes a node and fills it with processes alternating between packages until the node is full, it then repeats this on the next node until all processes are bound.
 By-core mapping places processes to consecutively numbered cores filling up a node before moving to the next, and by-node scatters processes across nodes by cycling through nodes and placing processes one at a time.
+
+\input{3_Chapters/4_Chapter_TopologyAwareness/Figures/init_mapping}
 
 \subsection{Hardware}\label{sec:topo-eval-hardware}
 % We evaluated our work on two heterogeneous clusters, Beluga and Cedar, provided by Compute Canada. 
@@ -278,15 +280,15 @@ By-core mapping places processes to consecutively numbered cores filling up a no
 % It also has a fat-tree topology configured, bus it is configured with 2:1 blocking and has adaptive routing.
 % Cedar's CPU allocation has dual-socket 24-core Xeon Platinum 8260 Cascade Lake processors, while the GPU nodes have two 20-core Xeon Silver 4216 Cascade Lake processors hosting four v100s GPUs interconnected by NVLink.
 
-We evaluated our work on Beluga, a heterogeneous cluster hosted by Polytechnique Montréal and access provided by Compute Canada. 
-Beluga is Infiniband based, structured as a 5:1 blocking fat tree with static routing.  
+We evaluated our work on Beluga, a heterogeneous cluster hosted by Polytechnique Montréal and with access provided by Compute Canada. 
+Beluga is an Infiniband based cluster, structured with a 5:1 blocking fat tree with static routing.
 The CPU nodes have dual socket Xeon Gold 6148 Skylake processors, and the GPU nodes use the same processors attached to 4 V100s fully connected with NVLink.
 
 \subsection{Results}
 
-\input{3_Chapters/4_Chapter_TopologyAwareness/Figures/ac_frac_imprv_beluga}
-\input{3_Chapters/4_Chapter_TopologyAwareness/Figures/bc_frac_imprv_beluga}
-\input{3_Chapters/4_Chapter_TopologyAwareness/Figures/dual_64_1024}
+% \input{3_Chapters/4_Chapter_TopologyAwareness/Figures/ac_frac_imprv_beluga}
+% \input{3_Chapters/4_Chapter_TopologyAwareness/Figures/bc_frac_imprv_beluga}
+% \input{3_Chapters/4_Chapter_TopologyAwareness/Figures/dual_64_1024}
 
 We used OSU-Microbenchamrks v5.7 \cite{Bureddy2012OMB} to evaluate the performance of our proposed method. 
 This tool performs 1000 loops over MPI\_Allreduce, measures the runtime of each function call, and outputs the average latency. 
@@ -295,22 +297,32 @@ It also provides the option to locate the data buffer in either CPU memory or GP
 Figure \ref{fig:beluga-ar-frac-imprv} demonstrates allreduce's rank reordering for both CPU and GPU nodes.
 GPU jobs were evaluated with 16 nodes (64 GPUs total), while CPU jobs were run across 32 nodes with 32 processes per node (1024 ranks total).
 The ring and RSA algorithms show ideal performance in that they're often on-par or better than the initial mapping, save for a few outliers.
-This shows how the proposed heuristics are finding a near ideal mapping or at least a mapping equivalent to what's provided as stock.  
+This shows how the proposed heuristics find a near-ideal mapping or at least a mapping equivalent to the initial conditions.
 
-One immediately obvious observation is that any improvements are more pronounced on CPUs vs GPUs, but it can be explained by the amount of contention on underlying resources.
+One immediately obvious observation is that any improvements are more pronounced on CPUs compared to GPUs, but this can be explained by the amount of contention on underlying resources.
 When using CPUs, any cross-socket communication needs to traverse the QPI link, which can easily become a bottleneck when multiple processes try to concurrently send large messages across it.
-The best example for this would be a ring algorithm with a by-package initial mapping.
-With a by-package mapping, consecutive ranks are placed on different sockets, and since communications in ring only happen between consecutive ranks, all intranode communication needs to traverse the QPI.
-Reordering fixes this by rearranging consecutive ranks to be as close as possible, leading to only one message needing to traverse the QPI link, removing QPI contention and providing up to 50\% performance improvements. 
-But GPUs don't have the same contention since there are only four processes per node, and the demand for resources is much smaller, further, the GPUs are fully connected with NVLINK intranode, so there is no single link bottleneck.
+Take RSA applied to a by-package initial mapping as an example.
+The by-package initial mapping places consecutive ranks on different nodes, forcing all the largest messages to traverse the QPI link. 
+If 32 ranks perform a 64MB allreduce, that would generate 512MB of unidirectional contention across 16 ranks during the first stage.
+The reordering moves all these large message transfers to within the same socket, removing the QPI bottleneck and gaining 10\% performance improvement.   
+Further, the ring algorithm sees even more improvement with a by-socket mapping since each rank has to send every message to a different NUMA region.
+By moving as many messages as possible within the same socket, the ring heuristic can find near 50\% performance improvement.
+% The best example for this would be a ring algorithm with a by-package initial mapping.
+% With a by-package mapping, consecutive ranks are placed on different sockets, and since communications in ring only happen between consecutive ranks, all intranode communication needs to traverse the QPI.
+% Reordering fixes this by rearranging consecutive ranks to be as close as possible, leading to only one message needing to traverse the QPI link, removing QPI contention and providing up to 50\% performance improvements. 
+But, GPUs don't generate the same contention since there are only four processes per node, so the resource demand is much smaller.
+Further, the GPUs are fully connected with NVLINK intranode, so there is no single link bottleneck.
+This hardware difference leads to the same reordering heuristics generating no performance differences when using GPUs.
 
 The next thing to note would be how the most dramatic performance improvements are seen on the by-node mapping, specifically for ring and RSA. 
 The by-node initial mapping places the most intense communications of the RSA algorithm on inter-node links, and literally, all communication in the ring algorithm is forced over the network.
 The reordering results in massive performance improvements by moving large chunks of communication internode and provides up to 80\% improvement for ring and RSA on CPUs.
+This large performance improvement is justified as the Infiniband link is the lowest bandwidth component in the system, as well as there only being one NIC having to service all 4/32 processes per node.
 
 In retrospect, using recursive doubling is dumb, it produces mappings where one process per node has the bulk of its partners on the same node, but the rest of the processes need to exchange their data off the node. 
 It's hard to notice with small communicator sizes, but when you scale it up so that $numnodes > processes per node$, it becomes more evident.
-Now, since I feel like a complete idiot for proposing this idea, I feel like I should scrap it and pretend it never happened?
+But at the same time, I should have seen the negative performance when I was developing this trash and gone, "\textit{That's weird, I should investigate why that deteriorates...}".
+Now I feel like a complete idiot for proposing this idea, should scrap it and pretend it never happened?
 
 The results for the evaluated broadcast remappings are presented in figure \ref{fig:beluga-bc-frac-imprv}.
 The broadcast algorithms see substantial improvements across the board. 
@@ -322,18 +334,22 @@ The by-package and by-core mappings see between 50\% to 80\% performance improve
 Scatter allgather is an interesting case, as it can see strong improvements for by-core and by-package initial mappings, showing how moving the large transfers in binomial scatter can save time. 
 Interestingly though, it loses performance on a by-node mapping, so clearly, there is performance left on the table, and more work could be done.
 
-In a lot of cases, the rank reordering generates a mapping similar to the initial mapping.
-For example, the by-core initial mapping is quite similar to ring, RSA, and knomial, while the binary tree is most similar to the by-node.
-In these scenarios, the performance is identical between the normal and remapped runs.
-
-To compare our work against existing reordering heuristics, we integrated SCOTCH \cite{Pellegrini2012SCOTCH} into our method and show its performance results in figure \ref{fig:beluga-mandm-dual-64-1024}.
+To compare our work against other graph reordering tools, we integrated SCOTCH \cite{Pellegrini2012SCOTCH} into our method and show its performance results in figure \ref{fig:beluga-mandm-dual-64-1024}.
 Once again, we ran with 16 GPU nodes and 32 CPU nodes, but this time we used OpenMPI's tuning table to select which algorithm to use based on its tuning table.
 Each heuristic provides a more efficient mapping than anything SCOTCH can generate, as is evidenced by the superior performance. 
-That said, OpenMPI's algorithm selection works efficiently for by-core and by-node mappings, but we are able to provide improvements when using a by-node mapping.  
+That said, OpenMPI's algorithm selection works efficiently out-of-the-box for both by-core and by-node mappings, but we are able to provide improvements when using a by-node mapping.  
 
 \section{I can't believe it's not a conclusion ™}
-High-level recap
-Connect to chapter 5 
+This chapter expands on the work proposed by Mirsadeghi and Afsahi \cite{Mirsadeghi2016TopoAwareCollRR} by expanding their idea to new collective communication algorithms.
+We show that their methods can viably be applied to RSA, ring, and recursive doubling allreduce, along with binary-tree, knomial, and scatter-allgather broadcast.
+Depending on the initial mapping, we can see performance improvements in the range of 10\% to 80\%.
+While this work is best applied to dense CPU allocations, it can be applied to GPU allocations as well. 
+
+The idea of this work was to accelerate allreduce through the topology-aware algorithms, with the motivation of decreaseing deep learning training time.
+Topology awareness has been exhaustively evaluated by many researchers, with a plethora of ideas existing in the literature.
+But, topology awareness is not the only strategy for accelerating allreduce.
+In the next chapter, we tackle the same problem of accelerating allreduce but from the angle of process arrival pattern awareness.
+This is still in the domain of large-message allreudce so many existing algorithms are applicable, but there are numerus differences and new challenges which require clever and innovative ideas to solve.
 
 % Conseptualy, this problem can be treated as a graph mapping problem. 
 % The MPI application is modeld as weighted graph $G=(V_G, w_G)$, where verticeis are processes and weights are the amount of communication between processes.

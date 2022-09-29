@@ -7,21 +7,13 @@
 \begin{itemize}
     \item Background on Process Arrival Pattern Awareness
     \begin{itemize}
+        \item Pedram's characterization work, mention that Horovod can see PAP imbalacen in range of 2-6, \cite{Alizadeh2022PAPCollDL, Mohammadalizadehbakhtevari2021Thesis}
         \item Maximum/Average Imbalance Factor and EQs
         \begin{itemize}
             \item Identify synchronization/data dependencies, propose a solution to synchronization dependencies using callbacks \cite{Luo2018ADAPT}
         \end{itemize}
     \end{itemize}
     \item Methods
-    \begin{itemize}
-        \item 
-        \begin{itemize}
-            \item "Concurrent accumulate operations with different origin, and target pairs are
-not ordered. Thus, there is no guarantee that the entire call to an accumulate operation is
-executed atomically."(MPI-4 standard, lines 32-34 page 618)
-        \end{itemize}
-        \item Background thread to receive messages before the process has arrived 
-    \end{itemize}
     \item Evaluation
     \begin{itemize}
         \item Horovod? Cosmoflow?
@@ -35,10 +27,9 @@ When designing collective algorithms, developers often assume that all processes
 The order and timing that processes enter the collective can have an impact on the algorithm's performance, and this work tries to leverage the arrival imbalance to improve the overall collective performance.
 
 There are previously proposed methods and algorithms that leverage PAP awareness to accelerate collectives, this chapter starts by surveying existing work.
-We outline some analysis on how PAP affects the collective, outlining our approach to accelerate allreduce.
-The main contribution is a cluster-wide method of sharing PAP information along with an allreduce algorithm based on this method that performs better than existing algorithms under a processes arrival imbalance.
+We outline some analysis on how PAP affects collectives, outlining our approach to accelerate allreduce.
+The main contribution is a cluster-wide method of sharing PAP information with an accommpanying allreduce algorithm that performs better than existing algorithms under a processes arrival imbalance.
 We evaluate our work with using an imbalance factor-inducing benchmark and show that we can see \_\% improvement over state-of-the-art algorithms.  
-(Horovod or Cosmoflow?)
 
 \section{Background}
 
@@ -47,13 +38,12 @@ As defined in \cite{Faraj2008StudyProcArrivalMPIColl}, for processes $(p_0, p_1,
 Therefore, each collective call has an arrival patterns $(a_0, a_1, ..., a_n)$ and an exit pattern $(f_0, f_1, ..., f_n)$.
 Each node spends $e_i = f_i - a_i$ time in the collective, where total collective time can be expresses as $e_0 + e_1 + ... + e_n$ and the average collective time is $\bar{e} = (e_0 + e_1 + ... + e_n)/n$, we can use these two terms to evaluate the performance of the overall collective.
 In order to quantify the difference between processs arrivals, let $\delta_i$ be the absolute time difference between a processes arrival and the average arrival time, i.e. $\delta_i = |\bar{a} - a_i|$. 
-We can then define the average arrival imbalance as $\bar{\delta}=(\delta_0 + \delta_i + ... + \delta_n)/n$, and the maximum imballance time as $\omega = max_i{a_i}-min_i{a_i}$, as well as 
+We can then define the average arrival imbalance as $\bar{\delta}=(\delta_0 + \delta_i + ... + \delta_n)/n$, and the maximum imballance time as $\omega = max_i(a_i)-min_i(a_i)$.
 When using average/max imbalance in practice, it is often easier to normalize it by the message transmision time.
-If the time to send a messages of $n$ bytes is $T$, then the \textit{maximum imbalance factor} is of that message is $\omega/T$, and the \textit{average imbalance factor} is $\bar{\delta}/T$
+If the time to send a messages of $n$ bytes is $T$, then the \textit{maximum imbalance factor} is of that message is $\omega/T$, and the \textit{average imbalance factor} is $\bar{\delta}/T$.
 
 
-\subsection{Synchronization Mechanism}
-
+\subsection{Synchronization Mechanism} 
 One of the predominant issues with PAP-Awareness is actually determining the order of process arrival.
 Each process needs some level of arrival information to determine the steps it needs to perform within the collective algorithm. 
 One strategy for inter-node PAP-awareness can include exchanging control messages using MPI point-to-point routines leveraging MPI\_Any\_Source \cite{Patarasuk2008EffBcastDifProcArr}.
@@ -79,8 +69,7 @@ Neither library has the notion of public/private memory, and the completion of o
 Operations in Libfabric relies on completion queues.
 Communication operations are associated with a completoin queue, and applicatoins poll the queueu to check 
 
-\subsection{Non-PAP-Aware Algorithms}
-
+\subsection{Non-PAP-Aware Algorithms} % more appropriate in collectives subseciton of backgroundor or methods subsection
 This work is targeting large message allreduce with the hope of accelerating model paralle distributed DL training.
 When performing a large messages allreduce, the most optimal algorithms are either ring or reduce-scatter-allgather.
 These are the algorithms most often used in practice, with Open MPI, MPICH, and UCC chosing to use reudce-scatter-allgather, and NCCL leveraging a ring-based strategy optimized for their hardware topology \cite{gabriel2004OpenMPI, MPICH, UCC, NCCL}.
@@ -99,7 +88,6 @@ This is useful for load balancing if you assume all processes arrive at the same
 In other words, for large message allreduce, the time of the last process can be described as $T_{last\_proc}=2((p-1)/p)n\beta + ((p-1)/p)n\gamma$.
 
 \subsection{Related Work}
-
 Mamidala et al. \cite{Mamidala2004BarrierAllreduceIBAdaptive} propose a PAP-Aware tree-based algorithm that can be applied to barrier and allreduce collectives.
 Their method involves rebalancing a k-ary tree by passing a token between ranks.
 For the process holding the token, when $k-1$ child processes have arrived, the token is passed to the $k^{th}$ child through an RDMA write.
@@ -152,12 +140,16 @@ The author proposed two methods, targeting both small and large messages, for ha
 The proposed work relies on shared memory, but they also evalute the efficacy of extending to a hierarchical algorithm to handle cluster-wide collectives.
 
 \section{Method}
-
-In order to evaluate the difference between MPI and UCX, we wrote a benchmark to evaluate the overhead of one-sided operations and synchronization, the outline of the MPI benchmark is given in listing \ref{lst:mpi_sync_bmark}, and the UCX benchmark is in lising \ref{lst:ucx_sync_bmark}.
+\subsection{Syncronizatoin method benchmark}
+In order to evaluate the difference between MPI and UCX, we wrote a benchmark to evaluate the overhead of one-sided operations and synchronization, the structure of which is provided in algorithm \ref{alg:sync_struct_bmark}.
 The core of the benchmark is evaluating how long it takes to atomically increment a memory location and perform a write to a separate location.
-In the MPI benchmark, this is done on lines 19 to 27, but the caveat to this is that calls to lock/unlock different memory locations are required to enforce memory coherency.
-The same functionality is implemented in the UCX benchmark on lines 22-32.
-In order to guarantee completion of communication operations, we monitor a pointer returned by the function call, this is done on lines 25/26 and 33/34.
+We built two implementaions of this benchmark, one with MPI and the other with UCX. 
+The most critical parts of the benchmarks would be the remote syncronization calls (lines 9 and 11), this is where the differneces between MPI and UCX will become apperent.  
+In order to ensure memory completion in MPI, users need to open and close and access epoch, this is done with blocking calls to MPI\_Win\_lock / MPI\_Win\_unlock before and after the rempote memory call.
+Completion in UCX is gaurenteed at a per-operation level. 
+Every communication call returns a pointer to a memory reigon which indicates the status of the operation. 
+At some point in the future (during a call to ucp\_progress()), the UCX runtime will set that address to UCS\_OK indicating completion.
+So to wait for remote memory completion, the UCX benchmark itterates between polling on the returned value and calling ucp\_progress().
 
 We ran our benchmark on Narval, a 200G HDR InfiniBand cluster, using 32 nodes and scaling the number of processes per node from 1 to 32, the results are presented in figure \ref{fig:sync_bmark_32n}.
 As is evident, the synchronization with MPI has much more overhead than UCX.
@@ -165,14 +157,15 @@ The benchmark time of UCX scales linearly with the number of processes from 10$\
 MPI has more overhead, as with 32 processes, it still takes 312$\mu s$, and scales exponentially to 453737$\mu s$ at 1024 processes.
 Therefore, we decided to use UCX to build our PAP management mechanism, as UCX provides wrappers around the nececary RDMA and atomic network operations, there is no enforced synchronization model, and there are strong guarantees on operation completion. 
 
-\lstset{style = bklstc}
-\lstset{label = lst:mpi_sync_bmark}
-\lstset{caption = Benchmark to evaluate the overhead of MPI for one-sided operations}
-\lstinputlisting[float=!htbp]{3_Chapters/5_Chapter_PAPAwareness/Figs/MPI_sync_bmark.c}
+\input{3_Chapters/5_Chapter_PAPAwareness/Figs/alg_sync_struct_mbark}
+% \lstset{style = bklstc}
+% \lstset{label = lst:mpi_sync_bmark}
+% \lstset{caption = Benchmark to evaluate the overhead of MPI for one-sided operations}
+% \lstinputlisting[float=!htbp]{3_Chapters/5_Chapter_PAPAwareness/Figs/MPI_sync_bmark.c}
 
-\lstset{label = lst:ucx_sync_bmark}
-\lstset{caption = Benchmark to evaluate the overhead of UCX for one-sided operations}
-\lstinputlisting[float=!htbp]{3_Chapters/5_Chapter_PAPAwareness/Figs/UCX_sync_bmark.c}
+% \lstset{label = lst:ucx_sync_bmark}
+% \lstset{caption = Benchmark to evaluate the overhead of UCX for one-sided operations}
+% \lstinputlisting[float=!htbp]{3_Chapters/5_Chapter_PAPAwareness/Figs/UCX_sync_bmark.c}
 
 \input{3_Chapters/5_Chapter_PAPAwareness/Figs/eval_sync_bmark}
 
