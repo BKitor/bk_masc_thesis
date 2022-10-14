@@ -33,7 +33,7 @@ We evaluate our work with using an imbalance factor-inducing benchmark and show 
 
 \section{Background}
 
-\subsection{Process arrival imbalance}
+\subsection{Process arrival imbalance} % move to background, in PAP subsection?
 As defined in \cite{Faraj2008StudyProcArrivalMPIColl}, for processes $(p_0, p_1,...,p_n)$ participating in a collective operation, each process has an arrival time denoted by $a_i$ and an exit time at $f_n$.
 Therefore, each collective call has an arrival patterns $(a_0, a_1, ..., a_n)$ and an exit pattern $(f_0, f_1, ..., f_n)$.
 Each node spends $e_i = f_i - a_i$ time in the collective, where total collective time can be expresses as $e_0 + e_1 + ... + e_n$ and the average collective time is $\bar{e} = (e_0 + e_1 + ... + e_n)/n$, we can use these two terms to evaluate the performance of the overall collective.
@@ -43,7 +43,7 @@ When using average/max imbalance in practice, it is often easier to normalize it
 If the time to send a messages of $n$ bytes is $T$, then the \textit{maximum imbalance factor} is of that message is $\omega/T$, and the \textit{average imbalance factor} is $\bar{\delta}/T$.
 
 
-\subsection{Synchronization Mechanism} 
+\subsection{Synchronization Mechanism} % move to background, in PAP subsection?
 One of the predominant issues with PAP-Awareness is actually determining the order of process arrival.
 Each process needs some level of arrival information to determine the steps it needs to perform within the collective algorithm. 
 One strategy for inter-node PAP-awareness can include exchanging control messages using MPI point-to-point routines leveraging MPI\_Any\_Source \cite{Patarasuk2008EffBcastDifProcArr}.
@@ -53,7 +53,8 @@ Further, this adds overhead and worsens workload imbalance as one process spends
 There is also the issue of processes stalling before the root has arrived, as no work can be done before PAP information is exchanged.
 Some proposed work fixes this by delegating PAP management to a background thread \cite{Proficz2018ImprvAllReduceForImbPAP, Proficz2020PAPAwareScatterGather, Proficz2021AllGatherResilientToImbPAP, Faraj2008StudyProcArrivalMPIColl}, but this solution can add more imbalance due to thread scheduling, as well as a burden on application developers to manage resources of background threads.
 
-Other internode solutions rely on non-portable interfaces like RDMA on Infiniband \cite{Qian2009ProcArrivalSHMA2AIB}, but this is promising as PAP information can be exchanged in a one-sided manner.
+Other internode solutions rely on non-portable interfaces like RDMA on Infiniband \cite{Qian2009ProcArrivalSHMA2AIB}.
+This does lock the solution to specific hardware, but it is promising as PAP information can be exchanged in a one-sided manner.
 Since processes don't synchronize, they can exchange PAP information before other processes have arrived, and without some central process managing the entire collective. 
 To provide more portability, we want to leverage a higher-level programming interface, and our first choice would be MPI's one-sided communications, but the problem with MPI is that the synchronization model is too burdensome. 
 In order to access a target process' memory, the origin processes need to synchronize through an access epoch. 
@@ -140,61 +141,54 @@ The author proposed two methods, targeting both small and large messages, for ha
 The proposed work relies on shared memory, but they also evalute the efficacy of extending to a hierarchical algorithm to handle cluster-wide collectives.
 
 \section{Method}
+In order for ranks to determine the arrival order, we use a structure consisting of a counter for arrival position, and an array for arrival-to-rank translations.
+This datastructure resides in netowrk exposed memory on a predetermined process.
+When a process arrives at the collective, it fetch-and-increments the couter and then writes its rank into the arrival array indexed at its arrival position.
+The accessing the counter creates a critical section, which can potentialy add overhead if not accounted for.
+The memory requirements scale linearly with the number of processes, but is well within reason for the system we evaluated on.
+Futhur, a more complicated design could distribute the arrival array so that each process exposes one index, more evenly distirbuting both memory requirements and network resource demand.
+
+When a process arrives it can determine which ranks have arrived before it by indexing their arrival position in the arrival-to-rank translation array.
+This setups allows us to build reduction/broadcast trees in terms of process' arrvial posittion. %, performing an arrival-to-rank translation and sending the data thorugh MPI.
+One sticking point is that later arriving ranks can easily know the rank of earlier processes, but earlier processes won't know the value of later ranks untill they've arrived.
+MPI ranks must know the destination before they can send their data, so if an early ranks needs to send data to a later rank it can either poll that rank's location in remote memory (an inadvisable choice unless you're trying to pick a fight with your sysadmin), or the late rank can notify the earlier process once it arrives.
+While this does create a litle overhead, it is negligbale compared to large message transfer time.
+
+In desinging an algorithm to outperform ring/rsa, our approach to is to minimize the amount of time the last arriving process needs to take, i.e. the last process should perform less work than $2n(\beta+\gamma)$. 
+If we simplify the problem and look at a 2 process allreduce, the minimum amout of work involbes recieving a message, performing a local reduction and sending a message.
+We can remove the initial recive by sending the data ahead of time to pre-determined location, and the final send will need to become a broadcast. 
+We also want to incoporate pipelining into our solution to furthur overlap the reduction message transfers.
+Therefore, out proposed solution involves the last arriving process recieving the fully reduce data of the other $n-1$ ranks before it arrives, and then triggering a pipelined local reduce/broadcast to distribute the data as efficiently as possible. 
+Theoreticly, the last proces only needs to reuduce and send one message divided accross $k$ segments, i.e. $T_{last\_proc\_reduce}=k\alpha+n(\beta+\gamma)$.
+This is roughly half of ring and rsa bandwith requirements.
+
+To ensure scalability, we embed our method in a hierarchical algorithm. 
+Ranks perform an intranode reduction to a local leader process, then the leader processes perform the PAP-Aware inter-node allreduce, the intra-node bcast is also incorporated into the pipeline used to distribute the data at the end of the collective. 
+The intranode reduction/bcast is a binomial-tree, while the internode reduction and broadcast are based on a linear-tree where arrival $r$ recieved data from $r-1$ and sends data to $r+1$.
+
+\section{Evaluation}
 \subsection{Syncronizatoin method benchmark}
 In order to evaluate the difference between MPI and UCX, we wrote a benchmark to evaluate the overhead of one-sided operations and synchronization, the structure of which is provided in algorithm \ref{alg:sync_struct_bmark}.
 The core of the benchmark is evaluating how long it takes to atomically increment a memory location and perform a write to a separate location.
 We built two implementaions of this benchmark, one with MPI and the other with UCX. 
 The most critical parts of the benchmarks would be the remote syncronization calls (lines 9 and 11), this is where the differneces between MPI and UCX will become apperent.  
-In order to ensure memory completion in MPI, users need to open and close and access epoch, this is done with blocking calls to MPI\_Win\_lock / MPI\_Win\_unlock before and after the rempote memory call.
-Completion in UCX is gaurenteed at a per-operation level. 
+In order to ensure memory completion in MPI, users need to open and close and access epoch, this is done with blocking calls to MPI\_Win\_lock / MPI\_Win\_unlock before and after each rempote memory call.
+On the other hand, completion in UCX is gaurenteed at a per-operation level. 
 Every communication call returns a pointer to a memory reigon which indicates the status of the operation. 
-At some point in the future (during a call to ucp\_progress()), the UCX runtime will set that address to UCS\_OK indicating completion.
-So to wait for remote memory completion, the UCX benchmark itterates between polling on the returned value and calling ucp\_progress().
+At some point in the future (during a call to ucp\_progress()), the UCX runtime will update that address to indicate completion.
+So to wait for remote memory completion, the UCX benchmark loops on a call to ucp\_progress() checking completion pointer after each invocatoin.
 
-We ran our benchmark on Narval, a 200G HDR InfiniBand cluster, using 32 nodes and scaling the number of processes per node from 1 to 32, the results are presented in figure \ref{fig:sync_bmark_32n}.
+We ran our benchmark on Narval, a 200G HDR InfiniBand cluster, using 32 nodes and scaling from 1 to 32 processes per node, and the results are presented in figure \ref{fig:sync_bmark_32n}.
 As is evident, the synchronization with MPI has much more overhead than UCX.
 The benchmark time of UCX scales linearly with the number of processes from 10$\mu s$ for 32 processes to 400$\mu s$ for 1024.
 MPI has more overhead, as with 32 processes, it still takes 312$\mu s$, and scales exponentially to 453737$\mu s$ at 1024 processes.
 Therefore, we decided to use UCX to build our PAP management mechanism, as UCX provides wrappers around the nececary RDMA and atomic network operations, there is no enforced synchronization model, and there are strong guarantees on operation completion. 
 
 \input{3_Chapters/5_Chapter_PAPAwareness/Figs/alg_sync_struct_mbark}
-% \lstset{style = bklstc}
-% \lstset{label = lst:mpi_sync_bmark}
-% \lstset{caption = Benchmark to evaluate the overhead of MPI for one-sided operations}
-% \lstinputlisting[float=!htbp]{3_Chapters/5_Chapter_PAPAwareness/Figs/MPI_sync_bmark.c}
-
-% \lstset{label = lst:ucx_sync_bmark}
-% \lstset{caption = Benchmark to evaluate the overhead of UCX for one-sided operations}
-% \lstinputlisting[float=!htbp]{3_Chapters/5_Chapter_PAPAwareness/Figs/UCX_sync_bmark.c}
-
 \input{3_Chapters/5_Chapter_PAPAwareness/Figs/eval_sync_bmark}
 
-We propose a syncronization method similar to the large-message structure proposed by Mohammadalizadehbakhtevari \cite{Mohammadalizadehbakhtevari2021Thesis}, but the shared data structure is located on rank 0 and exposed to every process accross the network.
-The structure consists of a counter for arrival position, and an array for arrival-to-rank translations.
-When a process arrives at the collective, it atomicly fetch-and-increments the couter using ucp\_op\_nbx(), and then calls ucp\_put\_nbx() to write its rank into the arrival array indexed by it's arrival position.
-The atomicity of ucp\_op\_nbx() gaurentees that each process is assigned a unique arrival position, and the arrival-to-rank array allows process to determine which ranks have already arrived.
-
-This setups allows us to build reduction/broadcast trees in terms of process' arrvial posittion, performing an arrival-to-rank translation and sending the data thorugh MPI.
-One sticking point is that later arriving ranks can easily know the rank of earlier processes, but earlier processes won't know the value of later ranks untill they've arrived.
-MPI ranks must know the destination before they can send their data, so if an early ranks needs to send data to a later rank it can either poll that rank's location in remote memory (an unadvisable choice unless you want your sysadmin to dislike you), or the late rank can notify the earlier process of its rank once arrived.
-While this does provide a litle overhead, it's still negligbale compared to the transfer time of large messages.
-
-In desinging an algorithm to outperform ring/rsa, our approach to is to minimize the amount of time the last arriving process needs to take.
-The minimum amout of work invovles performing a local reduction and triggering a broadcast.
-Therefore, out proposed solution involves the last arriving process recieving the fully reduce data of the other $n-1$ ranks before it arrives, and then triggering a pipelined local reduce/broadcast to distribute the data as efficiently as possible. 
-Theoreticly, the last proces only needs to reuduce and send one message divided accross $k$ segments, i.e. $T_{last\_proc\_reduce}=k\alpha+n(\beta+\gamma)$.
-This is roughly half of ring and rsa bandwith requirements.
-When the last process arrives it needs to have already recieved everyone else's data, soeach process pre-posting a recieve with a specific tag for the last arrival.
-
-To ensure scalability, we embed our method in a hierarchical algorithm. 
-Ranks perform an intranode reduction to a local leader process, then the leader processes perform the PAP-Aware inter-node allreduce, the intra-node bcast is also incorporated into the pipeline used to distribute the data at the end of the collective. 
-The intranode reduction/bcast is a binary-tree, while the internode reduction and broadcast are based on a linear-tree where arrival $r$ recieved data from $r-1$ and sends data to $r+1$.
-
-
-\section{Evaluation}
-
 \subsection{Software}
-We evaluated the PAP impact using a microbenchmark similar to \cite{Faraj2008StudyProcArrivalMPIColl}, presentied in listing \ref{lst:mif_ar_microbmark}.
+We evaluated the PAP impact using a microbenchmark similar to \cite{Faraj2008StudyProcArrivalMPIColl}, presentied in listing \ref{alg:mif_microbmark}.
 The benchmark evaluates allreduce performance for different maximum imbalance factors. 
 It does this by applying a random delay to each process, with process 0 recieving no delay and process $n-1$ recievein the full delay (lines 15-21).
 The delay is applied through a call to usleep (line 25).
@@ -210,9 +204,7 @@ In preveous work \cite{Faraj2008StudyProcArrivalMPIColl, Alizadeh2022PAPCollDL} 
     \end{itemize}
 \end{itemize}
 
-\lstset{label = lst:mif_ar_microbmark}
-\lstset{caption = MIF microbenchmark}
-\lstinputlisting[float=!htbp]{3_Chapters/5_Chapter_PAPAwareness/Figs/allreduce_mif_microbenchmark.c}
+\input{3_Chapters/5_Chapter_PAPAwareness/Figs/alg_mif_bmark}
 
 \subsection{Hardware}
 Evaluated on two clusters, Beluga and Narval.

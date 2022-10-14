@@ -1,0 +1,80 @@
+\begin{figure*}
+    \centering
+    \begin{tikzpicture}
+        \begin{groupplot}[group style={
+                        group size=2 by 3,
+                        xlabels at=edge bottom,
+                        ylabels at=edge left,
+                        % xticklabels at=edge bottom,
+                        % yticklabels at=edge left,
+                        vertical sep=1.5cm,
+                    },
+                height=5.7cm,
+                width=7.5cm,
+                xlabel={Message Size (Bytes)},
+                ylabel={Latency ($\mu$s)},
+                legend style={at={(-0.1,-0.3)}, anchor=north},
+                legend columns=3,
+                grid=both,
+            ]
+            
+            \nextgroupplot[xmode=log, log basis x=2, title=GPU By Socket, restrict y to domain=0:1100, xmin=2, xmax=131072]
+            \addplot table[x=msize, y=rsa] {3_Chapters/4_Chapter_TopologyAwareness/Figures/data/beluga/mandm/data/ar_gpu_bysoc_128.dat};
+            \addplot table[x=msize, y=ring] {3_Chapters/4_Chapter_TopologyAwareness/Figures/data/beluga/mandm/data/ar_gpu_bysoc_128.dat};
+            \addplot table[x=msize, y=rdouble] {3_Chapters/4_Chapter_TopologyAwareness/Figures/data/beluga/mandm/data/ar_gpu_bysoc_128.dat};
+            \addplot table[x=msize, y=min] {3_Chapters/4_Chapter_TopologyAwareness/Figures/data/beluga/mandm/data/ar_gpu_bysoc_128.dat};
+            \addplot table[x=msize, y=scotch] {3_Chapters/4_Chapter_TopologyAwareness/Figures/data/beluga/mandm/data/ar_gpu_bysoc_128.dat};
+            \addplot table[x=msize, y=def] {3_Chapters/4_Chapter_TopologyAwareness/Figures/data/beluga/mandm/data/ar_gpu_bysoc_128.dat};
+            
+            \nextgroupplot[xmode=log, log basis x=2, title=GPU By Socket, restrict y to domain=600:2000000, xmin=131072, xmax=268435456] 
+            \addplot table[x=msize, y=rsa] {3_Chapters/4_Chapter_TopologyAwareness/Figures/data/beluga/mandm/data/ar_gpu_bysoc_128.dat};
+            \addplot table[x=msize, y=ring] {3_Chapters/4_Chapter_TopologyAwareness/Figures/data/beluga/mandm/data/ar_gpu_bysoc_128.dat};
+            \addplot table[x=msize, y=rdouble] {3_Chapters/4_Chapter_TopologyAwareness/Figures/data/beluga/mandm/data/ar_gpu_bysoc_128.dat};
+            \addplot table[x=msize, y=min] {3_Chapters/4_Chapter_TopologyAwareness/Figures/data/beluga/mandm/data/ar_gpu_bysoc_128.dat};
+            \addplot table[x=msize, y=scotch] {3_Chapters/4_Chapter_TopologyAwareness/Figures/data/beluga/mandm/data/ar_gpu_bysoc_128.dat};
+            \addplot table[x=msize, y=def] {3_Chapters/4_Chapter_TopologyAwareness/Figures/data/beluga/mandm/data/ar_gpu_bysoc_128.dat};
+            
+            \nextgroupplot[xmode=log, log basis x=2, title=GPU By Core, restrict y to domain=0:1100, xmin=2, xmax=131072]
+            \addplot table[x=msize, y=rsa] {3_Chapters/4_Chapter_TopologyAwareness/Figures/data/beluga/mandm/data/ar_gpu_bycore_128.dat};
+            \addplot table[x=msize, y=ring] {3_Chapters/4_Chapter_TopologyAwareness/Figures/data/beluga/mandm/data/ar_gpu_bycore_128.dat};
+            \addplot table[x=msize, y=rdouble] {3_Chapters/4_Chapter_TopologyAwareness/Figures/data/beluga/mandm/data/ar_gpu_bycore_128.dat};
+            \addplot table[x=msize, y=min] {3_Chapters/4_Chapter_TopologyAwareness/Figures/data/beluga/mandm/data/ar_gpu_bycore_128.dat};
+            \addplot table[x=msize, y=scotch] {3_Chapters/4_Chapter_TopologyAwareness/Figures/data/beluga/mandm/data/ar_gpu_bycore_128.dat};
+            \addplot table[x=msize, y=def] {3_Chapters/4_Chapter_TopologyAwareness/Figures/data/beluga/mandm/data/ar_gpu_bycore_128.dat};
+            
+            \nextgroupplot[xmode=log, log basis x=2, title=GPU By Core, restrict y to domain=600:2000000, xmin=131072, xmax=268435456] 
+            \addplot table[x=msize, y=rsa] {3_Chapters/4_Chapter_TopologyAwareness/Figures/data/beluga/mandm/data/ar_gpu_bycore_128.dat};
+            \addplot table[x=msize, y=ring] {3_Chapters/4_Chapter_TopologyAwareness/Figures/data/beluga/mandm/data/ar_gpu_bycore_128.dat};
+            \addplot table[x=msize, y=rdouble] {3_Chapters/4_Chapter_TopologyAwareness/Figures/data/beluga/mandm/data/ar_gpu_bycore_128.dat};
+            \addplot table[x=msize, y=min] {3_Chapters/4_Chapter_TopologyAwareness/Figures/data/beluga/mandm/data/ar_gpu_bycore_128.dat};
+            \addplot table[x=msize, y=scotch] {3_Chapters/4_Chapter_TopologyAwareness/Figures/data/beluga/mandm/data/ar_gpu_bycore_128.dat};
+            \addplot table[x=msize, y=def] {3_Chapters/4_Chapter_TopologyAwareness/Figures/data/beluga/mandm/data/ar_gpu_bycore_128.dat};
+            
+            \nextgroupplot[xmode=log, log basis x=2, title=GPU By Node, restrict y to domain=0:1100, xmin=2, xmax=131072]
+            \addplot table[x=msize, y=rsa] {3_Chapters/4_Chapter_TopologyAwareness/Figures/data/beluga/mandm/data/ar_gpu_bynode_128.dat};
+            \addplot table[x=msize, y=ring] {3_Chapters/4_Chapter_TopologyAwareness/Figures/data/beluga/mandm/data/ar_gpu_bynode_128.dat};
+            \addplot table[x=msize, y=rdouble] {3_Chapters/4_Chapter_TopologyAwareness/Figures/data/beluga/mandm/data/ar_gpu_bynode_128.dat};
+            \addplot table[x=msize, y=min] {3_Chapters/4_Chapter_TopologyAwareness/Figures/data/beluga/mandm/data/ar_gpu_bynode_128.dat};
+            \addplot table[x=msize, y=scotch] {3_Chapters/4_Chapter_TopologyAwareness/Figures/data/beluga/mandm/data/ar_gpu_bynode_128.dat};
+            \addplot table[x=msize, y=def] {3_Chapters/4_Chapter_TopologyAwareness/Figures/data/beluga/mandm/data/ar_gpu_bynode_128.dat};
+            
+            \nextgroupplot[xmode=log, log basis x=2, title=GPU By Node, restrict y to domain=600:2000000, xmin=131072, xmax=268435456] 
+            \addplot table[x=msize, y=rsa] {3_Chapters/4_Chapter_TopologyAwareness/Figures/data/beluga/mandm/data/ar_gpu_bynode_128.dat};
+            \addplot table[x=msize, y=ring] {3_Chapters/4_Chapter_TopologyAwareness/Figures/data/beluga/mandm/data/ar_gpu_bynode_128.dat};
+            \addplot table[x=msize, y=rdouble] {3_Chapters/4_Chapter_TopologyAwareness/Figures/data/beluga/mandm/data/ar_gpu_bynode_128.dat};
+            \addplot table[x=msize, y=min] {3_Chapters/4_Chapter_TopologyAwareness/Figures/data/beluga/mandm/data/ar_gpu_bynode_128.dat};
+            \addplot table[x=msize, y=scotch] {3_Chapters/4_Chapter_TopologyAwareness/Figures/data/beluga/mandm/data/ar_gpu_bynode_128.dat};
+            \addplot table[x=msize, y=def] {3_Chapters/4_Chapter_TopologyAwareness/Figures/data/beluga/mandm/data/ar_gpu_bynode_128.dat};
+            
+            \addlegendentry{RSA}
+            \addlegendentry{Ring}
+            \addlegendentry{Recursive Doubling}
+            \addlegendentry{Remaping}
+            \addlegendentry{SCOTCH}
+            \addlegendentry{OMPI}
+            
+        \end{groupplot}
+    \end{tikzpicture}
+    \caption{GPU remaping on Bleuga with 128 nodes and 4 processes per node}
+    \label{fig:beluga-ar-abs-128}
+\end{figure*}

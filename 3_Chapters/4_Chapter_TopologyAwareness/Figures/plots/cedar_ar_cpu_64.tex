@@ -1,0 +1,79 @@
+\begin{figure*}
+    \centering
+    \begin{tikzpicture}
+        \begin{groupplot}[group style={
+                        group size=2 by 3,
+                        xlabels at=edge bottom,
+                        ylabels at=edge left,
+                        % xticklabels at=edge bottom,
+                        % yticklabels at=edge left,
+                        vertical sep=1.5cm,
+                    },
+                height=5.7cm,
+                width=7.5cm,
+                xlabel={Message Size (Bytes)},
+                ylabel={Latency ($\mu$s)},
+                legend style={at={(-0.1,-0.3)}, anchor=north},
+                legend columns=3,
+                grid=both,
+            ]
+            \nextgroupplot[xmode=log, log basis x=2, title=GPU By Socket, restrict y to domain=0:1100, xmin=2, xmax=131072]
+            \addplot table[x=msize, y=ar_bysoc_disabled0_alg6_scotch0] {3_Chapters/4_Chapter_TopologyAwareness/Figures/data/cedar/cedar_cpu_64.dat};
+            \addplot table[x=msize, y=ar_bysoc_disabled0_alg4_scotch0] {3_Chapters/4_Chapter_TopologyAwareness/Figures/data/cedar/cedar_cpu_64.dat};
+            \addplot table[x=msize, y=ar_bysoc_disabled0_alg3_scotch0] {3_Chapters/4_Chapter_TopologyAwareness/Figures/data/cedar/cedar_cpu_64.dat};
+            \addplot table[x=msize, y=ar_bysoc_disabled0_alg0_scotch0] {3_Chapters/4_Chapter_TopologyAwareness/Figures/data/cedar/cedar_cpu_64.dat};
+            % \addplot table[x=msize, y=ar_bysoc_disabled0_alg0_scotch1] {3_Chapters/4_Chapter_TopologyAwareness/Figures/data/cedar/cedar_cpu_64.dat};
+            \addplot table[x=msize, y=ar_bysoc_disabled1_alg0_scotch0] {3_Chapters/4_Chapter_TopologyAwareness/Figures/data/cedar/cedar_cpu_64.dat};
+            
+            \nextgroupplot[xmode=log, log basis x=2, title=GPU By Socket, restrict y to domain=600:2000000, xmin=131072, xmax=268435456] 
+            \addplot table[x=msize, y=ar_bysoc_disabled0_alg6_scotch0] {3_Chapters/4_Chapter_TopologyAwareness/Figures/data/cedar/cedar_cpu_64.dat};
+            \addplot table[x=msize, y=ar_bysoc_disabled0_alg4_scotch0] {3_Chapters/4_Chapter_TopologyAwareness/Figures/data/cedar/cedar_cpu_64.dat};
+            \addplot table[x=msize, y=ar_bysoc_disabled0_alg3_scotch0] {3_Chapters/4_Chapter_TopologyAwareness/Figures/data/cedar/cedar_cpu_64.dat};
+            \addplot table[x=msize, y=ar_bysoc_disabled0_alg0_scotch0] {3_Chapters/4_Chapter_TopologyAwareness/Figures/data/cedar/cedar_cpu_64.dat};
+            % \addplot table[x=msize, y=ar_bysoc_disabled0_alg0_scotch1] {3_Chapters/4_Chapter_TopologyAwareness/Figures/data/cedar/cedar_cpu_64.dat};
+            \addplot table[x=msize, y=ar_bysoc_disabled1_alg0_scotch0] {3_Chapters/4_Chapter_TopologyAwareness/Figures/data/cedar/cedar_cpu_64.dat};
+            
+            \nextgroupplot[xmode=log, log basis x=2, title=GPU By Core, restrict y to domain=0:1100, xmin=2, xmax=131072]
+            \addplot table[x=msize, y=ar_bycore_disabled0_alg6_scotch0] {3_Chapters/4_Chapter_TopologyAwareness/Figures/data/cedar/cedar_cpu_64.dat};
+            \addplot table[x=msize, y=ar_bycore_disabled0_alg4_scotch0] {3_Chapters/4_Chapter_TopologyAwareness/Figures/data/cedar/cedar_cpu_64.dat};
+            \addplot table[x=msize, y=ar_bycore_disabled0_alg3_scotch0] {3_Chapters/4_Chapter_TopologyAwareness/Figures/data/cedar/cedar_cpu_64.dat};
+            \addplot table[x=msize, y=ar_bycore_disabled0_alg0_scotch0] {3_Chapters/4_Chapter_TopologyAwareness/Figures/data/cedar/cedar_cpu_64.dat};
+            % \addplot table[x=msize, y=ar_bycore_disabled0_alg0_scotch1] {3_Chapters/4_Chapter_TopologyAwareness/Figures/data/cedar/cedar_cpu_64.dat};
+            \addplot table[x=msize, y=ar_bycore_disabled1_alg0_scotch0] {3_Chapters/4_Chapter_TopologyAwareness/Figures/data/cedar/cedar_cpu_64.dat};
+            
+            \nextgroupplot[xmode=log, log basis x=2, title=GPU By Core, restrict y to domain=600:2000000, xmin=131072, xmax=268435456] 
+            \addplot table[x=msize, y=ar_bycore_disabled0_alg6_scotch0] {3_Chapters/4_Chapter_TopologyAwareness/Figures/data/cedar/cedar_cpu_64.dat};
+            \addplot table[x=msize, y=ar_bycore_disabled0_alg4_scotch0] {3_Chapters/4_Chapter_TopologyAwareness/Figures/data/cedar/cedar_cpu_64.dat};
+            \addplot table[x=msize, y=ar_bycore_disabled0_alg3_scotch0] {3_Chapters/4_Chapter_TopologyAwareness/Figures/data/cedar/cedar_cpu_64.dat};
+            \addplot table[x=msize, y=ar_bycore_disabled0_alg0_scotch0] {3_Chapters/4_Chapter_TopologyAwareness/Figures/data/cedar/cedar_cpu_64.dat};
+            % \addplot table[x=msize, y=ar_bycore_disabled0_alg0_scotch1] {3_Chapters/4_Chapter_TopologyAwareness/Figures/data/cedar/cedar_cpu_64.dat};
+            \addplot table[x=msize, y=ar_bycore_disabled1_alg0_scotch0] {3_Chapters/4_Chapter_TopologyAwareness/Figures/data/cedar/cedar_cpu_64.dat};
+            
+            \nextgroupplot[xmode=log, log basis x=2, title=GPU By Node, restrict y to domain=0:1100, xmin=2, xmax=131072]
+            \addplot table[x=msize, y=ar_bynode_disabled0_alg6_scotch0] {3_Chapters/4_Chapter_TopologyAwareness/Figures/data/cedar/cedar_cpu_64.dat};
+            \addplot table[x=msize, y=ar_bynode_disabled0_alg4_scotch0] {3_Chapters/4_Chapter_TopologyAwareness/Figures/data/cedar/cedar_cpu_64.dat};
+            \addplot table[x=msize, y=ar_bynode_disabled0_alg3_scotch0] {3_Chapters/4_Chapter_TopologyAwareness/Figures/data/cedar/cedar_cpu_64.dat};
+            \addplot table[x=msize, y=ar_bynode_disabled0_alg0_scotch0] {3_Chapters/4_Chapter_TopologyAwareness/Figures/data/cedar/cedar_cpu_64.dat};
+            % \addplot table[x=msize, y=ar_bynode_disabled0_alg0_scotch1] {3_Chapters/4_Chapter_TopologyAwareness/Figures/data/cedar/cedar_cpu_64.dat};
+            \addplot table[x=msize, y=ar_bynode_disabled1_alg0_scotch0] {3_Chapters/4_Chapter_TopologyAwareness/Figures/data/cedar/cedar_cpu_64.dat};
+            
+            \nextgroupplot[xmode=log, log basis x=2, title=GPU By Node, restrict y to domain=600:2000000, xmin=131072, xmax=268435456] 
+            \addplot table[x=msize, y=ar_bynode_disabled0_alg6_scotch0] {3_Chapters/4_Chapter_TopologyAwareness/Figures/data/cedar/cedar_cpu_64.dat};
+            \addplot table[x=msize, y=ar_bynode_disabled0_alg4_scotch0] {3_Chapters/4_Chapter_TopologyAwareness/Figures/data/cedar/cedar_cpu_64.dat};
+            \addplot table[x=msize, y=ar_bynode_disabled0_alg3_scotch0] {3_Chapters/4_Chapter_TopologyAwareness/Figures/data/cedar/cedar_cpu_64.dat};
+            \addplot table[x=msize, y=ar_bynode_disabled0_alg0_scotch0] {3_Chapters/4_Chapter_TopologyAwareness/Figures/data/cedar/cedar_cpu_64.dat};
+            % \addplot table[x=msize, y=ar_bynode_disabled0_alg0_scotch1] {3_Chapters/4_Chapter_TopologyAwareness/Figures/data/cedar/cedar_cpu_64.dat};
+            \addplot table[x=msize, y=ar_bynode_disabled1_alg0_scotch0] {3_Chapters/4_Chapter_TopologyAwareness/Figures/data/cedar/cedar_cpu_64.dat};
+            
+            \addlegendentry{RSA}
+            \addlegendentry{Ring}
+            \addlegendentry{Recursive Doubling}
+            \addlegendentry{Optimal Remaping}
+            % \addlegendentry{SCOTCH}
+            \addlegendentry{OMPI}
+            
+        \end{groupplot}
+    \end{tikzpicture}
+    \caption{CPU remaping on Cedar with 64 nodes and 32 processes per node}
+    \label{fig:cedar-ar-abs_64}
+\end{figure*}
