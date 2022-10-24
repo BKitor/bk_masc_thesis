@@ -26,6 +26,7 @@
             \addplot[blue, mark=+] table[x=msize, y=scotch] {3_Chapters/4_Chapter_TopologyAwareness/Figures/data/beluga/mandm/data/ar_gpu_bysoc_128.dat};
             \addplot[black, mark=x] table[x=msize, y=def] {3_Chapters/4_Chapter_TopologyAwareness/Figures/data/beluga/mandm/data/ar_gpu_bysoc_128.dat};
             
+            
             \nextgroupplot[title=CPU By Socket, xmode=log, log basis x=2, ymode=log, log basis y=10, restrict y to domain=0:1100, xmin=2, xmax=268435456]
             \addplot[red, dashed, mark=*] table[x=msize, y=socket_disabled0_alg6_scotch0] {3_Chapters/4_Chapter_TopologyAwareness/Figures/data/beluga/cpu_128_ar.dat};
             \addplot[green, dashed, mark=square*] table[x=msize, y=socket_disabled0_alg4_scotch0] {3_Chapters/4_Chapter_TopologyAwareness/Figures/data/beluga/cpu_128_ar.dat};
