@@ -5,7 +5,7 @@
                         group size=2 by 3,
                         xlabels at=edge bottom,
                         ylabels at=edge left,
-                        % xticklabels at=edge bottom,
+                        xticklabels at=edge bottom,
                         % yticklabels at=edge left,
                         vertical sep=1.5cm,
                     },
@@ -13,9 +13,10 @@
                 width=7.5cm,
                 xlabel={Message Size (Bytes)},
                 ylabel={Latency ($\mu$s)},
+                xticklabels={4B, 256B, 16kB, 1MB, 64MB},
                 legend style={at={(-0.1,-0.3)}, anchor=north},
                 legend columns=5,
-                grid=both,
+                grid=major,
             ]
             
             \nextgroupplot[title=GPU By Socket, xmode=log, log basis x=2, ymode=log, log basis y=10, restrict y to domain=0:1100, xmin=2, xmax=268435456] 
@@ -75,6 +76,6 @@
             
         \end{groupplot}
     \end{tikzpicture}
-    \caption{Broadcast evaluation on Bleuga with 128 nodes.}
-    \label{fig:beluga-ar-abs-128}
+    \caption{Broadcast evaluation on Bleuga with 128 nodes. GPU nodes have 4 processes each, totaling 512 GPUs total, and CPU allocations have 32 processes per node for 4096 processes total. Message sizes range from 1B to 128MB on GPU resources, and \_B to \_MB on CPU resources.}
+    \label{fig:beluga-bc-128}
 \end{figure*}

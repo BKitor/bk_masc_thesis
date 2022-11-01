@@ -5,7 +5,7 @@
                         group size=2 by 3,
                         xlabels at=edge bottom,
                         ylabels at=edge left,
-                        % xticklabels at=edge bottom,
+                        xticklabels at=edge bottom,
                         % yticklabels at=edge left,
                         vertical sep=1.5cm,
                     },
@@ -13,9 +13,10 @@
                 width=7.5cm,
                 xlabel={Message Size (Bytes)},
                 ylabel={Latency ($\mu$s)},
+                xticklabels={4B, 256B, 16kB, 1MB, 64MB},
                 legend style={at={(-0.1,-0.3)}, anchor=north},
                 legend columns=5,
-                grid=both,
+                grid=major,
             ]
             
             \nextgroupplot[title=GPU By Socket, xmode=log, log basis x=2, ymode=log, log basis y=10, restrict y to domain=0:1100, xmin=2, xmax=268435456] 
@@ -69,5 +70,5 @@
         \end{groupplot}
     \end{tikzpicture}
     \caption{Broadcast evaluation on Cedar. CPU allocations have 64 nodes, gpu allocations have 32 nodes}
-    \label{fig:beluga-ar-abs-128}
+    \label{fig:cedar-bc-32g64c}
 \end{figure*}

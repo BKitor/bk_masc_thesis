@@ -28,7 +28,7 @@ The order and timing that processes enter the collective can have an impact on t
 
 There are previously proposed methods and algorithms that leverage PAP awareness to accelerate collectives, this chapter starts by surveying existing work.
 We outline some analysis on how PAP affects collectives, outlining our approach to accelerate allreduce.
-The main contribution is a cluster-wide method of sharing PAP information with an accommpanying allreduce algorithm that performs better than existing algorithms under a processes arrival imbalance.
+The main contribution is a cluster-wide method of sharing PAP information with an accommpanying allreduce algorithm designed to perform better than existing algorithms under a processes arrival imbalance.
 We evaluate our work with using an imbalance factor-inducing benchmark and show that we can see \_\% improvement over state-of-the-art algorithms.  
 
 \section{Background}
@@ -149,13 +149,13 @@ The memory requirements scale linearly with the number of processes, but is well
 Futhur, a more complicated design could distribute the arrival array so that each process exposes one index, more evenly distirbuting both memory requirements and network resource demand.
 
 When a process arrives it can determine which ranks have arrived before it by indexing their arrival position in the arrival-to-rank translation array.
-This setups allows us to build reduction/broadcast trees in terms of process' arrvial posittion. %, performing an arrival-to-rank translation and sending the data thorugh MPI.
+This setups allows us to build reduction/broadcast trees in terms of process' arrvial posittion.
 One sticking point is that later arriving ranks can easily know the rank of earlier processes, but earlier processes won't know the value of later ranks untill they've arrived.
-MPI ranks must know the destination before they can send their data, so if an early ranks needs to send data to a later rank it can either poll that rank's location in remote memory (an inadvisable choice unless you're trying to pick a fight with your sysadmin), or the late rank can notify the earlier process once it arrives.
+MPI ranks must know the destination before they can send their data, so if an early ranks needs to send data to a later rank it can either poll that rank's location in remote memory, or the late rank can notify the earlier process once it arrives.
 While this does create a litle overhead, it is negligbale compared to large message transfer time.
 
 In desinging an algorithm to outperform ring/rsa, our approach to is to minimize the amount of time the last arriving process needs to take, i.e. the last process should perform less work than $2n(\beta+\gamma)$. 
-If we simplify the problem and look at a 2 process allreduce, the minimum amout of work involbes recieving a message, performing a local reduction and sending a message.
+If we simplify the problem and look at a 2 process allreduce, the minimum amout of work involves recieving a message, performing a local reduction and sending a message.
 We can remove the initial recive by sending the data ahead of time to pre-determined location, and the final send will need to become a broadcast. 
 We also want to incoporate pipelining into our solution to furthur overlap the reduction message transfers.
 Therefore, out proposed solution involves the last arriving process recieving the fully reduce data of the other $n-1$ ranks before it arrives, and then triggering a pipelined local reduce/broadcast to distribute the data as efficiently as possible. 
@@ -193,16 +193,6 @@ The benchmark evaluates allreduce performance for different maximum imbalance fa
 It does this by applying a random delay to each process, with process 0 recieving no delay and process $n-1$ recievein the full delay (lines 15-21).
 The delay is applied through a call to usleep (line 25).
 In preveous work \cite{Faraj2008StudyProcArrivalMPIColl, Alizadeh2022PAPCollDL} delays were applied thorugh a random computation, this work opted to use usleep as it provides a more percise controll.
-
-
-\begin{itemize}
-    \item Should be comparing hierarcical algs
-    \begin{itemize}
-        \item reduce$\rightarrow$pap$\rightarrow$bcast
-        \item reduce$\rightarrow$rsa$\rightarrow$bcast
-        \item reduce$\rightarrow$ring$\rightarrow$bcast
-    \end{itemize}
-\end{itemize}
 
 \input{3_Chapters/5_Chapter_PAPAwareness/Figs/alg_mif_bmark}
 

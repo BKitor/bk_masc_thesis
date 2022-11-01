@@ -5,7 +5,7 @@
                         group size=2 by 3,
                         xlabels at=edge bottom,
                         ylabels at=edge left,
-                        % xticklabels at=edge bottom,
+                        xticklabels at=edge bottom,
                         % yticklabels at=edge left,
                         vertical sep=1.5cm,
                     },
@@ -13,9 +13,10 @@
                 width=7.5cm,
                 xlabel={Message Size (Bytes)},
                 ylabel={Latency ($\mu$s)},
+                xticklabels={4B, 256B, 16kB, 1MB, 64MB},
                 legend style={at={(-0.1,-0.3)}, anchor=north},
                 legend columns=5,
-                grid=both,
+                grid=major,
             ]
             
             \nextgroupplot[title=GPU By Socket, xmode=log, log basis x=2, ymode=log, log basis y=10, restrict y to domain=0:1100, xmin=2, xmax=268435456] 
@@ -25,7 +26,6 @@
             % \addplot[violet, mark=asterisk] table[x=msize, y=min] {3_Chapters/4_Chapter_TopologyAwareness/Figures/data/beluga/mandm/data/ar_gpu_bysoc_128.dat};
             \addplot[blue, mark=+] table[x=msize, y=scotch] {3_Chapters/4_Chapter_TopologyAwareness/Figures/data/beluga/mandm/data/ar_gpu_bysoc_128.dat};
             \addplot[black, mark=x] table[x=msize, y=def] {3_Chapters/4_Chapter_TopologyAwareness/Figures/data/beluga/mandm/data/ar_gpu_bysoc_128.dat};
-            
             
             \nextgroupplot[title=CPU By Socket, xmode=log, log basis x=2, ymode=log, log basis y=10, restrict y to domain=0:1100, xmin=2, xmax=268435456]
             \addplot[red, dashed, mark=*] table[x=msize, y=socket_disabled0_alg6_scotch0] {3_Chapters/4_Chapter_TopologyAwareness/Figures/data/beluga/cpu_128_ar.dat};
@@ -76,6 +76,6 @@
             
         \end{groupplot}
     \end{tikzpicture}
-    \caption{Allreduce evaluation on Bleuga with 128 nodes.}
-    \label{fig:beluga-ar-abs-128}
+    \caption{Allreduce evaluation on Bleuga with 128 nodes. GPU nodes have 4 processes each, totaling 512 GPUs total, and CPU allocations have 32 processes per node for 4096 processes total. Message sizes range from 4B to 128MB on GPU resources, and 4B to 64MB on CPU resources.}
+    \label{fig:beluga-ar-128}
 \end{figure*}

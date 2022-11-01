@@ -4,41 +4,58 @@
 \chapter[Background]{Background}\label{ch:Background}
 \index{Background}
 
-% Background
-% \section{Background}
-% \subsection{High level}
-% \begin{itemize}
-% 	\item{Broad description of subject}
-% 	\item{Some relevant history}
-% 	\item{Current implementations in industry}
-% 	\item{New \& Related Research on the subject}
-% \end{itemize}
+If you really want to blame someone for the existence of this thesis, I would hang it on John Gufstason for proposing weak scaling \cite{Gustafson1988GustafsonLaw}.
+Gustafson's Law states that if you can solve a parallelized problem on a computer in a fixed amount of time, you should be able to scale the problem size and the parallelized compute to solve a larger problem in the same amount of time.
+In other words, the larger the computer, the larger the problems it can solve.
+This foundational idea makes up the bedrock of \textit{high-performance computing} (HPC), and many decades of research have been poured into building larger and more parallel systems to solve bigger and more challenging problems.
 
-    \section{Target system architecture, Multi-GPU node, high speed interconnect}
-        \subsection{what is a node (CPU/GPU/memory)}
-        \subsection{what is a fabric (IB/Dragonfly/Fat-Tree)}
-    \section{Communication libraries} 
-    \cite{mpi40, gabriel2004OpenMPI, MPICH, shamis2015ucx}
-        \subsection{UCX/Libfabric}
-        \subsection{MPI p2p}
-        \subsection{MPI-One-sided}
-        \subsection{Collective communications (+hierarchical)}
-    \section{Data-Parallel Deeplearning, (Mini-batch SGD), distributed-deep learning, HOROVOD}
-    \cite{Ben-Nun2019DemystifyDL, Sergeev2018Horovod}
-    \section{Topology Awareness}
-    \section{PAP awareness}
+The world's most powerful computers have been growing at an exponential pace for the past decade, with each generation providing more parallelism and being able to solve larger problems \cite{Top500}.
+Recently the world's most powerful supercomputer, Frontier \cite{Frontier}, broke the exascale barrier with the ability to calculate $1.68*10^{18}$ 64-bit floating point (FP64) operations per second. 
+While breaking the exascale barrier is a monumental achievement, with over a decade of planning and research funded through the \textit{exascale compute project} (ECP), large numbers like $10^{18}$ are hard to understand without context.
+ExaWind \cite{ExaWind} is an ECP project with the goal of developing large-scale simulations of wind farms, scientists and engineers have always been able to use \textit{computational fluid dynamics} (CFD) to evaluate their designs, but the deployment of larger computers is crucial to unlocking larger and higher fidelity simulations.
+For example, in the mid-2000s, high-end systems would only have the capability to simulate a single blade, systems deployed in the 2010s let researchers scale their simulations to a full turbine with three blades rotating, creating turbulence.
+Exascale is projected to enable simulations at wind-farm scale so that designers can account for turbine-to-turbine turbulence, the impact of terrain, be it land or off the coast, and atmospheric conditions like weather patterns.
+But CFD isn't the only field extreme scale systems can enable new capabilities, many other fields rely on HPC, including molecular dynamics, cosmology, quantum chemistry, drug discovery and even \textit{artificial intelligence} (AI)/\textit{deep learning} (DL). 
 
-\clearpage
-% Citations can be included in your manuscript by referencing them. For example, if I wanted to cite XKCD for a comic (as I have in figure \ref{fig:DEFENCE}), I would just do \cite{xkcdThesis}.
+The consequence of relentless innovation in HPC systems is that current systems are incredibly complicated.
+To achieve massive scale within a reasonable power budget, modern HPC systems consist of a high-performance fabric connecting compute nodes densely packed with GPUs and multi-core CPUs.
+This leads to complex memory hierarchies with technologies like \textit{non-uniform memory access} (NUMA), CPU caches, and GPU memory; all of which are tied together with high-performance interconnects like \textit{Peripheral Component Interconnect Express} (PCIe), Intel's \textit{Ultra Path Interconnect} (UPI), NVLink, and Infiniband.
+Now, to squeeze the most performance out of these expensive machines, domain scientists need to account for all of this complexity and map it to whatever insanely difficult grand challenge they are trying to solve.
+In other words, writing efficient code for these massive systems is very hard.
 
-% %\subsection{Short name for the top of the page}{Long subsection title to start subsection}
-% \subsection[Glossaries]{Glossaries of Terms and Acronyms}
+This is where scientific programming libraries like come in.
+Over the years, academics and industry have congealed on a set of standards and abstractions for the hardware so that it can be more easily manipulated at a higher level.
+While programming multi-core CPUs is possible with pthreads \cite{pthreads}, it is often easier for scientists to use OpenMP \cite{OpenMP} because it provides a friendlier interface that is easier to map to scientific problems.
+Many applications built on GPUs use Nvidia's \textit{Compute Unified Device Architecture} (CUDA) \cite{CUDA} to drive the GPU, but scientists are slowly pushing for open-source alternatives like Kokkos \cite{kokkos}, Raja \cite{Raja}, and even OpenMP so that they're not locked into a single vendor's programming library.
+Driving the network can be done using shared-memoryesque libraries based on \textit{Partitioned Global Address Space} (PGAS), popular models include SHMEM \cite{OpenSHMEM}, \textit{Unified Parallel C} (UCP) \cite{UPC}, and Chapel \cite{Chapel}; but the point-to-point based \textit{Message Passing Interface} (MPI) \cite{mpi40} is by far the most prevalent programming model for managing distributed memory systems.
+MPI's dominance can be attributed to its well-established and respected standardizing body, but mostly because it's easy to understand and provides a powerful yet simple programming model for domain scientists to scale their problems to the largest machines. 
 
-% Latex allows you to add words and acronyms to a glossary which is found in \textit{2\_Glossaries/Glossary}. This feature benefits the reader, for when you use strong \gls{diction} in your \gls{lexicon}, the reader can click the hyperlink and see the definition to thus better understand your \gls{prose}.
+MPI is a critical piece of HPC infrastructure, since its inception in the early 90s, developers have been adopting it as the distributed memory library of choice.
+Being such a fundamental piece of scientific computing leads to many codes relying on the MPI's implementation to be as performant as possible.  
+It is not uncommon for application performance to be bound by the time spent in MPI, with many applications able to spend over 50\% of their time processing MPI calls \cite{Chunduri2018CharacterizeMPIonProd}.
+Collective communications, an MPI primitive that organizes simultaneous data exchanges among groups of processes, tend to consume large amounts of core hours and can become a bottleneck of many large-scale applications.
+A specific example includes \textit{Deep Learning} (DL), these frameworks heavily rely on MPI\_Allreduce to implement model parallelism, and applications like Horovod frequently issue large message Allreduce on GPU buffers to exchange weight updates \cite{Awan2019CommProfDLonClusters, Jain2019PerfCharDNNTFPT, Alizadeh2022PAPCollDL}.
+Therefore, it is paramount that MPI latency to be as minimal as possible because time spent in MPI is time wasted not calculating science, and often the pace of computational sciences is bound by the speed of MPI.
 
-% The glossary also allows you to keep track of acronyms and symbols. In the case of acronyms, LaTex defines the acronym on first use (such as \gls{lol}), then use the acronym afterwards (\gls{lol}). 
-% \glsresetall % reset the glossary to expand acronyms again
-% Everything is hyperlinked to the glossary page of your thesis, and if you want, you can reset the glossary at any point to make the full definition of an acronym appear again using \textbackslash glsresetall (\gls{lol}). Symbols are not very interesting, but work like this: \gls{mySymbol}. Note the definition is not printed alongside the symbol.
+The rest of this chapter will establish the fundamentals of HPC from the bottom up.
+It starts with a deep dive into the node architecture, discussing the trend of heterogeneous compute, then scaling up to the system level to evaluate the technologies interconnecting all the compute islands.
+Then the software environment is established, since this thesis is focused on communication libraries, we start with 'transport-layer' libraries which are used to build MPI implementations, then we discuss MPI itself, why it's prevalent, and it's important features, then we provide an example of an application that makes heavy use of MPI, driving the motivation to research certain aspects of MPI itself.
 
-% \textbf{Glossaries, Bibliography or Index not showing up?}
-% Did you compile them? They are not automatic. You have to manually click \lq Bibliography\rq, \lq Glossary\rq, and \lq index\rq under the TeXstudio \textit{Tools} drop-down menu. 
+
+\section{GPU Cluster Architecture}
+    \subsection{Compute Node Architecture}
+    \subsubsection{Compute CPU/GPU}
+    \subsubsection{Interconnects NVLink/PCIe/UPI}
+    \subsection{The fabric (IB/Fat-Tree)}
+\section{Communication libraries} 
+\cite{mpi40, gabriel2004OpenMPI, MPICH, shamis2015ucx}
+    \subsection{UCX/Libfabric}
+    \subsection{MPI p2p}
+    \subsection{MPI-One-sided}
+    \subsection{Collective communications (+hierarchical)}
+\section{Data-Parallel Deeplearning, (Mini-batch SGD), distributed-deep learning, HOROVOD}
+\cite{Ben-Nun2019DemystifyDL, Sergeev2018Horovod}
+\section{Topology Awareness}
+\section{PAP awareness}
+
+app
