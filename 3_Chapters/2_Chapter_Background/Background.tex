@@ -10,7 +10,7 @@ In other words, the larger the computer, the larger the problems it can solve.
 This foundational idea makes up the bedrock of \textit{high-performance computing} (HPC), and many decades of research have been poured into building larger and more parallel systems to solve bigger and more challenging problems.
 
 The world's most powerful computers have been growing at an exponential pace for the past decade, with each generation providing more parallelism and being able to solve larger problems \cite{Top500}.
-Recently the world's most powerful supercomputer, Frontier \cite{Frontier}, broke the exascale barrier with the ability to calculate $1.68*10^{18}$ 64-bit floating point (FP64) operations per second. 
+Recently the world's most powerful supercomputer, Frontier \cite{Frontier}, broke the exascale barrier with the ability to calculate $1.68*10^{18}$ 64-bit floating point operations per second (FLOPS). 
 While breaking the exascale barrier is a monumental achievement, with over a decade of planning and research funded through the \textit{exascale compute project} (ECP), large numbers like $10^{18}$ are hard to understand without context.
 ExaWind \cite{ExaWind} is an ECP project with the goal of developing large-scale simulations of wind farms, scientists and engineers have always been able to use \textit{computational fluid dynamics} (CFD) to evaluate their designs, but the deployment of larger computers is crucial to unlocking larger and higher fidelity simulations.
 For example, in the mid-2000s, high-end systems would only have the capability to simulate a single blade, systems deployed in the 2010s let researchers scale their simulations to a full turbine with three blades rotating, creating turbulence.
@@ -41,12 +41,59 @@ The rest of this chapter will establish the fundamentals of HPC from the bottom 
 It starts with a deep dive into the node architecture, discussing the trend of heterogeneous compute, then scaling up to the system level to evaluate the technologies interconnecting all the compute islands.
 Then the software environment is established, since this thesis is focused on communication libraries, we start with 'transport-layer' libraries which are used to build MPI implementations, then we discuss MPI itself, why it's prevalent, and it's important features, then we provide an example of an application that makes heavy use of MPI, driving the motivation to research certain aspects of MPI itself.
 
-
 \section{GPU Cluster Architecture}
-    \subsection{Compute Node Architecture}
-    \subsubsection{Compute CPU/GPU}
-    \subsubsection{Interconnects NVLink/PCIe/UPI}
-    \subsection{The fabric (IB/Fat-Tree)}
+Modern HPC is performed on GPU clusters, which are, in essence, a bunch of nodes (rack-mounted servers) tied to a system area network.
+These machines are assembled using commodity parts, and system designers can integrate components from different vendors.
+The fundamental components include the CPU, GPUs, and the interconnect, all of which have different vendors providing different solutions with their own price/performance/density tradeoffs.
+This allows for all kinds of flexible deployments, with the most obvious benefit being cost, but designs can be tailored to based on application (weather modelling, nuclear simulations, deep learning) or based on component supply (if there's ever some global disruption to supply chains or whatever and your lab can't get ahold of the network cards you wanted).
+While designers have flexibility in their deployments, several concepts and technologies  are consistent across deployments.
+
+The components in a cluster can be grouped into two categories, they either perform compute, or they are moving data between compute endpoints.
+Within a compute node, both CPUs and GPUs can perform compute, and there are a series of interconnects like PCIe and NVLink that shuffle data between compute resources.
+And at a larger scale, each node can be considered a compute island while the network shuffles data between nodes.
+Each resource has its quirks, and applications need to be properly structured to make full use of system resources, and at the same time, it is the library designer's job to provide tools that efficiently expose the granularity of compute developers need without overwhelming them with hardware details.
+
+When designing a cluster there is a possibility to introduce an additional category of components focused on file I/O.
+These components can include node-local SSD or Intel's Optane persistent memory, and they are used to expose a higher-performance file system with better bandwidth and latency than traditional network-attached storage.
+While these tools are important, and many applications are file I/O bound, these tools are out of the scope of this thesis. 
+
+\subsection{Compute Node Architecture}
+The compute nodes are where the calculations happen.
+The design goal of a compute node is to be able to perform as many FLOPS as possible while minimizing power consumption and area.
+At a high level, they can be thought of as a rack in a server tying together memory, CPUs, GPUs, the network, and maybe a bit of local storage, but there is nuance to node design, and tradeoffs for selecting different components. 
+
+\subsubsection{CPU Compute Nodes}
+Traditionally, compute nodes would be entirely CPU based, powered by multiple sockets of SMP cores.
+Typical CPU nodes can have in the range of 32 to 128 cores per node depending on the CPU model, and each CPU has their own memory controllers attached to a pool of memory ranging from 128GB to 4TB.
+Thanks to the operating system technology, multiple CPU sockets are combined and presented to applications as a single giant CPU attached to a giant pool of memory, and processes running on any core can access memory from any memory bank attached to any other CPU.
+
+Now, this model is known as a \textit{Symmetric Multiprocessor} (SMP), where processes share a common memory bus, and any thread can access any other process' memory, but in reality, these systems are not exactly symmetric. 
+Since each socket has its own memory controllers, each socket has its own NUMA domain, and there is a performance penalty accrued when cores access memory in other process's memory domains.
+There are also complex cache hierarchies, and if two cores are frequently modifying the same memory location, the contention caused by frequent cache flushed will tank performance, this is also known as cache thrashing.
+So when writing parallelized code, application developers must consider where data resided in memory and how CPU cores access that data.
+ 
+The number of cores in CPU-based SMP architectures have been growing slowly over the past decade, with high-end systems topping out around 128 cores (256 if you consider hyperthreading).
+The trouble with CPU cores is that they're complicated, the x86 instruction set has been around since the 80s and has been expanded multiple times, there are \textit{single instruction multiple data} (SIMD) for vectorization, security extensions for the paranoid, and even compatibility modes for older 32-bit programs. 
+All this baggage leads x86 cores to be large and not very space efficient. 
+
+\subsubsection{GPU Compute Nodes}
+GPUs subvert this problem by greatly simplifying the core design and providing thousands of cores per chip. 
+These accelerators provide massively parallel banks of floating point compute, and they can spit out so many FLOPS they require specially manufactured high bandwidth memory (HBM) to feed the beast.
+In terms of FLOPS/mm$^2$, GPUs win out by orders of magnitude, which is one of the largest driving reasons why GPU adoption for compute-intensive applications has exploded over the past decade.
+You can also associate multiple GPUs to a single CPU, so the trend has been to pack as many GPUs into a node as possible.
+When GPUs first took first place on the Top500 with Titan at ORNL, there was a single GPU per node, but a decade later, Frontier has scaled up to eight GPUs per node (technically, there are four MI250x cards per node, but each card has two GPU dies tied together with some advanced packaging solution, and it's presented to the application as eight GPUs).
+
+But, these external accelerators also add considerable amounts of complexity to system design, and that complexity is felt most acutely at the software level.  
+Because GPUs are fundamentally different from CPUs they require special programming models, programmers specify parallel computations in a GPU kernel, and at run-time, kernels are launched in parallel across a user-specified number of threads.
+To save die space, GPUs discard bloat like branch predictors, so control flow inside compute kernels can destroy performance if not accounted for properly.
+Since thousands of threads can be running at the same time, even more attention has to be paid to memory access patterns, as there is even more potential to tank performance (see memory coalescing \cite{CUDAMemCoalescing}).
+There's also the fact that GPUs have their own HBM that has to be explicitly managed, GPU kernels can only access data that's in the card they're running on, so device data management is another challenge developers need to account for. 
+
+
+\subsubsection{Interconnects NVLink/PCIe/UPI}
+
+\subsection{The fabric (IB/Fat-Tree)}
+    
 \section{Communication libraries} 
 \cite{mpi40, gabriel2004OpenMPI, MPICH, shamis2015ucx}
     \subsection{UCX/Libfabric}
@@ -57,5 +104,3 @@ Then the software environment is established, since this thesis is focused on co
 \cite{Ben-Nun2019DemystifyDL, Sergeev2018Horovod}
 \section{Topology Awareness}
 \section{PAP awareness}
-
-app
