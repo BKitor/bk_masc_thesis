@@ -69,6 +69,9 @@
             
         \end{groupplot}
     \end{tikzpicture}
-    \caption{Allreduce evaluation on Cedar. CPU allocations have 64 nodes. GPU allocations have 32 nodes.}
+    \caption{OSU Microbenchmark allreduce evaluation on Cedar.
+    GPU runs have 32 nodes with 4 processes per node, totaling 128 GPUs.
+    CPU runs have 64 nodes with 32 processes per node, totaling 2048 processes.
+    Message sizes range from 4B to 256MB on GPU resources, and 4B to 64MB on CPU resources.}
     \label{fig:cedar-ar-32g64c}
 \end{figure*}

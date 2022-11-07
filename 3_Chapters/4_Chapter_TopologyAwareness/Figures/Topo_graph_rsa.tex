@@ -13,15 +13,19 @@
             {
                 \draw (C\x) -- (C\y) node [above, midway] {$n$};
             }
-        \foreach \x/\y in {0/2, 3/1, 4/6, 7/5}
+        \foreach \x/\y in {0/2, 3/1}
+            {
+                \draw (C\x) -- (C\y) node [below, near start] {$n/2$};
+            }
+        \foreach \x/\y in {4/6, 7/5}
             {
                 \draw (C\x) -- (C\y) node [above, near start] {$n/2$};
             }
         \foreach \x/\y in {0/4, 5/1, 6/2, 3/7}
             {
-                \draw (C\x) -- (C\y) node [above, near start] {$n/4$};
+                \draw (C\x) -- (C\y) node [below, near start] {$n/4$};
             }
     \end{tikzpicture}
-    \caption{Eight process reduce scatter allgather, where message size is $n$.}
+    \caption{An example of eight process performing the RSA algorithm. Edge weights represent the amount of data in bytes transferd between ranks for an allreduce of size $n$.}
     \label{fig:graph-rsa}    
 \end{figure}

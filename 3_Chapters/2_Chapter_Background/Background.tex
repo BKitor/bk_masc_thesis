@@ -88,9 +88,12 @@ Because GPUs are fundamentally different from CPUs they require special programm
 To save die space, GPUs discard bloat like branch predictors, so control flow inside compute kernels can destroy performance if not accounted for properly.
 Since thousands of threads can be running at the same time, even more attention has to be paid to memory access patterns, as there is even more potential to tank performance (see memory coalescing \cite{CUDAMemCoalescing}).
 There's also the fact that GPUs have their own HBM that has to be explicitly managed, GPU kernels can only access data that's in the card they're running on, so device data management is another challenge developers need to account for. 
-
+But when everything comes to gether, when memory accesses are coalesced, when there is no warp divergence, when CPU-GPU memory transfers are pipelined and overlaped with compute, and all required blood/sweat sacrifices have been performed, holy cow are GPUs efficient.
 
 \subsubsection{Interconnects NVLink/PCIe/UPI}
+Within a node, there are multiple places data could be held in, spanning NUMA domains and GPUs memory. 
+Data movement is a com
+
 
 \subsection{The fabric (IB/Fat-Tree)}
     
