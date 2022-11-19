@@ -9,14 +9,11 @@
     \begin{itemize}
         \item Pedram's characterization work, mention that Horovod can see PAP imbalacen in range of 2-6, \cite{Alizadeh2022PAPCollDL, Mohammadalizadehbakhtevari2021Thesis}
         \item Maximum/Average Imbalance Factor and EQs
-        \begin{itemize}
-            \item Identify synchronization/data dependencies, propose a solution to synchronization dependencies using callbacks \cite{Luo2018ADAPT}
-        \end{itemize}
     \end{itemize}
     \item Methods
     \item Evaluation
     \begin{itemize}
-        \item Horovod? Cosmoflow?
+        \item Horovod? Cos  moflow?
     \end{itemize}
 \end{itemize}
 
@@ -46,7 +43,7 @@ If the time to send a messages of $n$ bytes is $T$, then the \textit{maximum imb
 \subsection{Synchronization Mechanism} % move to background, in PAP subsection?
 One of the predominant issues with PAP-Awareness is actually determining the order of process arrival.
 Each process needs some level of arrival information to determine the steps it needs to perform within the collective algorithm. 
-One strategy for inter-node PAP-awareness can include exchanging control messages using MPI point-to-point routines leveraging MPI\_Any\_Source \cite{Patarasuk2008EffBcastDifProcArr}.
+One strategy for inter-node PAP-awareness can include exchanging control messages using MPI point-to-point routines leveraging \texttt{MPI\_ANY\_SOURCE} \cite{Patarasuk2008EffBcastDifProcArr}.
 These strategies aren't ideal, as these mechanisms require the active participation of some leader processes.
 This is often delegated to the root in one-to-many or many-to-one collectives but doesn't map as easily to many-to-many collectives.
 Further, this adds overhead and worsens workload imbalance as one process spends considerably more cycles orchestrating process arrival information.
@@ -58,8 +55,8 @@ This does lock the solution to specific hardware, but it is promising as PAP inf
 Since processes don't synchronize, they can exchange PAP information before other processes have arrived, and without some central process managing the entire collective. 
 To provide more portability, we want to leverage a higher-level programming interface, and our first choice would be MPI's one-sided communications, but the problem with MPI is that the synchronization model is too burdensome. 
 In order to access a target process' memory, the origin processes need to synchronize through an access epoch. 
-Active target communication is out of the question as one of our goals is to minimize the amount of synchronization, and MPI\_Win\_Fence is a collective, so it also defeats the purpose, this leaves  MPI\_Win\_lock/MPI\_Win\_unlock as the only viable synchronization mechanism.
-On the other hand, we could try to ignore synchronization by starting an access epoch with MPI\_Win\_Fence at MPI\_Init, and imposing order through MPI\_Fetch\_and\_op, but MPI's memory model doesn't guarantee that public/private windows will be updated unless synchronization occurs, so that means we still need MPI\_Win\_lock/MPI\_Win\_unlock synchronization.
+Active target communication is out of the question as one of our goals is to minimize the amount of synchronization, and \texttt{MPI\_Win\_Fence()} is a collective, so it also defeats the purpose, this leaves  \texttt{MPI\_Win\_lock()}/\texttt{MPI\_Win\_unlock()} as the only viable synchronization mechanism.
+On the other hand, we could try to ignore synchronization by starting an access epoch with \texttt{MPI\_Win\_Fence()} at \texttt{MPI\_Init()}, and imposing order through \texttt{MPI\_Fetch\_and\_op()}, but MPI's memory model doesn't guarantee that public/private windows will be updated unless synchronization occurs, so that means we still need \texttt{MPI\_Win\_lock()}/\texttt{MPI\_Win\_unlock()}  synchronization.
 
 Alternatively, there are deeper layers in the MPI stack. 
 Under the hood, MPI implementations will target a transport-focused layer to drive the network hardware, this design choice is done for portability purposes as the transport layer can support multiple types of hardware, and different programming models can target the transport layer APIs.
@@ -116,7 +113,7 @@ Parsons and Pai \cite{Parsons2015ExpProcImbMPICollHierarcialSys} study process i
 They go a bit more in-depth by investigating performance counters using PAPI \cite{Mucci1999PAPI}, but they arrive at the same conclusion that the system is too complex and that none of the observable counters strongly correlate with processing imbalance. 
 The authors propose a dynamic leader selection method to build hierarchical pap-aware algorithms for reduce and broadcast.
 They use a shared memory structure for intranode communications, where the last/first processes to arrive is selected as the leader for the reduce/broadcast algorithms, respectively. 
-Since any rank could be dynamically selected as a leader, parent/child relationships for the internode binomial tree are established using control messaged with MPI\_ANY\_SOURCE. 
+Since any rank could be dynamically selected as a leader, parent/child relationships for the internode binomial tree are established using control messaged with \texttt{MPI\_ANY\_SOURCE}. 
 They also propose an alltoall algorithm, but they found that the overhead of the control messages is too great, so instead they impose a static multileader hierarchical pattern.
 In order to take advantage of arrival patterns, the authors propose \textit{opportunistic message fragmentation}, criteria that leaders can use to select chunks of data to send before all processes have arrived.
 This work only applies PAP awareness at an intra-node level; while there is a leader identification mechanism to set up inter-node exchanges, it does not leverage any PAP information.
@@ -172,11 +169,11 @@ In order to evaluate the difference between MPI and UCX, we wrote a benchmark to
 The core of the benchmark is evaluating how long it takes to atomically increment a memory location and perform a write to a separate location.
 We built two implementaions of this benchmark, one with MPI and the other with UCX. 
 The most critical parts of the benchmarks would be the remote syncronization calls (lines 9 and 11), this is where the differneces between MPI and UCX will become apperent.  
-In order to ensure memory completion in MPI, users need to open and close and access epoch, this is done with blocking calls to MPI\_Win\_lock / MPI\_Win\_unlock before and after each rempote memory call.
+In order to ensure memory completion in MPI, users need to open and close and access epoch, this is done with blocking calls to \texttt{MPI\_Win\_lock()}/\texttt{MPI\_Win\_unlock()} before and after each rempote memory call.
 On the other hand, completion in UCX is gaurenteed at a per-operation level. 
 Every communication call returns a pointer to a memory reigon which indicates the status of the operation. 
-At some point in the future (during a call to ucp\_progress()), the UCX runtime will update that address to indicate completion.
-So to wait for remote memory completion, the UCX benchmark loops on a call to ucp\_progress() checking completion pointer after each invocatoin.
+At some point in the future (during a call to \texttt{ucp\_progress()}), the UCX runtime will update that address to indicate completion.
+So to wait for remote memory completion, the UCX benchmark loops on a call to \texttt{ucp\_progress()} checking completion pointer after each invocatoin.
 
 We ran our benchmark on Narval, a 200G HDR InfiniBand cluster, using 32 nodes and scaling from 1 to 32 processes per node, and the results are presented in figure \ref{fig:sync_bmark_32n}.
 As is evident, the synchronization with MPI has much more overhead than UCX.

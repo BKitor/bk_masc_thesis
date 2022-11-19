@@ -19,7 +19,7 @@ But CFD isn't the only field extreme scale systems can enable new capabilities, 
 
 The consequence of relentless innovation in HPC systems is that current systems are incredibly complicated.
 To achieve massive scale within a reasonable power budget, modern HPC systems consist of a high-performance fabric connecting compute nodes densely packed with GPUs and multi-core CPUs.
-This leads to complex memory hierarchies with technologies like \textit{non-uniform memory access} (NUMA), CPU caches, and GPU memory; all of which are tied together with high-performance interconnects like \textit{Peripheral Component Interconnect Express} (PCIe), Intel's \textit{Ultra Path Interconnect} (UPI), NVLink, and Infiniband.
+This leads to complex memory hierarchies with technologies like \textit{non-uniform memory access} (NUMA), CPU caches, and GPU memory; all of which are tied together with high-performance interconnects like \textit{Peripheral Component Interconnect Express} (PCIe), Intel's \textit{Ultra Path Interconnect} (UPI), NVLink, and InfiniBand.
 Now, to squeeze the most performance out of these expensive machines, domain scientists need to account for all of this complexity and map it to whatever insanely difficult grand challenge they are trying to solve.
 In other words, writing efficient code for these massive systems is very hard.
 
@@ -27,7 +27,7 @@ This is where scientific programming libraries like come in.
 Over the years, academics and industry have congealed on a set of standards and abstractions for the hardware so that it can be more easily manipulated at a higher level.
 While programming multi-core CPUs is possible with pthreads \cite{pthreads}, it is often easier for scientists to use OpenMP \cite{OpenMP} because it provides a friendlier interface that is easier to map to scientific problems.
 Many applications built on GPUs use Nvidia's \textit{Compute Unified Device Architecture} (CUDA) \cite{CUDA} to drive the GPU, but scientists are slowly pushing for open-source alternatives like Kokkos \cite{kokkos}, Raja \cite{Raja}, and even OpenMP so that they're not locked into a single vendor's programming library.
-Driving the network can be done using shared-memoryesque libraries based on \textit{Partitioned Global Address Space} (PGAS), popular models include SHMEM \cite{OpenSHMEM}, \textit{Unified Parallel C} (UCP) \cite{UPC}, and Chapel \cite{Chapel}; but the point-to-point based \textit{Message Passing Interface} (MPI) \cite{mpi40} is by far the most prevalent programming model for managing distributed memory systems.
+Driving the network can be done using shared-memoryesque libraries based on \textit{Partitioned Global Address Space} (PGAS), with popular models including SHMEM \cite{OpenSHMEM}, \textit{Unified Parallel C} (UCP) \cite{UPC}, and Chapel \cite{Chapel}; but the point-to-point based \textit{Message Passing Interface} (MPI) \cite{mpi40} is by far the most prevalent programming model for managing distributed memory systems.
 MPI's dominance can be attributed to its well-established and respected standardizing body, but mostly because it's easy to understand and provides a powerful yet simple programming model for domain scientists to scale their problems to the largest machines. 
 
 MPI is a critical piece of HPC infrastructure, since its inception in the early 90s, developers have been adopting it as the distributed memory library of choice.
@@ -35,11 +35,11 @@ Being such a fundamental piece of scientific computing leads to many codes relyi
 It is not uncommon for application performance to be bound by the time spent in MPI, with many applications able to spend over 50\% of their time processing MPI calls \cite{Chunduri2018CharacterizeMPIonProd}.
 Collective communications, an MPI primitive that organizes simultaneous data exchanges among groups of processes, tend to consume large amounts of core hours and can become a bottleneck of many large-scale applications.
 A specific example includes \textit{Deep Learning} (DL), these frameworks heavily rely on MPI\_Allreduce to implement model parallelism, and applications like Horovod frequently issue large message Allreduce on GPU buffers to exchange weight updates \cite{Awan2019CommProfDLonClusters, Jain2019PerfCharDNNTFPT, Alizadeh2022PAPCollDL}.
-Therefore, it is paramount that MPI latency to be as minimal as possible because time spent in MPI is time wasted not calculating science, and often the pace of computational sciences is bound by the speed of MPI.
+Therefore, it is paramount that MPI latency is as minimal as possible because time spent in MPI is time wasted not calculating science, and often the pace of computational sciences is bound by the speed of MPI.
 
 The rest of this chapter will establish the fundamentals of HPC from the bottom up.
-It starts with a deep dive into the node architecture, discussing the trend of heterogeneous compute, then scaling up to the system level to evaluate the technologies interconnecting all the compute islands.
-Then the software environment is established, since this thesis is focused on communication libraries, we start with 'transport-layer' libraries which are used to build MPI implementations, then we discuss MPI itself, why it's prevalent, and it's important features, then we provide an example of an application that makes heavy use of MPI, driving the motivation to research certain aspects of MPI itself.
+It starts with a deep dive into the node architecture, discussing the trend of heterogeneous clusters, then scaling up to the system level to evaluate the technologies interconnecting all the compute islands.
+Next, the software environment is established, since this thesis is focused on communication libraries, we start with 'transport-layer' libraries which are used to build MPI implementations, then we discuss MPI itself, why it's prevalent, and its important features. % then we provide an example of an application that makes heavy use of MPI, driving the motivation to research certain aspects of MPI itself.
 
 \section{GPU Cluster Architecture}
 Modern HPC is performed on GPU clusters, which are, in essence, a bunch of nodes (rack-mounted servers) tied to a system area network.
@@ -53,14 +53,14 @@ Within a compute node, both CPUs and GPUs can perform compute, and there are a s
 And at a larger scale, each node can be considered a compute island while the network shuffles data between nodes.
 Each resource has its quirks, and applications need to be properly structured to make full use of system resources, and at the same time, it is the library designer's job to provide tools that efficiently expose the granularity of compute developers need without overwhelming them with hardware details.
 
-When designing a cluster there is a possibility to introduce an additional category of components focused on file I/O.
+There is an additional category of components focused on accelerating file I/O.
 These components can include node-local SSD or Intel's Optane persistent memory, and they are used to expose a higher-performance file system with better bandwidth and latency than traditional network-attached storage.
 While these tools are important, and many applications are file I/O bound, these tools are out of the scope of this thesis. 
 
 \subsection{Compute Node Architecture}
 The compute nodes are where the calculations happen.
 The design goal of a compute node is to be able to perform as many FLOPS as possible while minimizing power consumption and area.
-At a high level, they can be thought of as a rack in a server tying together memory, CPUs, GPUs, the network, and maybe a bit of local storage, but there is nuance to node design, and tradeoffs for selecting different components. 
+At a high level, a node can be thought of as a rack in a server tying together memory, CPUs, GPUs, network cards, and maybe a bit of local storage, but there is nuance to node design and tradeoffs that determine component selection. 
 
 \subsubsection{CPU Compute Nodes}
 Traditionally, compute nodes would be entirely CPU based, powered by multiple sockets of SMP cores.
@@ -69,41 +69,162 @@ Thanks to the operating system technology, multiple CPU sockets are combined and
 
 Now, this model is known as a \textit{Symmetric Multiprocessor} (SMP), where processes share a common memory bus, and any thread can access any other process' memory, but in reality, these systems are not exactly symmetric. 
 Since each socket has its own memory controllers, each socket has its own NUMA domain, and there is a performance penalty accrued when cores access memory in other process's memory domains.
-There are also complex cache hierarchies, and if two cores are frequently modifying the same memory location, the contention caused by frequent cache flushed will tank performance, this is also known as cache thrashing.
+There are also complex cache hierarchies, and if two cores are frequently modifying the same memory location, the contention caused by frequent cache flushes will tank performance, this is also known as cache thrashing.
 So when writing parallelized code, application developers must consider where data resided in memory and how CPU cores access that data.
  
-The number of cores in CPU-based SMP architectures have been growing slowly over the past decade, with high-end systems topping out around 128 cores (256 if you consider hyperthreading).
+The number of cores in CPU-based SMP architectures has been growing slowly over the past decade, with high-end systems topping out around 128 cores (256 if you consider hyperthreading).
 The trouble with CPU cores is that they're complicated, the x86 instruction set has been around since the 80s and has been expanded multiple times, there are \textit{single instruction multiple data} (SIMD) for vectorization, security extensions for the paranoid, and even compatibility modes for older 32-bit programs. 
-All this baggage leads x86 cores to be large and not very space efficient. 
+There are alternate RISC ISA that cut down on instruction complexity, with the most mature being ARM, but these cores are still heavily optimized for single-thread compute.
+Compared to other core architectures, CPU cores tend to be large and not very space efficient. 
 
 \subsubsection{GPU Compute Nodes}
-GPUs subvert this problem by greatly simplifying the core design and providing thousands of cores per chip. 
+GPUs subvert the core-complexity problem of CPUs by greatly simplifying the core design and providing thousands of cores per chip. 
 These accelerators provide massively parallel banks of floating point compute, and they can spit out so many FLOPS they require specially manufactured high bandwidth memory (HBM) to feed the beast.
-In terms of FLOPS/mm$^2$, GPUs win out by orders of magnitude, which is one of the largest driving reasons why GPU adoption for compute-intensive applications has exploded over the past decade.
+In terms of FLOPS/mm$^2$ and FLOPS/Watt, GPUs win out by orders of magnitude, which is one of the largest driving reasons why GPU adoption for compute-intensive applications has exploded over the past decade.
 You can also associate multiple GPUs to a single CPU, so the trend has been to pack as many GPUs into a node as possible.
 When GPUs first took first place on the Top500 with Titan at ORNL, there was a single GPU per node, but a decade later, Frontier has scaled up to eight GPUs per node (technically, there are four MI250x cards per node, but each card has two GPU dies tied together with some advanced packaging solution, and it's presented to the application as eight GPUs).
 
 But, these external accelerators also add considerable amounts of complexity to system design, and that complexity is felt most acutely at the software level.  
-Because GPUs are fundamentally different from CPUs they require special programming models, programmers specify parallel computations in a GPU kernel, and at run-time, kernels are launched in parallel across a user-specified number of threads.
-To save die space, GPUs discard bloat like branch predictors, so control flow inside compute kernels can destroy performance if not accounted for properly.
-Since thousands of threads can be running at the same time, even more attention has to be paid to memory access patterns, as there is even more potential to tank performance (see memory coalescing \cite{CUDAMemCoalescing}).
-There's also the fact that GPUs have their own HBM that has to be explicitly managed, GPU kernels can only access data that's in the card they're running on, so device data management is another challenge developers need to account for. 
-But when everything comes to gether, when memory accesses are coalesced, when there is no warp divergence, when CPU-GPU memory transfers are pipelined and overlaped with compute, and all required blood/sweat sacrifices have been performed, holy cow are GPUs efficient.
+Because GPUs are fundamentally different from CPUs, they require special programming models.
+Programmers specify GPU bound parallel computations in a GPU kernel, and at run-time, kernels are launched in parallel across a user-specified number of threads.
+To save die space, GPU cores discard bloat like branch predictors, so control flow inside compute kernels can destroy performance if not accounted for properly.
+Since thousands of threads can run simultaneously, even more attention has to be paid to memory access patterns, as there is even more potential  for sloppy code to tank performance (see memory coalescing \cite{CUDAMemCoalescing}).
+There's also the fact that GPUs have their own HBM that can't be accessed by load/store CPU instructions, and GPU kernels can only access data resident to the card they're running on, so device data management is another challenge developers need to account for. 
+But when everything comes together, when memory accesses are coalesced, when there is no warp divergence, when CPU-GPU memory transfers are overlapped with compute, and all required sweat/blood sacrifices have been performed, holy cow are GPUs fast.
 
-\subsubsection{Interconnects NVLink/PCIe/UPI}
-Within a node, there are multiple places data could be held in, spanning NUMA domains and GPUs memory. 
-Data movement is a com
+\subsubsection{Interconnects}
+Within a node, data can reside in host memory or device memory, host memory can be further subdivided into NUMA domains, and there are often multiple GPUs with their own memory domains.
+So data is constantly being shuffled between different types of memory, and to accommodate this, the hardware interconnecting different memory regions needs to be as fast as possible.
+Several technologies have been designed to support these operations, with broad categories including cross-socket CPU-CPU interconnects, host-to-device interconnects, and  GPU-GPU  interconnects.
+
+For multi-socket shared memory systems to work properly, there needs to be a hardware mechanism to maintain memory and cache coherency between the CPUs.  
+The technology behind these solutions is often proprietary and vendor-specific, with each CPU vendor having their own implementation.
+For example, Intel's Xeon Scalable processors can be connected through UPI \cite{XeonTechOverview}.
+Xeon CPUs have either two or three UPI links (depending on SKU), which can transfer data at 10.4GT/s and can be combined into different topologies of two, four, or eight CPUs.
+Intersocket link designs are often tightly coupled to the on-chip memory controllers, seeing as their job involves connecting said memory controllers across sockets.
+These interfaces strive to be transparent to applications, so programming for these interfaces is not that explicit and often involves critically thinking about thread/process-to-core bindings and ensuring compute kernels aren't cache thrashing.
+
+To move data in and out of accelerator memory, systems leverage \textit{Peripheral Component Interconnect Express} (PCIe).
+The PCIe standard, maintained by the PCI-SIG consortium, was first released in 2003 and has evolved over the years to meet ever-increasing communication needs \cite{PCIeIntroPaper, PCIeV5Spec}.
+A PCIe connection is based on a scalable number of lanes, which represent the physical wires connecting the endpoints, and can range from a single lane up to 16 lanes, with more lanes providing more bandwidth.
+At the time of writing, the most common implementation is PCIe V4 which provides bidirectional 2GB/s per lane, letting high-performance devices top out at 32GB/s on a 16x connection. 
+PCIe is also a switched architecture, for example, it is possible to design a system where a 16x CPU endpoint coming off the CPU can be passed into a switch and connected to four GPUs with their own 16x endpoints.
+The PCIe standard isn't just for accelerators, it is designed to work for any I/O device and is also used to connect storage devices and network cards to the CPU.
+Many operations traverse PCIe transparently, for example, all network operations traverse PCIe, and all file I/O operations pass a PCIe connection, both local and network attached.
+In most GPU programming models, the host-to-device transfers are explicit through functions like cudaMemcpyAsync, so developers will know when transfers are taking place and can use techniques like compute-communication overlap to hide transfers.
+
+The last category of connections is GPU to GPU interconnects, and there are several technologies here, both proprietary and open.
+Originally, if a system had multiple GPUs, transfers would have to be staged through host memory, but it is possible for GPUs to send data to each other through PCIe peer-to-peer.
+This technology cuts host memory out of the data's path, increasing bandwidth and freeing up CPU resources to handle other tasks.
+But the pace of development for PCIe is relatively slow since consortiums are not fast in publishing new standards. 
+Since PCI-SIG can't keep up with the scaling bandwidth requirement of HPC, GPU manufacturers have started to create their own device-to-device connections.
+For example, Nvidia's GPUs can leverage NVLink.
+NVLink3, the third generation of NVLink announced alongside the A100 GPU, can transmit data at 50Gb/s per lane and has an accompanying NVSwitch for scalability \cite{A100Whitepaper}.
+Each A100 GPU has 12 links, providing system designers with the flexibility to build different topologies, for example, four GPU nodes can have a fully-connected topology with each GPU connected by a 200Gb/s pipe, or an ultra-dense eight GPU node can leverage six NVSwitches in parallel to build a star topology.
+These connections can be orders of magnitude faster than PCIe and are tightly integrated with the GPUs memory controller.
+Programmatically, developers drive NVLlink through cudaIPC, a model similar to mapped memory where a memory handle from one GPU is passed to another GPU through main memory, then compute kernels can access the remote memory region as if it is local memory.
+
+\subsection{The Network}
+The last and most critical piece of a cluster is the network.  
+A single node will have some inherent scalability limit often bottlenecked by compute (number of CPU cores or GPUs) or memory (the number of memory channels the CPU can support or the available GPU memory).
+HPC Clusters break this limit by tying multiple nodes together through a high-bandwidth and low-latency network so that programmers can scale their application across the resources of multiple nodes.
+But once again, adding this extra layer for scalability adds a bunch more complexity that needs to be accounted for.
+
+\input{3_Chapters/2_Chapter_Background/Figs/FatTreeImg}
+
+The network topology describes how the nodes are connected, it is often modelled as a graph where vertices are either nodes or switches, and edges represent the network links connecting resources.
+In the past, large systems would deploy switchless fabrics, with popular topologies including mesh and torus networks.
+Some production clusters still use switchless networks as they map well to the communication patterns of certain HPC applications, but modern commodity hardware has converged on switched topologies, as they are easier to deploy, scale, and manage. 
+There are many switched topologies used in practice and proposed in the literature, popular ones include Clos and dragonfly, but the most common switched topology deployed in HPC clusters is fat-tree.
+A sample fat tree topology with 16 nodes and two levels is demonstrated in Figure \ref{fig:fat-tree-topology}, similar to a tree data structure, there is a spine switch (the root of the tree) connected to leaf switches (children of the root) which connect to the nodes (leaves of the tree).
+Fat-tree get their name because links at the top of the tree will have more bandwidth than links at the bottom, this is because all nodes can potentially send data across the root at the same time.
+To save costs, fat trees can be designed with a blocking factor which describes the ratio of available bandwidth at the root compared to the number of children attached to a leaf node, so a non-blocking fat-tree can afford to have all nodes send data across the root at the same time, while a tree with a 5:1 blocking ratio will grind down to 1/5 of the potential bandwidth if all processes go through the spine at the same time.
+
+In HPC communities, the most widely adopted type of network is InfiniBand. 
+Similar to PCIe, InfiniBand is a networking standard published by the \textit{InfiniBand Trade Association} (IBTA).
+The first InfiniBand spec was published in 2001 with hardware that could support speeds around two Gb/s, but over time the standard and technology have evolved, and now modern InfiniBand networks can transfer data at 400 Gb/s.
+The other key characteristic of an HPC network is tremendously low latency, network designers have poured countless hours into removing any possible overhead from the communication code path, some of these key technologies include kernel bypass, hardware tag matching, and network offload.
+The InfiniBand specification outlines both the physical characteristics of the network hardware, as well as the InfiniBand verbs programming interface \cite{IBSpec}.
+InfiniBand is not the only programming interface, though, and many players have moved in and out of the HPC networking market.
+Cornelis Networks develops OmniPath, and Cray has their own line of SlingShot networks, all of which share similar performance and foundational ideas in their design but differ enough to fall across a diverse price/performance spectrum.
 
 
-\subsection{The fabric (IB/Fat-Tree)}
-    
 \section{Communication libraries} 
-\cite{mpi40, gabriel2004OpenMPI, MPICH, shamis2015ucx}
-    \subsection{UCX/Libfabric}
-    \subsection{MPI p2p}
-    \subsection{MPI-One-sided}
-    \subsection{Collective communications (+hierarchical)}
-\section{Data-Parallel Deeplearning, (Mini-batch SGD), distributed-deep learning, HOROVOD}
-\cite{Ben-Nun2019DemystifyDL, Sergeev2018Horovod}
+
+There are limits to how applications can interact with the network.
+Modern networks have message latencies on the order of microseconds, but with L1 cache latency being on the order of nanoseconds, network accesses are excruciatingly slow.
+With drastic performance limits that need to be designed around and a diverse set of network hardware to choose from, a set of programming models are needed to expose network resources. 
+There are vast differences in vendor technology as well, different networks have different software layers built on top of them, and portability between networks is an important requirement for many applications. 
+So over time, a series of APIs have formed, each targeting different types of users, exposing more/less granularity of the hardware and different types of convenience functions designed to help write code for each layer.
+The lowest layer would be device-specific libraries, these are vendor-specific data structures and functions designed to interact directly with hardware on the network card.
+Above the device layer would be the transport layer, these are APIs that are designed to lightly wrap around different communication endpoints, they are still not that user-friendly, but they provide more portability and can more easily manage different sets of resources.
+The transport layer is used to build programming models, the best example of which is MPI, this is the layer application developers are expected to interact with, it provides the most flexibility and portability for scientific codes.
+
+% \cite{mpi40, gabriel2004OpenMPI, MPICH, shamis2015ucx}
+\subsection{Device APIs and the Transport Layer}
+
+The lowest possible layer of network software is the device-specific interface, and each vendor has their own; for example, InfiniBand has verbs, Slingshot has GNI, and OmniPath has PSM2 \cite{IBSpec,Slingshot,PSM2}.
+These APIs are often tightly coupled to device drivers and directly manage memory and registers directly on the network card.
+There are often two types of data transfer models, two-sided communication and one-sided communication.
+The two-sided model can be thought of as as point-to-point messages, applications post send messages indicating which buffers to move to across the network, and the remote peer posts a receive buffer indicating where to place the data.
+This model heavily corresponds to MPI send/recv, and network cards often have hardware built in specifically to handle parts of this API.  
+The one-sided model, often referred to as Remote Direct Memory Access (RDMA), cuts out the involvement of the remote process, the remote peer registers a memory region, and the communicating processes can put/get data in that region without remote CPU involvement.
+These one-sided functions loosely map to MPI's \textit{Remote Memory Access} API, as well as other one-sided programming models like UPC and SHMEM.
+
+Device APIs are the most performant layer, as they are as close as possible to the hardware, but they are often difficult to use and not portable at all.
+This is where the transport layer comes in, with the two most well-known interfaces being libfabric and \textit{Unified Communication X} (UCX).
+Transport layer libraries provide a programming model that can be easily mapped to multiple types of hardware but still be abstract and portable enough so that vendors can add/remove features specific to their hardware.
+When instantiating a libfabric endpoint, users explicitly chose the type of network they want to establish, options can include specific vendors, TCP sockets, shared memory, and many more.
+So libfabric provides an abstraction of the network resources, some registration routines, and a work queue based communication model for one-sided and two-sided communications \cite{libfabric}.
+In the work queue model, processes post communication requests on a work queue and poll a corresponding completion queue for communication completion, the benefit of this model is that it maps very closely to how the hardware works.
+One catch with libfabric is that higher-level programming models still have to manage multiple types of resources to ensure that the proper hardware is used for the appropriate transactions. 
+However, UCX avoids this problem by handling transport selection.
+UCX provides similar abstractions for network resources, memory registration and one/two-sided communication, but the communication model is based on callbacks to notify completion \cite{shamis2015ucx}.
+This callback-based model provides more flexibility to user implementation at the cost of increased overhead.
+Both libraries have support (or at least specify support) for accelerators, it is possible to pass device buffers in to communication operations, and expose device memory for RDMA.
+
+These interfaces are a lot friendlier and provide nicer and more portable endpoints than vendor APIs, but they still have a lot of rough edges, and the target audience is systems developers, not domain scientists.
+Transport layer libraries often expect users to perform a lot of memory and device management, which can place a lot of unnecessary burdens on application developers.
+That's why there is one more layer above the transport layer, the programming model layer, which is intended to be used by a more science-focused audience.
+
+\subsection{MPI}
+At the highest level, application developers are expected to use a programming model to build thier scientific apps. 
+While there are multiple types of distributed memory programming models, MPI is by far the most prevalent and widely used.
+As the formost HPC network programming model, the MPI-forum, the acedemic/insdustry body that is responsible for standardizing MPI, is often the bridge between the application comunity and the networking community.
+At it's core, MPI is a communication runtime for multi-process parallel programming, and while it provides a diverse set of tools for developers, the most important features are the communication routines.
+The first MPI specification was release in 1994 and it stated as a two-sided programming model with support for collective communications, and has evolved over time with MPI-2, published in 1997, adding support for a one-sided programming model, and the latest spec MPI-4 specifyign many other features like neighborhood collectives, partitioned communication, virtual topologies, datatype management, distributed I/O and more.
+In order to comprehend why MPI is so powerful, it is necicary to understand MPI's message passing model, this interface specifies how two processes exchange data, but can be extended to a collective model where multiple processes exchange data in a pre-determined mannor. 
+Furthur, the one-sided model is also important, as it provides a set of tools for managing communication withough peer invovlement.
+
+\subsubsection{Two-Sided Communications}
+MPI is a programming model for multi-process distributed memory programming, so at programm launch each process is needs to be generated by a call to \texttt{fork()}, and connection information (hostname and PID) needs to be distributed amonsgst all processes. 
+Process creation step is handel by the prorgamm \texttt{mpiexec}, users specify how many processes and the location of their executable and \texttt{mpiexec} launches all the process in the appropriate locations.
+The first MPI routine that is can be called is \texttt{MPI\_Init()}, this is responsible for instanciating the MPI library, and activities like network card initialization and wireup are done here.  
+One of the data struture \texttt{MPI\_Init()} sets up is the global communicator \texttt{MPI\_COMM\_WORLD}, communicators are a structure encapuslating a set of processes that can exchage data with each other, and \texttt{MPI\_COMM\_WORLD} contains every processes launced by \texttt{mpiexec}.
+Each processes in a communcator is assigned a rank, a unique identifier ranging from zero to the size of the communicator minus 1, and these ranks are used to identify an individual process within a communicator.
+\texttt{MPI\_Init()} instanciates the global communcator, but application can create new communicators, this can be used to carve out smaller groups of processes, or renumber processes to map to a topological structure.
+
+The two-sided model is built aroudn sending and recieving messages accros a communicator.
+Messages are specified as a vector of MPI datatypes, which can vary from simple array of integers, to complex structues of derrived datatypes that require special handeling to pack into buffers. 
+\texttt{MPI\_Send()} specifies a data buffer to send to a remote process, and the rempote process must post a coresponding \texttt{MPI\_Recv()} pointing to a local buffer where the data will be placed. 
+The send operation identifies the destination through a tuple containing a rank, tag, and comminicator, the coresponding recieve must match match these fields, or contain wildcard values for \texttt{MPI\_ANY\_SOURCE} or \texttt{MPI\_ANY\_TAG}.
+
+\subsubsection{Collective Communication}
+
+\input{3_Chapters/2_Chapter_Background/Figs/mpispec_collective}
+
+MPI's point-to-point messages specify data transfers between two processes, but often when writing MPI codes, there are several common patterns that arrise wich require data exchanges amonst multiple processes at the same time.
+These patterns are known as collective communications, and they are common enough that the MPI-forum has standardized several of them.
+A few example collectives are outlined in figure \ref{fig:mpispec_collectives}, collectives take a data buffer and tranfer the data buffer accross all ranks in a specified communicator.
+Collectives can be generalized into two groups, all-to-one and all-to-all collectives
+
+
+
+\subsubsection{One-sided Communication}
+The term two-sided exsists because both processes have to actively be invovled in communication, the model is known for being easy to understand and learn quickly but is limited by the tightly coupled nature of the communciation model.
+Certain application do not map well to the two-side model, there are problems where the sending process won't nececarily know where data will need to go until runtime, that's why MPI's one-sided model was adopted by the standard. 
+% \section{Data-Parallel Deeplearning, (Mini-batch SGD), distributed-deep learning, HOROVOD}
+% \cite{Ben-Nun2019DemystifyDL, Sergeev2018Horovod}
 \section{Topology Awareness}
 \section{PAP awareness}
+
