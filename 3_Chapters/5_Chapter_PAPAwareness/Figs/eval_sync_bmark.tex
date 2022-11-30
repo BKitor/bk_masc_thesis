@@ -1,8 +1,7 @@
 \begin{figure}
     \centering
     \begin{tikzpicture}
-        \begin{semilogxaxis}[
-        % \begin{loglogaxis}[
+        \begin{loglogaxis}[
             title={Syncronization Method Comparison},
             xlabel={Number of Processes},
             ylabel={Sync time ($\mu s$)},
@@ -13,11 +12,10 @@
             xtick={32, 64, 128, 256, 512, 1024},
             % nodes near coords,
         ]
-        \addplot table[x=ranks, y=mpirma] {3_Chapters/5_Chapter_PAPAwareness/Figs/bk_eval_ss_32n.dat};
-        \addplot table[x=ranks, y=ucp] {3_Chapters/5_Chapter_PAPAwareness/Figs/bk_eval_ss_32n.dat};
-        \end{semilogxaxis}
-        % \end{loglogaxis}
+        \addplot table[x=ranks, y=mpirma] {3_Chapters/5_Chapter_PAPAwareness/Figs/data/bk_eval_ss_32n.dat};
+        \addplot table[x=ranks, y=ucp] {3_Chapters/5_Chapter_PAPAwareness/Figs/data/bk_eval_ss_32n.dat};
+        \end{loglogaxis}
     \end{tikzpicture}
-    \caption{Comparison of rma syncronization methods with 32 nodes on Narval.}
+    \caption{Comparison of rma syncronization methods with 32 nodes on Narval, the number of processes per node are scaled form 1 to 1024 processes total.}
     \label{fig:sync_bmark_32n}
 \end{figure}

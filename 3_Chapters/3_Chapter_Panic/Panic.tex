@@ -1,33 +1,20 @@
 % Chapter 3 - Methodology
-% With Sample Figures From Kevin Hughes
 
 \glsresetall % reset the glossary to expand acronyms again
 \chapter[Panic]{Panic}\label{ch:Panic}
 \index{Panic}
 
-% Methodology
-\section{Some type of literature review? Or something about existing collective algorithms?}
+\section{Deep Learning}
+\subsection{Data-Parallel}
+\subsubsection{Lit-Review}
 
 \begin{itemize}
-	\item{Characterization of existing collectives}
-	\item{AlltoOne, OneToAll, AllToAll}
-    \begin{itemize}
-        \item{Allreduce - ring, RSA, Recursive Doubling}
-        \item{Bcast/Reduce - Chain, binomial/knomial tree, binary tree}
-    \end{itemize}
-    \item{Modeling similar to \cite{Thakur2005OptMPICH}}
-    \item{Some benchmarking on target systems (Mist,Beluga,Narval)}
-    \item{Existing Impls, OMPI, MPICH, UCC, ONECCL, NCCL, RCCL}
+    \item Math foundation of Distributed DL, \cite{Ben-Nun2019DemystifyDL}
+    \item Lit review of DL (Awan's work + more), establish that Allreduce is Key
+    \item Foundation on Allreduce, algorithms \cite{Thakur2005OptMPICH}, hierarchical algs, pipelining, etc... 
+    \item Potentialy some DL profiling (Python based)
 \end{itemize}
 
-\begin{itemize}
-    \item Lit review of DL (Awan's work, Demistifying DL, )
-    \item Research of Lower level comm libs for DL+AI (NCCL, UCC, HOROVOD, DLRM, 
-\end{itemize}
-
-Could do mathematicly why Allreduce is Important
-Light survey of exisitng works
-Supplimented with some profiling (Pyhton profiling interface)
 
 
 \clearpage

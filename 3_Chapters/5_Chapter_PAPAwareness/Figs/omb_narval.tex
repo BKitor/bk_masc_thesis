@@ -1,0 +1,115 @@
+\begin{figure*}
+    \centering
+    \begin{tikzpicture}
+        \begin{groupplot}[group style={
+                        group size=3 by 4,
+                        xlabels at=edge bottom,
+                        ylabels at=edge left,
+                        xticklabels at=edge bottom,
+                        % yticklabels at=edge left,
+                        vertical sep=1cm,
+                    },
+                height=4.7cm,
+                width=5.2cm,
+                xlabel={Message Size (Bytes)},
+                ylabel={Latency ($\mu$s)},
+                xtick={1048579, 16777216, 134217728},
+                xticklabels={1MB, 16MB, 128MB},
+                legend style={at={(-1.1,-0.5)}, anchor=north},
+                legend columns=3,
+                grid=major,
+            ]
+
+            
+            \nextgroupplot[title=4 Nodes MIF 0, xmode=log, log basis x=2, ymode=log, log basis y=10]
+            \addplot table[x=msize, y=mif0.00_bkpap_alg0_bkpap_seg_size4194304_ucc_en0_ucc_tlsall_avg_lat] {3_Chapters/5_Chapter_PAPAwareness/Figs/data/narval_4n.dat};
+            \addplot table[x=msize, y=mif0.00_bkpap_alg0_bkpap_seg_size134217728_ucc_en0_ucc_tlsall_avg_lat] {3_Chapters/5_Chapter_PAPAwareness/Figs/data/narval_4n.dat};
+            \addplot table[x=msize, y=mif0.00_bkpap_alg4_bkpap_seg_size134217728_ucc_en0_ucc_tlsall_avg_lat] {3_Chapters/5_Chapter_PAPAwareness/Figs/data/narval_4n.dat};
+            \addplot table[x=msize, y=mif0.00_bkpap_alg6_bkpap_seg_size134217728_ucc_en1_ucc_tlsucp_avg_lat] {3_Chapters/5_Chapter_PAPAwareness/Figs/data/narval_4n.dat};
+            \addplot table[x=msize, y=mif0.00_bkpap_alg6_bkpap_seg_size134217728_ucc_en1_ucc_tlsall_avg_lat] {3_Chapters/5_Chapter_PAPAwareness/Figs/data/narval_4n.dat};
+            \addplot table[x=msize, y=mif0.00_wsize16_ppn4_avg_lat] {3_Chapters/5_Chapter_PAPAwareness/Figs/data/narval_4n.dat};
+            
+            
+            \nextgroupplot[title=4 Nodes MIF 6, xmode=log, log basis x=2, ymode=log, log basis y=10]
+            \addplot table[x=msize, y=mif6.00_bkpap_alg0_bkpap_seg_size4194304_ucc_en0_ucc_tlsall_avg_lat] {3_Chapters/5_Chapter_PAPAwareness/Figs/data/narval_4n.dat};
+            \addplot table[x=msize, y=mif6.00_bkpap_alg0_bkpap_seg_size134217728_ucc_en0_ucc_tlsall_avg_lat] {3_Chapters/5_Chapter_PAPAwareness/Figs/data/narval_4n.dat};
+            \addplot table[x=msize, y=mif6.00_bkpap_alg4_bkpap_seg_size134217728_ucc_en0_ucc_tlsall_avg_lat] {3_Chapters/5_Chapter_PAPAwareness/Figs/data/narval_4n.dat};
+            \addplot table[x=msize, y=mif6.00_bkpap_alg6_bkpap_seg_size134217728_ucc_en1_ucc_tlsucp_avg_lat] {3_Chapters/5_Chapter_PAPAwareness/Figs/data/narval_4n.dat};
+            \addplot table[x=msize, y=mif6.00_bkpap_alg6_bkpap_seg_size134217728_ucc_en1_ucc_tlsall_avg_lat] {3_Chapters/5_Chapter_PAPAwareness/Figs/data/narval_4n.dat};
+            \addplot table[x=msize, y=mif6.00_wsize16_ppn4_avg_lat] {3_Chapters/5_Chapter_PAPAwareness/Figs/data/narval_4n.dat};
+            
+            \nextgroupplot[title=4 Nodes MIF 20, xmode=log, log basis x=2, ymode=log, log basis y=10]
+            \addplot table[x=msize, y=mif20.00_bkpap_alg0_bkpap_seg_size4194304_ucc_en0_ucc_tlsall_avg_lat] {3_Chapters/5_Chapter_PAPAwareness/Figs/data/narval_4n.dat};
+            \addplot table[x=msize, y=mif20.00_bkpap_alg0_bkpap_seg_size134217728_ucc_en0_ucc_tlsall_avg_lat] {3_Chapters/5_Chapter_PAPAwareness/Figs/data/narval_4n.dat};
+            \addplot table[x=msize, y=mif20.00_bkpap_alg4_bkpap_seg_size134217728_ucc_en0_ucc_tlsall_avg_lat] {3_Chapters/5_Chapter_PAPAwareness/Figs/data/narval_4n.dat};
+            \addplot table[x=msize, y=mif20.00_bkpap_alg6_bkpap_seg_size134217728_ucc_en1_ucc_tlsucp_avg_lat] {3_Chapters/5_Chapter_PAPAwareness/Figs/data/narval_4n.dat};
+            \addplot table[x=msize, y=mif20.00_bkpap_alg6_bkpap_seg_size134217728_ucc_en1_ucc_tlsall_avg_lat] {3_Chapters/5_Chapter_PAPAwareness/Figs/data/narval_4n.dat};
+            \addplot table[x=msize, y=mif20.00_wsize16_ppn4_avg_lat] {3_Chapters/5_Chapter_PAPAwareness/Figs/data/narval_4n.dat};
+            
+            \nextgroupplot[title=8 Nodes MIF 0, xmode=log, log basis x=2, ymode=log, log basis y=10]
+            \addplot table[x=msize, y=bkpap_alg0_bkpap_seg_size4194304_ucc_en0_ucc_tlsall_mif0.00_avg_lat] {3_Chapters/5_Chapter_PAPAwareness/Figs/data/narval_8n.dat};
+            \addplot table[x=msize, y=bkpap_alg0_bkpap_seg_size134217728_ucc_en0_ucc_tlsall_mif0.00_avg_lat] {3_Chapters/5_Chapter_PAPAwareness/Figs/data/narval_8n.dat};
+            \addplot table[x=msize, y=bkpap_alg4_bkpap_seg_size134217728_ucc_en0_ucc_tlsall_mif0.00_avg_lat] {3_Chapters/5_Chapter_PAPAwareness/Figs/data/narval_8n.dat};
+            \addplot table[x=msize, y=bkpap_alg6_bkpap_seg_size134217728_ucc_en1_ucc_tlsucp_mif0.00_avg_lat] {3_Chapters/5_Chapter_PAPAwareness/Figs/data/narval_8n.dat};
+            \addplot table[x=msize, y=bkpap_alg6_bkpap_seg_size134217728_ucc_en1_ucc_tlsall_mif0.00_avg_lat] {3_Chapters/5_Chapter_PAPAwareness/Figs/data/narval_8n.dat};
+            \addplot table[x=msize, y=mif0.00_wsize32_ppn4_avg_lat] {3_Chapters/5_Chapter_PAPAwareness/Figs/data/narval_8n.dat};
+            
+            \nextgroupplot[title=8 Nodes MIF 6, xmode=log, log basis x=2, ymode=log, log basis y=10]
+            \addplot table[x=msize, y=bkpap_alg0_bkpap_seg_size4194304_ucc_en0_ucc_tlsall_mif6.00_avg_lat] {3_Chapters/5_Chapter_PAPAwareness/Figs/data/narval_8n.dat};
+            \addplot table[x=msize, y=bkpap_alg0_bkpap_seg_size134217728_ucc_en0_ucc_tlsall_mif6.00_avg_lat] {3_Chapters/5_Chapter_PAPAwareness/Figs/data/narval_8n.dat};
+            \addplot table[x=msize, y=bkpap_alg4_bkpap_seg_size134217728_ucc_en0_ucc_tlsall_mif6.00_avg_lat] {3_Chapters/5_Chapter_PAPAwareness/Figs/data/narval_8n.dat};
+            \addplot table[x=msize, y=bkpap_alg6_bkpap_seg_size134217728_ucc_en1_ucc_tlsucp_mif6.00_avg_lat] {3_Chapters/5_Chapter_PAPAwareness/Figs/data/narval_8n.dat};
+            \addplot table[x=msize, y=bkpap_alg6_bkpap_seg_size134217728_ucc_en1_ucc_tlsall_mif6.00_avg_lat] {3_Chapters/5_Chapter_PAPAwareness/Figs/data/narval_8n.dat};
+            \addplot table[x=msize, y=mif6.00_wsize32_ppn4_avg_lat] {3_Chapters/5_Chapter_PAPAwareness/Figs/data/narval_8n.dat};
+            
+            \nextgroupplot[title=8 Nodes MIF 20, xmode=log, log basis x=2, ymode=log, log basis y=10]
+            \addplot table[x=msize, y=bkpap_alg0_bkpap_seg_size4194304_ucc_en0_ucc_tlsall_mif20.00_avg_lat] {3_Chapters/5_Chapter_PAPAwareness/Figs/data/narval_8n.dat};
+            \addplot table[x=msize, y=bkpap_alg0_bkpap_seg_size134217728_ucc_en0_ucc_tlsall_mif20.00_avg_lat] {3_Chapters/5_Chapter_PAPAwareness/Figs/data/narval_8n.dat};
+            \addplot table[x=msize, y=bkpap_alg4_bkpap_seg_size134217728_ucc_en0_ucc_tlsall_mif20.00_avg_lat] {3_Chapters/5_Chapter_PAPAwareness/Figs/data/narval_8n.dat};
+            \addplot table[x=msize, y=bkpap_alg6_bkpap_seg_size134217728_ucc_en1_ucc_tlsucp_mif20.00_avg_lat] {3_Chapters/5_Chapter_PAPAwareness/Figs/data/narval_8n.dat};
+            \addplot table[x=msize, y=bkpap_alg6_bkpap_seg_size134217728_ucc_en1_ucc_tlsall_mif20.00_avg_lat] {3_Chapters/5_Chapter_PAPAwareness/Figs/data/narval_8n.dat};
+            \addplot table[x=msize, y=mif20.00_wsize32_ppn4_avg_lat] {3_Chapters/5_Chapter_PAPAwareness/Figs/data/narval_8n.dat};
+            
+            \nextgroupplot[title=16 Nodes MIF 0, xmode=log, log basis x=2, ymode=log, log basis y=10]
+            \addplot table[x=msize, y=mif0.00_bkpap_alg0_bkpap_seg_size4194304_ucc_en0_ucc_tlsall_avg_lat] {3_Chapters/5_Chapter_PAPAwareness/Figs/data/narval_16n.dat};
+            \addplot table[x=msize, y=mif0.00_bkpap_alg0_bkpap_seg_size134217728_ucc_en0_ucc_tlsall_avg_lat] {3_Chapters/5_Chapter_PAPAwareness/Figs/data/narval_16n.dat};
+            \addplot table[x=msize, y=mif0.00_bkpap_alg4_bkpap_seg_size134217728_ucc_en0_ucc_tlsall_avg_lat] {3_Chapters/5_Chapter_PAPAwareness/Figs/data/narval_16n.dat};
+            \addplot table[x=msize, y=mif0.00_bkpap_alg6_bkpap_seg_size134217728_ucc_en1_ucc_tlsucp_avg_lat] {3_Chapters/5_Chapter_PAPAwareness/Figs/data/narval_16n.dat};
+            \addplot table[x=msize, y=mif0.00_bkpap_alg6_bkpap_seg_size134217728_ucc_en1_ucc_tlsall_avg_lat] {3_Chapters/5_Chapter_PAPAwareness/Figs/data/narval_16n.dat};
+            \addplot table[x=msize, y=wsize64_mif0.00_ppn4_avg_lat] {3_Chapters/5_Chapter_PAPAwareness/Figs/data/narval_16n.dat};
+            
+            \nextgroupplot[title=16 Nodes MIF 6, xmode=log, log basis x=2, ymode=log, log basis y=10]
+            \addplot table[x=msize, y=mif6.00_bkpap_alg0_bkpap_seg_size4194304_ucc_en0_ucc_tlsall_avg_lat] {3_Chapters/5_Chapter_PAPAwareness/Figs/data/narval_16n.dat};
+            \addplot table[x=msize, y=mif6.00_bkpap_alg0_bkpap_seg_size134217728_ucc_en0_ucc_tlsall_avg_lat] {3_Chapters/5_Chapter_PAPAwareness/Figs/data/narval_16n.dat};
+            \addplot table[x=msize, y=mif6.00_bkpap_alg4_bkpap_seg_size134217728_ucc_en0_ucc_tlsall_avg_lat] {3_Chapters/5_Chapter_PAPAwareness/Figs/data/narval_16n.dat};
+            \addplot table[x=msize, y=mif6.00_bkpap_alg6_bkpap_seg_size134217728_ucc_en1_ucc_tlsucp_avg_lat] {3_Chapters/5_Chapter_PAPAwareness/Figs/data/narval_16n.dat};
+            \addplot table[x=msize, y=mif6.00_bkpap_alg6_bkpap_seg_size134217728_ucc_en1_ucc_tlsall_avg_lat] {3_Chapters/5_Chapter_PAPAwareness/Figs/data/narval_16n.dat};
+            \addplot table[x=msize, y=wsize64_mif6.00_ppn4_avg_lat] {3_Chapters/5_Chapter_PAPAwareness/Figs/data/narval_16n.dat};
+            
+            \nextgroupplot[title=16 Nodes MIF 20, xmode=log, log basis x=2, ymode=log, log basis y=10]
+            \addplot table[x=msize, y=mif20.00_bkpap_alg0_bkpap_seg_size4194304_ucc_en0_ucc_tlsall_avg_lat] {3_Chapters/5_Chapter_PAPAwareness/Figs/data/narval_16n.dat};
+            \addplot table[x=msize, y=mif20.00_bkpap_alg0_bkpap_seg_size134217728_ucc_en0_ucc_tlsall_avg_lat] {3_Chapters/5_Chapter_PAPAwareness/Figs/data/narval_16n.dat};
+            \addplot table[x=msize, y=mif20.00_bkpap_alg4_bkpap_seg_size134217728_ucc_en0_ucc_tlsall_avg_lat] {3_Chapters/5_Chapter_PAPAwareness/Figs/data/narval_16n.dat};
+            \addplot table[x=msize, y=mif20.00_bkpap_alg6_bkpap_seg_size134217728_ucc_en1_ucc_tlsucp_avg_lat] {3_Chapters/5_Chapter_PAPAwareness/Figs/data/narval_16n.dat};
+            \addplot table[x=msize, y=mif20.00_bkpap_alg6_bkpap_seg_size134217728_ucc_en1_ucc_tlsall_avg_lat] {3_Chapters/5_Chapter_PAPAwareness/Figs/data/narval_16n.dat};
+            \addplot table[x=msize, y=wsize64_mif20.00_ppn4_avg_lat] {3_Chapters/5_Chapter_PAPAwareness/Figs/data/narval_16n.dat};
+            
+            \nextgroupplot[title=32 Nodes MIF 0, xmode=log, log basis x=2, ymode=log, log basis y=10]
+            
+            \nextgroupplot[title=32 Nodes MIF 6, xmode=log, log basis x=2, ymode=log, log basis y=10]
+            
+            \nextgroupplot[title=32 Nodes MIF 20, xmode=log, log basis x=2, ymode=log, log basis y=10]
+            
+            
+            \addlegendentry{PAP-Aware Pipelined}
+            \addlegendentry{PAP-Aware No Pipeline}
+            \addlegendentry{OMPI RSA + GPU reduce}
+            \addlegendentry{OMPI + UCC/UCP}
+            \addlegendentry{OMPI + UCC/NCCL}
+            \addlegendentry{Default OMPI}
+            
+        \end{groupplot}
+    \end{tikzpicture}
+    \caption{PAP-Awareness algorithm evaluated accross}
+    \label{fig:narval_omb_pap}
+\end{figure*}

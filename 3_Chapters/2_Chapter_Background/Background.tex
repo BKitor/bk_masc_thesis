@@ -51,7 +51,7 @@ While designers have flexibility in their deployments, several concepts and tech
 The components in a cluster can be grouped into two categories, they either perform compute, or they are moving data between compute endpoints.
 Within a compute node, both CPUs and GPUs can perform compute, and there are a series of interconnects like PCIe and NVLink that shuffle data between compute resources.
 And at a larger scale, each node can be considered a compute island while the network shuffles data between nodes.
-Each resource has its quirks, and applications need to be properly structured to make full use of system resources, and at the same time, it is the library designer's job to provide tools that efficiently expose the granularity of compute developers need without overwhelming them with hardware details.
+Each resource has its quirks, and applications need to be properly structured to make full use of system resources, and at the same time, it is the library designer's job to provide tools that efficiently expose the granularity of control that developers need without overwhelming them with hardware details.
 
 There is an additional category of components focused on accelerating file I/O.
 These components can include node-local SSD or Intel's Optane persistent memory, and they are used to expose a higher-performance file system with better bandwidth and latency than traditional network-attached storage.
@@ -86,7 +86,7 @@ When GPUs first took first place on the Top500 with Titan at ORNL, there was a s
 
 But, these external accelerators also add considerable amounts of complexity to system design, and that complexity is felt most acutely at the software level.  
 Because GPUs are fundamentally different from CPUs, they require special programming models.
-Programmers specify GPU bound parallel computations in a GPU kernel, and at run-time, kernels are launched in parallel across a user-specified number of threads.
+Programmers specify GPU-bound parallel computations in a GPU kernel, and at run-time, kernels are launched in parallel across a user-specified number of threads.
 To save die space, GPU cores discard bloat like branch predictors, so control flow inside compute kernels can destroy performance if not accounted for properly.
 Since thousands of threads can run simultaneously, even more attention has to be paid to memory access patterns, as there is even more potential  for sloppy code to tank performance (see memory coalescing \cite{CUDAMemCoalescing}).
 There's also the fact that GPUs have their own HBM that can't be accessed by load/store CPU instructions, and GPU kernels can only access data resident to the card they're running on, so device data management is another challenge developers need to account for. 
@@ -148,83 +148,153 @@ The InfiniBand specification outlines both the physical characteristics of the n
 InfiniBand is not the only programming interface, though, and many players have moved in and out of the HPC networking market.
 Cornelis Networks develops OmniPath, and Cray has their own line of SlingShot networks, all of which share similar performance and foundational ideas in their design but differ enough to fall across a diverse price/performance spectrum.
 
-
 \section{Communication libraries} 
 
 There are limits to how applications can interact with the network.
-Modern networks have message latencies on the order of microseconds, but with L1 cache latency being on the order of nanoseconds, network accesses are excruciatingly slow.
-With drastic performance limits that need to be designed around and a diverse set of network hardware to choose from, a set of programming models are needed to expose network resources. 
+Modern networks have message latencies on the order of microseconds, but with L1 cache latency being on the order of nanoseconds, network transfers are excruciatingly slow.
+With drastic performance limits that need to be designed around and a diverse set of network hardware to choose from, a unique set of programming tools are needed to expose network resources. 
 There are vast differences in vendor technology as well, different networks have different software layers built on top of them, and portability between networks is an important requirement for many applications. 
 So over time, a series of APIs have formed, each targeting different types of users, exposing more/less granularity of the hardware and different types of convenience functions designed to help write code for each layer.
 The lowest layer would be device-specific libraries, these are vendor-specific data structures and functions designed to interact directly with hardware on the network card.
 Above the device layer would be the transport layer, these are APIs that are designed to lightly wrap around different communication endpoints, they are still not that user-friendly, but they provide more portability and can more easily manage different sets of resources.
 The transport layer is used to build programming models, the best example of which is MPI, this is the layer application developers are expected to interact with, it provides the most flexibility and portability for scientific codes.
 
-% \cite{mpi40, gabriel2004OpenMPI, MPICH, shamis2015ucx}
 \subsection{Device APIs and the Transport Layer}
 
-The lowest possible layer of network software is the device-specific interface, and each vendor has their own; for example, InfiniBand has verbs, Slingshot has GNI, and OmniPath has PSM2 \cite{IBSpec,Slingshot,PSM2}.
+The lowest possible layer of network software are device-specific interfaces, and each vendor has their own; for example, InfiniBand has verbs, Cray's Aries interconnect has GNI, and Intel/Cornellis Netwoks' OmniPath has PSM2 \cite{IBSpec,LibfabricGNICauseCrayisabut,IntelPSM2ProgGuide}.
 These APIs are often tightly coupled to device drivers and directly manage memory and registers directly on the network card.
 There are often two types of data transfer models, two-sided communication and one-sided communication.
-The two-sided model can be thought of as as point-to-point messages, applications post send messages indicating which buffers to move to across the network, and the remote peer posts a receive buffer indicating where to place the data.
+The two-sided model can be thought of as point-to-point messages, applications post send messages indicating which buffers to move to across the network, and the remote peer posts a receive buffer indicating where to place the data.
 This model heavily corresponds to MPI send/recv, and network cards often have hardware built in specifically to handle parts of this API.  
-The one-sided model, often referred to as Remote Direct Memory Access (RDMA), cuts out the involvement of the remote process, the remote peer registers a memory region, and the communicating processes can put/get data in that region without remote CPU involvement.
+The one-sided model, often referred to as Remote Direct Memory Access (RDMA), cuts out the involvement of the remote process.
+The remote peer registers a memory region, and the communicating processes can put/get data in that region without remote CPU involvement.
+Network cards will also provide atomic memory operations like compare-and-swap and fetch-and-increment, these endpoints perform their function in remote memory without being interrupted by other processes.
 These one-sided functions loosely map to MPI's \textit{Remote Memory Access} API, as well as other one-sided programming models like UPC and SHMEM.
 
 Device APIs are the most performant layer, as they are as close as possible to the hardware, but they are often difficult to use and not portable at all.
 This is where the transport layer comes in, with the two most well-known interfaces being libfabric and \textit{Unified Communication X} (UCX).
 Transport layer libraries provide a programming model that can be easily mapped to multiple types of hardware but still be abstract and portable enough so that vendors can add/remove features specific to their hardware.
-When instantiating a libfabric endpoint, users explicitly chose the type of network they want to establish, options can include specific vendors, TCP sockets, shared memory, and many more.
-So libfabric provides an abstraction of the network resources, some registration routines, and a work queue based communication model for one-sided and two-sided communications \cite{libfabric}.
+When instantiating a libfabric endpoint, users explicitly chose the type of network they want to establish, and options can include specific vendors, TCP sockets, shared memory, and many more.
+So libfabric provides an abstraction of the network resources, some registration routines, and a work queue-based communication model for one-sided and two-sided communications \cite{libfabric}.
 In the work queue model, processes post communication requests on a work queue and poll a corresponding completion queue for communication completion, the benefit of this model is that it maps very closely to how the hardware works.
 One catch with libfabric is that higher-level programming models still have to manage multiple types of resources to ensure that the proper hardware is used for the appropriate transactions. 
 However, UCX avoids this problem by handling transport selection.
 UCX provides similar abstractions for network resources, memory registration and one/two-sided communication, but the communication model is based on callbacks to notify completion \cite{shamis2015ucx}.
 This callback-based model provides more flexibility to user implementation at the cost of increased overhead.
-Both libraries have support (or at least specify support) for accelerators, it is possible to pass device buffers in to communication operations, and expose device memory for RDMA.
+While their completion models differ, both support point-to-point messages (tagged and untagged) and one-sided operations, and both communication models are frequently used by higher-level libraries or have hardware optimizations built into high-performance network cards.
+Both libraries also support (or at least specify support for) accelerators, this means it is possible to pass device buffers into communication operations and expose device memory for RDMA.
 
 These interfaces are a lot friendlier and provide nicer and more portable endpoints than vendor APIs, but they still have a lot of rough edges, and the target audience is systems developers, not domain scientists.
 Transport layer libraries often expect users to perform a lot of memory and device management, which can place a lot of unnecessary burdens on application developers.
 That's why there is one more layer above the transport layer, the programming model layer, which is intended to be used by a more science-focused audience.
 
 \subsection{MPI}
-At the highest level, application developers are expected to use a programming model to build thier scientific apps. 
+At the highest level, application developers are expected to use a programming model to build their scientific apps. 
 While there are multiple types of distributed memory programming models, MPI is by far the most prevalent and widely used.
-As the formost HPC network programming model, the MPI-forum, the acedemic/insdustry body that is responsible for standardizing MPI, is often the bridge between the application comunity and the networking community.
-At it's core, MPI is a communication runtime for multi-process parallel programming, and while it provides a diverse set of tools for developers, the most important features are the communication routines.
-The first MPI specification was release in 1994 and it stated as a two-sided programming model with support for collective communications, and has evolved over time with MPI-2, published in 1997, adding support for a one-sided programming model, and the latest spec MPI-4 specifyign many other features like neighborhood collectives, partitioned communication, virtual topologies, datatype management, distributed I/O and more.
-In order to comprehend why MPI is so powerful, it is necicary to understand MPI's message passing model, this interface specifies how two processes exchange data, but can be extended to a collective model where multiple processes exchange data in a pre-determined mannor. 
-Furthur, the one-sided model is also important, as it provides a set of tools for managing communication withough peer invovlement.
+The MPI-forum, the academic/industry body that is responsible for standardizing MPI, is often the bridge between the application community and the networking community.
+The first MPI specification was released in 1994 and started as a two-sided programming model with support for collective communications, and has evolved over time with MPI-2, published in 1997, adding support for a one-sided programming model, and the latest spec, MPI-4, specifying many more features like neighbourhood collectives, partitioned communication, virtual topologies, datatype management, distributed I/O and more.
+
+MPI is a programming model for multi-process distributed memory programming, so at program launch, each process needs to be created by a call to \texttt{fork()}, and connection information (including but not limited to hostname and PID) needs to be distributed among all processes. 
+Process creation is handled by \texttt{mpiexec}, a program MPI implementations must provide, and users can specify how many processes to launch, how to bind processes to resources and the location of the executable file.
+Inside the user's code, the first MPI routine that can be called is \texttt{MPI\_Init()}, which is responsible for instantiating the MPI library, and performs tasks like network card initialization and wireup.
+One of the data structures \texttt{MPI\_Init()} sets up is the global communicator \texttt{MPI\_COMM\_WORLD}, communicators are a structure encapsulating a set of processes that can exchange data with each other, and \texttt{MPI\_COMM\_WORLD} contains every process launched by \texttt{mpiexec}.
+Each process in a communicator is assigned a rank, a unique identifier ranging from zero to the size of the communicator minus 1, and these ranks are used to identify an individual process within a communicator.
+\texttt{MPI\_Init()} instantiates the global communicator, but applications can create new communicators, this can be used to carve out smaller groups of processes or renumber processes to map to a topological structure.
+
+In order to comprehend why MPI is so powerful, it is necessary to understand MPI's message-passing model, this interface specifies how two processes exchange data.
+Point-to-point messages can be extended to a collective model where multiple processes exchange data in a pre-determined manner, these communication routines are extremely powerful and heavily relied upon. 
+Further, the one-sided model is also important, as it provides a set of tools for managing communication without peer involvement.
 
 \subsubsection{Two-Sided Communications}
-MPI is a programming model for multi-process distributed memory programming, so at programm launch each process is needs to be generated by a call to \texttt{fork()}, and connection information (hostname and PID) needs to be distributed amonsgst all processes. 
-Process creation step is handel by the prorgamm \texttt{mpiexec}, users specify how many processes and the location of their executable and \texttt{mpiexec} launches all the process in the appropriate locations.
-The first MPI routine that is can be called is \texttt{MPI\_Init()}, this is responsible for instanciating the MPI library, and activities like network card initialization and wireup are done here.  
-One of the data struture \texttt{MPI\_Init()} sets up is the global communicator \texttt{MPI\_COMM\_WORLD}, communicators are a structure encapuslating a set of processes that can exchage data with each other, and \texttt{MPI\_COMM\_WORLD} contains every processes launced by \texttt{mpiexec}.
-Each processes in a communcator is assigned a rank, a unique identifier ranging from zero to the size of the communicator minus 1, and these ranks are used to identify an individual process within a communicator.
-\texttt{MPI\_Init()} instanciates the global communcator, but application can create new communicators, this can be used to carve out smaller groups of processes, or renumber processes to map to a topological structure.
 
-The two-sided model is built aroudn sending and recieving messages accros a communicator.
-Messages are specified as a vector of MPI datatypes, which can vary from simple array of integers, to complex structues of derrived datatypes that require special handeling to pack into buffers. 
-\texttt{MPI\_Send()} specifies a data buffer to send to a remote process, and the rempote process must post a coresponding \texttt{MPI\_Recv()} pointing to a local buffer where the data will be placed. 
-The send operation identifies the destination through a tuple containing a rank, tag, and comminicator, the coresponding recieve must match match these fields, or contain wildcard values for \texttt{MPI\_ANY\_SOURCE} or \texttt{MPI\_ANY\_TAG}.
+The two-sided model is built around sending and receiving messages across a communicator.
+Messages are specified as a vector of MPI datatypes, which can vary from a simple array of integers to complex structures of derived datatypes that require special handling to pack into buffers. 
+\texttt{MPI\_Send()} specifies a segment of data to send to a remote process, and the remote process must post a corresponding \texttt{MPI\_Recv()} indicating where the data will be placed. 
+The send operation identifies the destination through a tuple containing a rank, tag, and communicator, the corresponding receive must match these fields or contain wildcard values for \texttt{MPI\_ANY\_SOURCE} or \texttt{MPI\_ANY\_TAG}.
+
+There are a few nuances and gotchas to the message-passing model.
+Messages are non-overlapping, so if two back-to-back sends can match the same receive operation, then the first message needs to complete before the second, and standard MPI operations are blocking, this means program execution halts at the communication call until the operation is complete.
+If the programmer is not careful, this can lead to deadlocks, for example, a process can get stuck in a blocking receive that doesn't have a corresponding send, and the program will hand.
+
+In a later version of the MPI specification, non-blocking messages were introduced with corresponding \texttt{MPI\_Isend()}/\texttt{MPI\_Irecv()} functions.
+These endpoints return immediately but don't complete communication, instead, they populate an \texttt{MPI\_Request} object with information about the ongoing communication.
+The programmer needs to progress the \texttt{MPI\_Request} object in order to ensure completion, this can be done with \texttt{MPI\_Test} to check if it's done and \texttt{MPI\_Wait} to block communication until completion.
+Non-blocking communications provide more flexibility and freedom in setting up complex communication patterns, as well as more opportunities to establish computation communication overlap.
+
+\subsubsection{One-sided Communication}
+The term two-sided exists because both processes have to actively be involved in communication (a send needs a matching receive), the model is popular because it is easy to understand and learn quickly but is limited by the tightly coupled nature of the communication model.
+Certain applications do not map well to the two-side model, there are codes where processes need to send/receive data between iterations but don't necessarily know who they will need to exchange with, and while solutions can be coded using a one-sided model, it requires the use of heavy global synchronizations heavily impacting performance, 
+The one-sided model, also known as Remote Memory Access (RMA), provides a model where only one process needs to provide the communication information, message data, message destination, and participating ranks.
+One-sided operations are performed on a window, an opaque object encapsulating network-exposed memory on a communicator, the target rank is the process that owns memory in the window, and the origin process is the remote rank accessing the target's data.
+Load/store operations are triggered on a window using \texttt{MPI\_Get()}/\texttt{MPI\_Put()} functions, and remote arithmatic can be done using \texttt{MPI\_Accumulate()} or \texttt{MPI\_Fetch\_and\_op()}.
+Many of the data parameters for one-sided can be mapped to values in the sided model, a rank is specified, and operations accept buffers of MPI\_Datatypes for the origin's local data and the target's data within the window.
+
+The challenge with RMAs is synchronization, shared memory type models are prone to data races, and the MPI standard tries to establish a series of guard rails to make writing applications much easier.
+By default, all MPI RMA operations are non-blocking, calling \texttt{MPI\_Get()}/\texttt{MPI\_Put()} triggers a communication operation but does not guarantee completion.
+MPI RMA operations have multiple mechanisms to choose from for enforcing ordering and completion.
+The most straightforward synchronization method is to use \texttt{MPI\_Win\_Fence()}, this operation acts as a collective barrier across a window, and all processes must call \texttt{MPI\_Win\_Fence()} before proceeding, but it guarantees that all outstanding one-sided operations are completed on a window before proceeding. 
+There is an active communication model which relies on four endpoints (\texttt{MPI\_Win\_start}, \texttt{MPI\_Win\_complete}, \texttt{MPI\_Win\_post}, and \texttt{MPI\_Win\_wait}) and provides a mechanism for the target process to dictate when remote processes can access its window.
+The target starts an access epoch with \texttt{MPI\_Win\_start}, next the origin rank must call \texttt{MPI\_Win\_post} to synchronize with the remote peer and gain exclusive access to the window, now the target can issue put/get/accumulate calls as necessary.
+To finish communication, the origin calls \texttt{MPI\_Win\_wait}, this cleans up all outstanding communication requests, now another rank can try and gain access through their own call to \texttt{MPI\_Win\_post}, or the target can close the window by calling \texttt{MPI\_Win\_complete}.
+The last mechanism is \texttt{MPI\_Win\_lock}/\texttt{MPI\_Win\_unlock}, these primitives are essentially mutexes, they let ranks establish shared or exclusive access to a window, and all outstanding operations are guaranteed completion on MPI\_Win\_unlock().
+
 
 \subsubsection{Collective Communication}
 
 \input{3_Chapters/2_Chapter_Background/Figs/mpispec_collective}
 
-MPI's point-to-point messages specify data transfers between two processes, but often when writing MPI codes, there are several common patterns that arrise wich require data exchanges amonst multiple processes at the same time.
+MPI's point-to-point and RMA models specify data transfers between two processes, but often when writing MPI codes, several common patterns arise which require data exchanges among multiple processes at the same time.
 These patterns are known as collective communications, and they are common enough that the MPI-forum has standardized several of them.
-A few example collectives are outlined in figure \ref{fig:mpispec_collectives}, collectives take a data buffer and tranfer the data buffer accross all ranks in a specified communicator.
-Collectives can be generalized into two groups, all-to-one and all-to-all collectives
+A few example collectives are outlined in figure \ref{fig:mpispec_collectives}, collectives take a data buffer and transfer the data buffer across all ranks in a communicator.
+Collectives can be generalized into two groups, \textit{all-to-one} and \textit{all-to-all} collectives.
+All-to-one collectives have a specified root that can act as the main source/destination for all data, for example, \texttt{MPI\_Bcast()} distributes a chunk of data specified by the root to all processes in the communicator.
+All-to-all collectives have every process both contribute and receive some set of data within the operations, with, for example, in \texttt{MPI\_Allgather()} each process specifies a segment of data and all the segments are combined into a larger vector (indexed by rank) with a copy of the final result distributed to each process.
 
+The reduction collectives, \texttt{MPI\_Reduce()} and \texttt{MPI\_Allreduce()}, are collectives of particular interest as they are heavily relied upon and can take up large parts of overall application run time.
+Their defining characteristic is that accepts an operation which is applied to the data in flight.
+\texttt{MPI\_Reduce()} is an all-to-one collective where each process specified a buffer and result is placed at the root, while \texttt{MPI\_Allreduce()} is an all-to-all style collective where each process receives a copy of the final result. 
+As an example, if each process had a double and the average across all doubles was necessary for the next step of the computation, each process could call \texttt{MPI\_Allreduce()} with a type \texttt{MPI\_DOUBLE} with the op \texttt{MPI\_SUM} to get the sum of each rank's double, and then divide the result by the communicator size to get the average.
 
+Collective communications are considerably powerful as they can express a lot of data movement in a single operation, and for this reason, they are heavily used in production codes.
+But, the inherent downside of collectives is the amount of synchronization they can apply to parallel programs. 
+Collectives can be blocking operations, and they require all processes in a communicator to participate in the operation, so they often have the side effect of stalling the entire program waiting for processes to arrive.
+Non-blocking collectives do exist, like the point-to-point interface, they return an \texttt{MPI\_Request} object that needs to be progressed with \texttt{MPI\_Test}/\texttt{MPI\_Wait}, but adoption isn't that large and many codes still rely on blocking operations.
+The popularity, yet simultaneous optimization challenges, have led to a large body of research on the topic of collective communication. 
+There are plethora of strategies for designing collective algorithms, two of which we rely on for this thesis including topology-awareness and process arrival pattern awareness.
 
-\subsubsection{One-sided Communication}
-The term two-sided exsists because both processes have to actively be invovled in communication, the model is known for being easy to understand and learn quickly but is limited by the tightly coupled nature of the communciation model.
-Certain application do not map well to the two-side model, there are problems where the sending process won't nececarily know where data will need to go until runtime, that's why MPI's one-sided model was adopted by the standard. 
-% \section{Data-Parallel Deeplearning, (Mini-batch SGD), distributed-deep learning, HOROVOD}
-% \cite{Ben-Nun2019DemystifyDL, Sergeev2018Horovod}
-\section{Topology Awareness}
-\section{PAP awareness}
+\subsubsection{Algorithm Structure}
+Under the hood, collective algorithms are implemented as a series of point to point messages. 
+There are different ways to structure the exchanges in order to implement a specified collective, and different structures have different performance tradeoffs depending on the collective's parameters.
+One of the most impactful parameters in communication is the size of the message, and it is best examplified through Hockney's model \cite{Hockney1994HockenyModel}.
+Hockney's model states that the time to send a message of $n$ bytes can be modeled as $T_{msg}=\alpha+n\beta$, where $\alpha$ represents the startup overhead cost (seconds) and $\beta$ is inverse bandwidth (seconds per byte).
+What tends to happen in practice is that small messages are bound by $\alpha$, while large messages spend most of their time bandwith bound by $n\beta$.
+This principle extends this to collective algorithms, where designes tend to fall into the same two categories, latency bound for small messages and bandwidth bound for large messages.
+Latency bound algorithms try to minimize the number of messages sent as the fewer times we invoke $\alpha$ the faster the algorithm, while large message algorithms will break the data vector into components and issue multiple smaller message minimizing the total amount of data sent.
+When dealing with reduction operations, we can add a $\gamma$ term which represents the time to perform a reduction in seconds per flop, similar to the $\beta$ term this scales by $n$.
+
+\input{3_Chapters/2_Chapter_Background/Figs/allreduce_grid}
+Figure \ref{fig:ring-allreduce-grid} outlines a four rank ring allreduce.
+The ring algorithm is oftenly used for large message allreduce because bandwitdh based performance scales linearly.
+During each step of the algorithm, each rank $r$ sends a message to rank $r+1$ and recieves a message from rank $r-1$, this is where the ring algorithm gets its name from.
+For a ring of $p$ processes, the first $p-1$ steps consist of a data exchange and reduction operation, where each chunk of data conssists of $n/p$ Bytes of data. 
+At the midway point, each rank will hold $1/n$ of the fully reduced vector, this data distribution can be considered as a reduce-scatter.
+The algorithm finishes with another $p-1$ messages of size $n/p$, this time without the reduce, which act as an allgather distributing the final result.
+In total, $2(p-1)$ messages of size $n/p$ are sent, with half of them requireing a reduction, this can give us a total collective time of $T_{ring} = 2(p-1)\alpha + 2((p-1)/p)n\beta + ((p-1)/p)n\gamma$.
+The ring algorithm can be generalized to a reduce-scatter folowed by an allgather, and it is possible to implement both in a recussive-doubling method, this is also known as Rabenseifner's algorithm \cite{Thakur2005OptMPICH}.
+This change can lower the number of data exchanges to $2\log(p)$, but will require an extra communication stage to ballance data if $p$ is not a power of 2.
+
+One-to-all type collective algorithms can often modelled as trees where vertices are ranks, edges between verticeis are messages, and the root of the tree is the root of the collective.
+The stucture of the tree will have an imact on collective time, for example, a binary would theorheticly perform better than a linear tree (also known as a chain) due to the logarithmic nature of its height.
+Collective algorithms can also leverage message pipelineing techniques, where a message is broken into segments and be propogated through a tree letting different segments overlap each other.
+By default, a chain broadcast would take $T_{chain}=p\alpha+pn\beta$, but with a segment size of $k$ it could be performed in $T_{chain\_pipe}=(n/k+p-1)\alpha+(n+(p-2)k)\beta$.
+Pipelining leverages concurrency by sending multiple stages in parallel and shows the most benifit from a bandwith perspective.
+
+\subsubsection{Topology Awareness}
+The desing of the machine is important
+Adding topology awareness, 
+Hierarchical algs
+\subsubsection{Process Arrival Pattern Awareness}
+Not all procs arrive at the same time
+\subsubsection{Algorithm selection}
+Different algs are better in different scenarios
 
