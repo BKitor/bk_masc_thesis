@@ -1,6 +1,6 @@
 % Chapter 2 - Background
 
-\glsresetall % reset the glossary to expand acronyms again
+% \glsresetall % reset the glossary to expand acronyms again
 \chapter[Background]{Background}\label{ch:Background}
 \index{Background}
 
@@ -238,7 +238,6 @@ The target starts an access epoch with \texttt{MPI\_Win\_start}, next the origin
 To finish communication, the origin calls \texttt{MPI\_Win\_wait}, this cleans up all outstanding communication requests, now another rank can try and gain access through their own call to \texttt{MPI\_Win\_post}, or the target can close the window by calling \texttt{MPI\_Win\_complete}.
 The last mechanism is \texttt{MPI\_Win\_lock}/\texttt{MPI\_Win\_unlock}, these primitives are essentially mutexes, they let ranks establish shared or exclusive access to a window, and all outstanding operations are guaranteed completion on MPI\_Win\_unlock().
 
-
 \subsubsection{Collective Communication}
 
 \input{3_Chapters/2_Chapter_Background/Figs/mpispec_collective}
@@ -260,41 +259,82 @@ But, the inherent downside of collectives is the amount of synchronization they 
 Collectives can be blocking operations, and they require all processes in a communicator to participate in the operation, so they often have the side effect of stalling the entire program waiting for processes to arrive.
 Non-blocking collectives do exist, like the point-to-point interface, they return an \texttt{MPI\_Request} object that needs to be progressed with \texttt{MPI\_Test}/\texttt{MPI\_Wait}, but adoption isn't that large and many codes still rely on blocking operations.
 The popularity, yet simultaneous optimization challenges, have led to a large body of research on the topic of collective communication. 
-There are plethora of strategies for designing collective algorithms, two of which we rely on for this thesis including topology-awareness and process arrival pattern awareness.
+There are a plethora of strategies for designing collective algorithms, two of which we rely on for this thesis, including topology-awareness and process arrival pattern awareness.
 
 \subsubsection{Algorithm Structure}
-Under the hood, collective algorithms are implemented as a series of point to point messages. 
-There are different ways to structure the exchanges in order to implement a specified collective, and different structures have different performance tradeoffs depending on the collective's parameters.
-One of the most impactful parameters in communication is the size of the message, and it is best examplified through Hockney's model \cite{Hockney1994HockenyModel}.
-Hockney's model states that the time to send a message of $n$ bytes can be modeled as $T_{msg}=\alpha+n\beta$, where $\alpha$ represents the startup overhead cost (seconds) and $\beta$ is inverse bandwidth (seconds per byte).
+Under the hood, collective algorithms are implemented as a series of point-to-point messages. 
+There are different ways to structure the exchanges to implement a specified collective, and different structures have different performance tradeoffs depending on the collective's parameters.
+One of the most impactful parameters in communication is the size of the message, and it is best exemplified through Hockney's model \cite{Hockney1994HockenyModel}.
+Hockney's model states that the time to send a message of $n$ bytes can be estimated as $T_{msg}=\alpha+n\beta$, where $\alpha$ represents the startup overhead cost (seconds), and $\beta$ is inverse bandwidth (seconds per byte).
 What tends to happen in practice is that small messages are bound by $\alpha$, while large messages spend most of their time bandwith bound by $n\beta$.
-This principle extends this to collective algorithms, where designes tend to fall into the same two categories, latency bound for small messages and bandwidth bound for large messages.
-Latency bound algorithms try to minimize the number of messages sent as the fewer times we invoke $\alpha$ the faster the algorithm, while large message algorithms will break the data vector into components and issue multiple smaller message minimizing the total amount of data sent.
-When dealing with reduction operations, we can add a $\gamma$ term which represents the time to perform a reduction in seconds per flop, similar to the $\beta$ term this scales by $n$.
+This principle extends this to collective algorithms, where designs tend to fall into the same two categories, latency bound for small messages and bandwidth bound for large messages.
+Latency-bound algorithms try to minimize the number of messages sent as the fewer times we invoke $\alpha$, the faster the algorithm, while large message algorithms will break the data vector into components and issue multiple smaller messages minimizing the total amount of data sent.
+When dealing with reduction operations, we can add a $\gamma$ term which represents the time to perform a reduction in seconds per flop, similar to the $\beta$, this scales with $n$.
 
-\input{3_Chapters/2_Chapter_Background/Figs/allreduce_grid}
-Figure \ref{fig:ring-allreduce-grid} outlines a four rank ring allreduce.
-The ring algorithm is oftenly used for large message allreduce because bandwitdh based performance scales linearly.
-During each step of the algorithm, each rank $r$ sends a message to rank $r+1$ and recieves a message from rank $r-1$, this is where the ring algorithm gets its name from.
-For a ring of $p$ processes, the first $p-1$ steps consist of a data exchange and reduction operation, where each chunk of data conssists of $n/p$ Bytes of data. 
-At the midway point, each rank will hold $1/n$ of the fully reduced vector, this data distribution can be considered as a reduce-scatter.
-The algorithm finishes with another $p-1$ messages of size $n/p$, this time without the reduce, which act as an allgather distributing the final result.
-In total, $2(p-1)$ messages of size $n/p$ are sent, with half of them requireing a reduction, this can give us a total collective time of $T_{ring} = 2(p-1)\alpha + 2((p-1)/p)n\beta + ((p-1)/p)n\gamma$.
-The ring algorithm can be generalized to a reduce-scatter folowed by an allgather, and it is possible to implement both in a recussive-doubling method, this is also known as Rabenseifner's algorithm \cite{Thakur2005OptMPICH}.
-This change can lower the number of data exchanges to $2\log(p)$, but will require an extra communication stage to ballance data if $p$ is not a power of 2.
+\input{3_Chapters/2_Chapter_Background/Figs/allreduce_ring_grid.tex}
+Figure \ref{fig:ring-allreduce-grid} outlines a four-rank ring-allreduce.
+The ring algorithm is often used for large message allreduce because its bandwidth-based performance scales linearly.
+During each step of the algorithm, each rank $r$ sends a message to rank $r+1$ and receives a message from rank $r-1$, this is where the ring algorithm gets its name from.
+For a ring of $p$ processes, the first $p-1$ steps consist of a data exchange and reduction operation, where each chunk of data consists of $n/p$ Bytes of data. 
+At the midway point (the fourth grid in figure \ref{fig:ring-allreduce-grid}), each rank will hold $1/n$ of the fully reduced vector, this data distribution can be considered as a reduce-scatter.
+The algorithm finishes with another $p-1$ exchanges of size $n/p$, this time without the reduce, which acts as an allgather distributing the final result.
+In total, $2(p-1)$ messages of size $n/p$ are sent, with half of them requiring a reduction, this can give us a total collective time of $T_{ring} = 2(p-1)\alpha + 2((p-1)/p)n\beta + ((p-1)/p)n\gamma$.
+The ring algorithm can be generalized to a reduce-scatter followed by an allgather and maintains the $29(p-1)/p)n\beta$ term.
+This leads to another popular implementation of allreduce, Rabenseifner's algorithm, which uses a recursive doubling method to implement reduce-scatter allgather \cite{Thakur2005OptMPICH}.
+This change can lower the number of data exchanges to $2\log(p)$ but can require an extra communication stage to balance data if $p$ is not a power of 2.
 
-One-to-all type collective algorithms can often modelled as trees where vertices are ranks, edges between verticeis are messages, and the root of the tree is the root of the collective.
-The stucture of the tree will have an imact on collective time, for example, a binary would theorheticly perform better than a linear tree (also known as a chain) due to the logarithmic nature of its height.
-Collective algorithms can also leverage message pipelineing techniques, where a message is broken into segments and be propogated through a tree letting different segments overlap each other.
+One-to-all type collective algorithms can often be modelled as trees where vertices are ranks, edges between vertices are messages, and the root of the tree is the root of the collective.
+The structure of the tree will have an impact on collective time, for example, a binary tree would theoretically perform better than a linear tree (also known as a chain) due to the logarithmic nature of its height.
+Collective algorithms can also leverage message pipelining techniques, where a message is broken into segments and propagated through a tree letting different segments overlap each other.
 By default, a chain broadcast would take $T_{chain}=p\alpha+pn\beta$, but with a segment size of $k$ it could be performed in $T_{chain\_pipe}=(n/k+p-1)\alpha+(n+(p-2)k)\beta$.
-Pipelining leverages concurrency by sending multiple stages in parallel and shows the most benifit from a bandwith perspective.
+Pipelining leverages concurrency by propagating data through multiple stages of the tree parallel and shows the most benefit for large message collectives.
+
+While many of these algorithms are foundational to collective research, they tend to make several naive assumptions about the underlying hardware.
+Topology-Awareness breaks the assumption that all messages cost the same, as outlined earlier, different interconnects have different performance characteristics, and it has been shown that tailoring the collective structure to the underlying hardware can unlock a lot of performance. 
+One other assumption is that all processes arrive at the same time, and process-arrival-pattern-aware collectives break this assumption, they look at how data dependencies within a communication structure can be decoupled to unlock performance.
 
 \subsubsection{Topology Awareness}
-The desing of the machine is important
-Adding topology awareness, 
-Hierarchical algs
+Topology awareness, as the name implies, revolves around passing hardware information to the runtime in order to use resources intelligently.
+To perform this task, the MPI runtime needs two pieces of information, system hardware information and application communication information.
+The hardware information includes the usual suspects like host memory characteristics (NUMA and cache hierarcies), PCIe information on how devices and CPUs are connected, and network characteristics like topology or routing strategy.
+This info is relatively easy to collect, there as several libraries for exposing this info to applications, and many MPI implementations already collect this information at runtime.
+
+Acting on topology information is a whole different kind of challenge, these problems involve modelling an application's communication and accelerating it with the hardware info, and many methods have been attempted over the years.
+Some methods involve measuring all communication during a profiling run of an application, using the logs to model a communication pattern and calculate an optimal process to core binding that should be used in all future runs. 
+Other methods, like virtual topologies, rely on the application passing information to the MPI runtime, hinting at which ranks will exchange data within a communicator.
+Collectives are also a target for topology awareness as the collective itself specifies the expected communication, and the implementation is given free rein to optimize the algorithm however it sees best.
+
+One noteworthy type of topology-aware collective algorithms are hierarchical algorithms, these algorithms break a larger collective into several smaller collectives that run across subsets of the communicator. 
+The most basic hierarchy relies on an intranode communicator, where all ranks are on the same node, and an internode communicator, where every rank is on a different node.
+Each intranode communicator will select a leader who will be responsible for performing communications across nodes.
+In order to perform an allreduce, a typical algorithm could be performed in 4 steps, 1) intranode reduce to the leader, 2) internode reduce to some predetermined rank, 3) internode broadcast, and 4) intranode broadcast.
+These algorithms rely on topology information to build hierarchies and are structured to minimize the amount of traffic that has to hit the network. 
+
 \subsubsection{Process Arrival Pattern Awareness}
-Not all procs arrive at the same time
-\subsubsection{Algorithm selection}
-Different algs are better in different scenarios
+Process-arrival-pattern awareness leverages process skew to mitigate performance loss or improve application performance. 
+Most collective algorithms assume that all ranks enter the collective at the same time, but in reality, performance is not deterministic.
+Many stochastic factors can affect compute performance, like OS process scheduling, network noise, and opportunistic CPU frequency boosting, and all these factors can add up to add a skew to process arriving at different times \cite{Faraj2008StudyProcArrivalMPIColl}.
+
+\input{3_Chapters/2_Chapter_Background/Figs/pap_theory.tex}
+
+Faraj et al. \cite{Faraj2008StudyProcArrivalMPIColl} provide a set of formal definitions for modelling process arrivals, a visual interpretation is given in figure \ref{fig:pap-theory}.
+For processes $(p_0, p_1,...,p_n)$ participating in a collective operation, each process has an arrival time denoted by $a_i$ and an exit time at $f_n$.
+Therefore, each collective call has an arrival patterns $(a_0, a_1, ..., a_n)$ and an exit pattern $(f_0, f_1, ..., f_n)$.
+Each rank spends $e_i = f_i - a_i$ time in the collective, where total collective time can be expressed as $e_0 + e_1 + ... + e_n$ and the average collective time is $\bar{e} = (e_0 + e_1 + ... + e_n)/n$, we can use these two terms to evaluate the performance of the overall collective.
+In order to quantify the difference between process arrivals, let $\delta_i$ be the absolute time difference between a process's arrival and the average arrival time, i.e. $\delta_i = |\bar{a} - a_i|$. 
+We can then define the average arrival imbalance as $\bar{\delta}=(\delta_0 + \delta_i + ... + \delta_n)/n$, and the maximum imbalance time as $\omega = max_i(a_i)-min_i(a_i)$.
+When using average/max imbalance in practice, it is often easier to normalize it by the message transmission time.
+If the time to send a message of $n$ bytes is $T$, then the \textit{maximum imbalance factor} is of that message is $\omega/T$, and the \textit{average imbalance factor} is $\bar{\delta}/T$.
+
+In order to apply this theory to actual collectives, several problems must be solved.
+One of the predominant issues with PAP-Awareness is actually determining the order of process arrival.
+Each process needs some level of arrival information to determine the steps it needs to perform within the collective algorithm. 
+One strategy for inter-node PAP awareness can include exchanging control messages using MPI point-to-point routines leveraging \texttt{MPI\_ANY\_SOURCE} \cite{Patarasuk2008EffBcastDifProcArr}.
+These strategies aren't ideal, as these mechanisms require the active participation of some leader processes.
+This is often delegated to the root in one-to-many or many-to-one collectives but doesn't map as easily to many-to-many collectives.
+Further, this adds overhead and worsens workload imbalance as one process spends considerably more cycles orchestrating process arrival information.
+There is also the issue of processes stalling before the root has arrived, as no work can be done before PAP information is exchanged.
+Some proposed work fixes this by delegating PAP management to a background thread \cite{Proficz2018ImprvAllReduceForImbPAP, Proficz2020PAPAwareScatterGather, Proficz2021AllGatherResilientToImbPAP, Faraj2008StudyProcArrivalMPIColl}, but this solution can add more imbalance due to thread scheduling, as well as a burden on application developers to manage resources of background threads.
+Other internode solutions rely on non-portable interfaces like RDMA on InfiniBand \cite{Qian2009ProcArrivalSHMA2AIB}.
+While this lock the solution to specific hardware, exchanging control messages in a one-sided manner is promising because processes don't synchronize and they can triggers data transfers before other processes have arrived, and they do not rely on a central process managing the entire collective. 
 

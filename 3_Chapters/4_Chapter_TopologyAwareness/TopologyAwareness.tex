@@ -1,7 +1,7 @@
 % Chapter 4 - Topology Awareness
 
-\glsresetall % reset the glossary to expand acronyms again
-\chapter[Topology]{Topology Awareness}\label{ch:TopologyAwareness}
+% \glsresetall % reset the glossary to expand acronyms again
+\chapter[Topology Awaeness]{Topology Awareness}\label{ch:TopologyAwareness}
 \index{Topology Awareness}
 
 The first technique investigated to improve MPI collective communication performance is topology awareness.
@@ -12,8 +12,9 @@ This chapter builds on work by Mirsadeghi and Afsahi \cite{Mirsadeghi2016TopoAwa
 Their work relies on the notion that collective algorithms have an implicit communication pattern and that the ranks in a communicator can be reordered to better fit the communication pattern to the host topology.
 We extend their work to multiple new algorithms in allreduce and broadcast.
 We see up to \_\_\% performance improvement under certain scenarios with microbenchmark evaluation, and our proposed mapping heuristics can outperform established techniques.
+We also evaluated several deep learning applications, but the performance benefits present in the microbenchmarks did not translate.
 
-This chapter will start by outlining existing methods for applying topology awareness within MPI.
+This chapter will start by motivating the usage of topology awareness and outline existing methods using topology awareness within MPI.
 Next, we propose a method of accelerating MPI collectives and build an implementation targeting multiple \texttt{MPI\_Allreduce()} and \texttt{MPI\_Bcast()} algorithms.
 Our work is evaluated in CPU and GPU environments on two different clusters.
 
@@ -27,18 +28,10 @@ Compute nodes have expansive memory hierarchies spanning multiple caches, NUMA d
 Furthermore, modern fabric interconnects have complex network topologies with variable performance depending on node location.
 So, in reality, the hardware topology of the system has an outsized impact on message performance, which has a knock-on effect on overall application performance. 
 
-MPI applications often have consistent and predictable data-transfer patterns, this means individual rank will often send and receive the same set of messages to and from the same set of peers on consecutive runs of the application.
-Since data-transfer patterns are predictable, and the programming model doesn't bind processes to specific locations, MPI implementations have the flexibility to map ranks to processing elements to make the most optimal use of the underlying hardware.
-This problem of mapping ranks to processing elements can be formalized as an instance of a graph-embedding problem.
-However, previous work has shown this to be an NP-Hard problem \cite{Hoefler2011GenericTopoMappingStrats}. 
-Solving this problem at scale (on the order of millions of processes) is not feasible. Therefore heuristics and simplifications are often used instead.
-
-To apply topology awareness to collectives, we can leverage how collective algorithms are structured as a series of point-to-point communications.
-MPI providers will often include multiple algorithms for different collectives with common patterns, including ring, recursive doubling, knomial-tree, etc...
-This gives MPI implementations the flexibility to select a performant algorithm depending on the collective's parameters like message size and the number of processes.
-These frameworks for algorithm selection often neglect the host topology, but there is room to incorporate it.
-The collective algorithm defines the pattern to disseminate data, but the value of the ranks in the graph often does not matter (there are some algorithms where this does matter, like allgather, alltoall and commutative allreduce, but these can be accounted for).
-So in this work, we evaluate the efficacy of mapping collective communication graphs to the underlying hardware topology on-the-fly during application runtime.
+Performance improvements with topology awareness invovles combining topology information with communication information, we have tools for collective topology information at runtime, and the collective's communication pattern is implicit to whichever algorithm they use.  
+Different algorithms (ring, recursive doubling, binary tree, binomial tree, etc...) have predefined data-transfer patterns, we know ahead of time how ranks will send and receive messages, and we can trivially model these relationships for different sizes of communicators.
+While there are existing methods for topology-aware collectives, they can add extra communication and complexity to support their algorithm. 
+So this work evaluates and extends an existing method for adding topology awareness to flat algorithms by rank reordering.
 
 \section{Related works}
 Topology awareness is a commonly used technique for accelerating MPI applications. 
@@ -117,12 +110,18 @@ Their work focuses on broadcast and allgather collectives, with remapping algori
 We extend their work by looking at allreduce and the additional challenges the reduction operation adds to their method.
 We also propose mapping algorithms for reduce-scatter-allgather, knomial and binary-tree communication patterns.
 
+
 \section{Method}
-When applying topology awareness to collectives there are two common strategies.
-Either build a communication pattern that is designed to fit the hardware or take an existing pattern and efficiently map it to the hardware.
-This work uses the latter strategy, we take the collective algorithm selected by the implementation and silently renumber the processes to better utilize communication resources.
-When a collective is called, the MPI library selects an algorithm based on factors like the message size, the number of processes, or the data's location.
-The communication pattern is implicit to the collective algorithm, so we define a heuristic tailored to specific algorithms that calculates how ranks should be renumbered.
+When applying topology awareness to collectives, there are two common strategies.
+Either build a communication pattern that is designed to fit the hardware (this is what hierarchical algorithms do) or take an existing pattern and efficiently map it to the hardware.
+This work uses the latter strategy, we take the collective algorithm selected by the implementation and silently renumber the processes to utilize communication resources better.
+MPI providers will often include multiple algorithms for different collectives with common patterns, and each algorithm has a communication pattern which is implicit in the algorithm's design.
+For example, ring only exchanges data with its immediate neighbours, and recursive doubling algorithms only exchange data with processes whose rank is a power of two distance away.
+Since these patterns are pre-defined, we can extract a communication pattern and combine it with topology information before the collective is run.
+This problem can be formalized as an instance of a graph-embedding problem, which previous work has shown to be an NP-Hard problem \cite{Hoefler2011GenericTopoMappingStrats}. 
+So solving this problem at scale (on the order of millions of processes) is not feasible, therefore, heuristics and simplifications are often used instead.
+
+Since we are interested in accelerating distributed deep learning, we target several allreduce algorithms, as well as a few broadcast algorithms, since they can be combined with a reduce to create an allreduce.
 To make the calculation efficient and scalable, each proposed remapping heuristic leverages a greedy strategy.
 An outline of the general strategy is given in algorithm \ref{alg:toporr-strat}.
 The basic structure starts by binding rank zero to core zero and sets zero as the reference rank.
@@ -137,7 +136,7 @@ This structure is flexible and allows us to evaluate multiple types of collectiv
 Mirsadeghi and Afsahi \cite{Mirsadeghi2016TopoAwareCollRR} propose heuristics targeting ring allgather, recursive doubling allgather, and binomial tree broadcast. 
 We reimplement their ring and recursive doubling algorithms and evaluate them on allreduce collectives, and evaluate their binomial-broadcast heuristic in the context of a scatter-allgather broadcast.
 To extend their work while targeting large message allreduce, we propose a new reordering heuristic for reduce-scatter-allgather allreduce.
-Furthermore, since broadcast can be used as a component in allreudce, we also propose heuristics for two broadcast algorithms, knomial and binary tree broadcast.
+Furthermore, we also propose heuristics for two broadcast algorithms, knomial and binary tree broadcast.
 
 \input{3_Chapters/4_Chapter_TopologyAwareness/Figures/TopoRR_strat_pseudocode}
 

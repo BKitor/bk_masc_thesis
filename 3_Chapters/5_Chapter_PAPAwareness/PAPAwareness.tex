@@ -1,7 +1,7 @@
 % Chapter 5 - Process Arrival Pattern Awareness
 
-\glsresetall % reset the glossary to expand acronyms again
-\chapter[PAPAwareness]{Process Arrival Pattern Awareness}\label{ch:PAPAwareness}
+% \glsresetall % reset the glossary to expand acronyms again
+\chapter[Process Arrival Pattern Awareness]{Process Arrival Pattern Awareness}\label{ch:PAPAwareness}
 \index{Process Arrival Pattern Awareness}
 
 \begin{itemize}
@@ -22,33 +22,13 @@
 This chapter approaches allreduce collective design through the lens of process arrival pattern (PAP) awareness. 
 When designing collective algorithms, developers often assume that all processes arrive at the same time, but this is not a safe assumption.
 The order and timing that processes enter the collective can have an impact on the algorithm's performance, and this work tries to leverage the arrival imbalance to improve the overall collective performance.
+Deep learning is a difficult application to load balance due to the stochastic nature of datasets, leading to increased arrival imbalance at collectives \cite{Mohammadalizadehbakhtevari2021Thesis, Alizadeh2022PAPCollDL, Li2020DLPartialColl}. 
+While PAP-aware collective algorithms do exist, no existing algorithms target multi-node GPU deployments, so to fill this gap, we propose a UCX-RMA-based PAP distribution mechanism with an accompanying allreduce algorithm which shows \_\% improvement over default allreduce algorithms performance under arrival imbalance.  
 
 There are previously proposed methods and algorithms that leverage PAP awareness to accelerate collectives, this chapter starts by surveying existing work.
 We outline some analysis on how PAP affects collectives, outlining our approach to accelerate allreduce.
-The main contribution is a novel cluster-wide method of sharing PAP information with an accommpanying allreduce algorithm designed to perform better than existing algorithms under a processes arrival imbalance.
-We evaluate our work with using an imbalance factor-inducing benchmark and show that we can see \_\% improvement over state-of-the-art algorithms.  
-
-\section{Background}
-
-\subsection{Process arrival imbalance} % move to background, in PAP subsection?
-As defined in \cite{Faraj2008StudyProcArrivalMPIColl}, for processes $(p_0, p_1,...,p_n)$ participating in a collective operation, each process has an arrival time denoted by $a_i$ and an exit time at $f_n$.
-Therefore, each collective call has an arrival patterns $(a_0, a_1, ..., a_n)$ and an exit pattern $(f_0, f_1, ..., f_n)$.
-Each node spends $e_i = f_i - a_i$ time in the collective, where total collective time can be expresses as $e_0 + e_1 + ... + e_n$ and the average collective time is $\bar{e} = (e_0 + e_1 + ... + e_n)/n$, we can use these two terms to evaluate the performance of the overall collective.
-In order to quantify the difference between processs arrivals, let $\delta_i$ be the absolute time difference between a processes arrival and the average arrival time, i.e. $\delta_i = |\bar{a} - a_i|$. 
-We can then define the average arrival imbalance as $\bar{\delta}=(\delta_0 + \delta_i + ... + \delta_n)/n$, and the maximum imballance time as $\omega = max_i(a_i)-min_i(a_i)$.
-When using average/max imbalance in practice, it is often easier to normalize it by the message transmision time.
-If the time to send a messages of $n$ bytes is $T$, then the \textit{maximum imbalance factor} is of that message is $\omega/T$, and the \textit{average imbalance factor} is $\bar{\delta}/T$.
-
-One of the predominant issues with PAP-Awareness is actually determining the order of process arrival.
-Each process needs some level of arrival information to determine the steps it needs to perform within the collective algorithm. 
-One strategy for inter-node PAP-awareness can include exchanging control messages using MPI point-to-point routines leveraging \texttt{MPI\_ANY\_SOURCE} \cite{Patarasuk2008EffBcastDifProcArr}.
-These strategies aren't ideal, as these mechanisms require the active participation of some leader processes.
-This is often delegated to the root in one-to-many or many-to-one collectives but doesn't map as easily to many-to-many collectives.
-Further, this adds overhead and worsens workload imbalance as one process spends considerably more cycles orchestrating process arrival information.
-There is also the issue of processes stalling before the root has arrived, as no work can be done before PAP information is exchanged.
-Some proposed work fixes this by delegating PAP management to a background thread \cite{Proficz2018ImprvAllReduceForImbPAP, Proficz2020PAPAwareScatterGather, Proficz2021AllGatherResilientToImbPAP, Faraj2008StudyProcArrivalMPIColl}, but this solution can add more imbalance due to thread scheduling, as well as a burden on application developers to manage resources of background threads.
-Other internode solutions rely on non-portable interfaces like RDMA on InfiniBand \cite{Qian2009ProcArrivalSHMA2AIB}.
-While this lock the solution to specific hardware, exchanging controll messages in a one-sided manner is promising as because processes don't synchronize and they can triggers data transfers before other processes have arrived, and they do not rely on a central process managing the entire collective. 
+The main contribution is a novel cluster-wide method of sharing PAP information with an accompanying allreduce algorithm designed to perform better than existing algorithms under a processes arrival imbalance.
+We evaluate our work using an imbalance factor-inducing benchmark and show that we can see \_\% improvement over state-of-the-art algorithms.  
 
 
 \subsection{Related Work}
