@@ -1,0 +1,79 @@
+\begin{figure*}
+    \centering
+    \begin{tikzpicture}
+        \begin{groupplot}[group style={
+                        group size=2 by 3,
+                        xlabels at=edge bottom,
+                        ylabels at=edge left,
+                        xticklabels at=edge bottom,
+                        % yticklabels at=edge left,
+                        vertical sep=1.5cm,
+                    },
+                height=5.7cm,
+                width=7.5cm,
+                xlabel={Message Size (Bytes)},
+                ylabel={Latency ($\mu$s)},
+                xticklabels={4B, 256B, 16kB, 1MB, 64MB},
+                legend style={at={(-0.1,-0.3)}, anchor=north},
+                legend columns=5,
+                grid=major,
+            ]
+            
+            \nextgroupplot[title=GPU By Socket, xmode=log, log basis x=2, ymode=log, log basis y=10, restrict y to domain=0:1100, xmin=2, xmax=268435456] 
+            \addplot[red, dashed, mark=*] table[x=msize, y=socket_disabled0_alg6_scotch0] {3_Chapters/4_Chapter_TopologyAwareness/Figs/data/cedar/ar_gpu_32.dat};
+            \addplot[green, dashed, mark=square*] table[x=msize, y=socket_disabled0_alg4_scotch0] {3_Chapters/4_Chapter_TopologyAwareness/Figs/data/cedar/ar_gpu_32.dat};
+            \addplot[orange, dashed, mark=diamond*] table[x=msize, y=socket_disabled0_alg3_scotch0] {3_Chapters/4_Chapter_TopologyAwareness/Figs/data/cedar/ar_gpu_32.dat};
+            % \addplot[violet, mark=asterisk] table[x=msize, y=socket_disabled0_alg0_scotch0] {3_Chapters/4_Chapter_TopologyAwareness/Figs/data/cedar/ar_gpu_32.dat};
+            \addplot[black, mark=x] table[x=msize, y=socket_disabled1_alg0_scotch0] {3_Chapters/4_Chapter_TopologyAwareness/Figs/data/cedar/ar_gpu_32.dat};
+            
+            \nextgroupplot[title=CPU By Socket, xmode=log, log basis x=2, ymode=log, log basis y=10, restrict y to domain=0:1100, xmin=2, xmax=268435456]
+            \addplot[red, dashed, mark=*] table[x=msize, y=socket_disabled0_alg6_scotch0] {3_Chapters/4_Chapter_TopologyAwareness/Figs/data/cedar/ar_cpu_64.dat};
+            \addplot[green, dashed, mark=square*] table[x=msize, y=socket_disabled0_alg4_scotch0] {3_Chapters/4_Chapter_TopologyAwareness/Figs/data/cedar/ar_cpu_64.dat}; 
+            \addplot[orange, dashed, mark=diamond*] table[x=msize, y=socket_disabled0_alg3_scotch0] {3_Chapters/4_Chapter_TopologyAwareness/Figs/data/cedar/ar_cpu_64.dat};
+            % \addplot[violet, mark=asterisk] table[x=msize, y=socket_disabled0_alg0_scotch0] {3_Chapters/4_Chapter_TopologyAwareness/Figs/data/cedar/ar_cpu_64.dat};
+            \addplot[black, mark=x] table[x=msize, y=socket_disabled1_alg0_scotch0] {3_Chapters/4_Chapter_TopologyAwareness/Figs/data/cedar/ar_cpu_64.dat};
+            
+            \nextgroupplot[title=GPU By Core, xmode=log, log basis x=2, ymode=log, log basis y=10, restrict y to domain=0:1100, xmin=2, xmax=268435456]
+            \addplot[red, dashed, mark=*] table[x=msize, y=core_disabled0_alg6_scotch0] {3_Chapters/4_Chapter_TopologyAwareness/Figs/data/cedar/ar_gpu_32.dat};
+            \addplot[green, dashed, mark=square*] table[x=msize, y=core_disabled0_alg4_scotch0] {3_Chapters/4_Chapter_TopologyAwareness/Figs/data/cedar/ar_gpu_32.dat};
+            \addplot[orange, dashed, mark=diamond*] table[x=msize, y=core_disabled0_alg3_scotch0] {3_Chapters/4_Chapter_TopologyAwareness/Figs/data/cedar/ar_gpu_32.dat};
+            % \addplot[violet, mark=asterisk] table[x=msize, y=core_disabled0_alg0_scotch0] {3_Chapters/4_Chapter_TopologyAwareness/Figs/data/cedar/ar_gpu_32.dat};
+            \addplot[black, mark=x] table[x=msize, y=core_disabled1_alg0_scotch0] {3_Chapters/4_Chapter_TopologyAwareness/Figs/data/cedar/ar_gpu_32.dat};
+            
+            \nextgroupplot[title=CPU By Core, xmode=log, log basis x=2, ymode=log, log basis y=10, restrict y to domain=0:1100, xmin=2, xmax=268435456]
+            \addplot[red, dashed, mark=*] table[x=msize, y=core_disabled0_alg6_scotch0] {3_Chapters/4_Chapter_TopologyAwareness/Figs/data/cedar/ar_cpu_64.dat};
+            \addplot[green, dashed, mark=square*] table[x=msize, y=core_disabled0_alg4_scotch0] {3_Chapters/4_Chapter_TopologyAwareness/Figs/data/cedar/ar_cpu_64.dat}; 
+            \addplot[orange, dashed, mark=diamond*] table[x=msize, y=core_disabled0_alg3_scotch0] {3_Chapters/4_Chapter_TopologyAwareness/Figs/data/cedar/ar_cpu_64.dat};
+            % \addplot[violet, mark=asterisk] table[x=msize, y=core_disabled0_alg0_scotch0] {3_Chapters/4_Chapter_TopologyAwareness/Figs/data/cedar/ar_cpu_64.dat};
+            \addplot[black, mark=x] table[x=msize, y=core_disabled1_alg0_scotch0] {3_Chapters/4_Chapter_TopologyAwareness/Figs/data/cedar/ar_cpu_64.dat};
+            
+            \nextgroupplot[title=GPU By Node, xmode=log, log basis x=2, ymode=log, log basis y=10, restrict y to domain=0:1100, xmin=2, xmax=268435456]
+            \addplot[red, dashed, mark=*] table[x=msize, y=node_disabled0_alg6_scotch0] {3_Chapters/4_Chapter_TopologyAwareness/Figs/data/cedar/ar_gpu_32.dat};
+            \addplot[green, dashed, mark=square*] table[x=msize, y=node_disabled0_alg4_scotch0] {3_Chapters/4_Chapter_TopologyAwareness/Figs/data/cedar/ar_gpu_32.dat};
+            \addplot[orange, dashed, mark=diamond*] table[x=msize, y=node_disabled0_alg3_scotch0] {3_Chapters/4_Chapter_TopologyAwareness/Figs/data/cedar/ar_gpu_32.dat};
+            % \addplot[violet, mark=asterisk] table[x=msize, y=node_disabled0_alg0_scotch0] {3_Chapters/4_Chapter_TopologyAwareness/Figs/data/cedar/ar_gpu_32.dat};
+            \addplot[black, mark=x] table[x=msize, y=node_disabled1_alg0_scotch0] {3_Chapters/4_Chapter_TopologyAwareness/Figs/data/cedar/ar_gpu_32.dat};
+            
+            \nextgroupplot[title=CPU By Node, xmode=log, log basis x=2, ymode=log, log basis y=10, restrict y to domain=0:1100, xmin=2, xmax=268435456]
+            \addplot[red, dashed, mark=*] table[x=msize, y=node_disabled0_alg6_scotch0] {3_Chapters/4_Chapter_TopologyAwareness/Figs/data/cedar/ar_cpu_64.dat};
+            \addplot[green, dashed, mark=square*] table[x=msize, y=node_disabled0_alg4_scotch0] {3_Chapters/4_Chapter_TopologyAwareness/Figs/data/cedar/ar_cpu_64.dat}; 
+            \addplot[orange, dashed, mark=diamond*] table[x=msize, y=node_disabled0_alg3_scotch0] {3_Chapters/4_Chapter_TopologyAwareness/Figs/data/cedar/ar_cpu_64.dat};
+            % \addplot[violet, mark=asterisk] table[x=msize, y=node_disabled0_alg0_scotch0] {3_Chapters/4_Chapter_TopologyAwareness/Figs/data/cedar/ar_cpu_64.dat};
+            \addplot[black, mark=x] table[x=msize, y=node_disabled1_alg0_scotch0] {3_Chapters/4_Chapter_TopologyAwareness/Figs/data/cedar/ar_cpu_64.dat};
+            
+            \addlegendentry{RSA}
+            \addlegendentry{Ring}
+            \addlegendentry{Recursive Doubling}
+            % \addlegendentry{Remaping}
+            \addlegendentry{OMPI}
+            
+        \end{groupplot}
+    \end{tikzpicture}
+    \caption[Rank reordered allreduce microbenchmark results on Cedar]{
+        OSU Microbenchmark allreduce evaluation on Cedar.
+        GPU runs have 32 nodes with 4 processes per node, totalling 128 GPUs.
+        CPU runs have 64 nodes with 32 processes per node, totalling 2048 processes.
+        Message sizes range from 4B to 256MB on GPU resources and 4B to 64MB on CPU resources.
+    }
+    \label{fig:cedar-ar-32g64c}
+\end{figure*}

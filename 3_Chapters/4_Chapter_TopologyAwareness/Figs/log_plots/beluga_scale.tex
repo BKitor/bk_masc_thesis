@@ -1,0 +1,79 @@
+
+\begin{figure*}
+    \centering
+    \begin{tikzpicture}
+        \begin{groupplot}[group style={
+                        group size=2 by 2,
+                        xlabels at=edge bottom,
+                        ylabels at=edge left,
+                        % xticklabels at=edge bottom,
+                        % yticklabels at=edge left,
+                        vertical sep=1.5cm,
+                    },
+                height=5.7cm,
+                width=7.5cm,
+                xlabel={Number of Processes},
+                ylabel={Latency ($\mu$s)},
+                % xtick={32,64,128},
+                % xticklabels={32,64,128},
+                ymin=0,
+                grid=major, 
+                ybar,
+                enlarge x limits=0.2,
+            ]
+            
+            \nextgroupplot[title=Allreduce GPU, xmode=log, log basis x=2, bar width=6,
+                legend columns=4, legend style={anchor=north, at={(0.5, -1.67)}},
+                xticklabels={128, 256, 512}, xtick={128, 256, 512}]
+            \addplot[red, pattern=horizontal lines] table[x=nproc, y=rsa] {3_Chapters/4_Chapter_TopologyAwareness/Figs/data/beluga/scale/ar_gpu_bysocket_64m.dat};
+            \addplot[green, pattern=horizontal lines] table[x=nproc, y=ring] {3_Chapters/4_Chapter_TopologyAwareness/Figs/data/beluga/scale/ar_gpu_bysocket_64m.dat};
+            \addplot[orange, pattern=horizontal lines]  table[x=nproc, y=rdouble] {3_Chapters/4_Chapter_TopologyAwareness/Figs/data/beluga/scale/ar_gpu_bysocket_64m.dat};
+            % \addplot[blue, pattern=horizontal lines]  table[x=nproc, y=scotch] {3_Chapters/4_Chapter_TopologyAwareness/Figs/data/beluga/scale/ar_gpu_bysocket_64m.dat};
+            \addplot[black, pattern=horizontal lines] table[x=nproc, y=def] {3_Chapters/4_Chapter_TopologyAwareness/Figs/data/beluga/scale/ar_gpu_bysocket_64m.dat};
+            \addlegendentry{rsa}
+            \addlegendentry{ring}
+            \addlegendentry{rdouble}
+            % \addlegendentry{scotch}
+            \addlegendentry{def}
+            
+            \nextgroupplot[title=Allreduce CPU, xmode=log, log basis x=2, bar width=6,
+                xticklabels={1024, 2048, 4096}, xtick={1024, 2048, 4096}]
+            \addplot[red, pattern=horizontal lines] table[x=nproc, y=rsa] {3_Chapters/4_Chapter_TopologyAwareness/Figs/data/beluga/scale/ar_cpu_bysocket_64m.dat};
+            \addplot[green, pattern=horizontal lines] table[x=nproc, y=ring] {3_Chapters/4_Chapter_TopologyAwareness/Figs/data/beluga/scale/ar_cpu_bysocket_64m.dat};
+            \addplot[orange, pattern=horizontal lines]  table[x=nproc, y=rdouble] {3_Chapters/4_Chapter_TopologyAwareness/Figs/data/beluga/scale/ar_cpu_bysocket_64m.dat};
+            % \addplot[blue, pattern=horizontal lines]  table[x=nproc, y=scotch] {3_Chapters/4_Chapter_TopologyAwareness/Figs/data/beluga/scale/ar_cpu_bysocket_64m.dat};
+            \addplot[black, pattern=horizontal lines] table[x=nproc, y=def] {3_Chapters/4_Chapter_TopologyAwareness/Figs/data/beluga/scale/ar_cpu_bysocket_64m.dat};
+            
+            \nextgroupplot[title=Broadcast GPU, 
+                xmode=log, log basis x=2, bar width=6, 
+                xticklabels={128, 256, 512}, xtick={128, 256, 512}]
+            \addplot[red, pattern=dots] table[x=nproc, y=bintree] {3_Chapters/4_Chapter_TopologyAwareness/Figs/data/beluga/scale/bc_gpu_bysocket_64m.dat};
+            \addplot[green, pattern=dots] table[x=nproc, y=knomial] {3_Chapters/4_Chapter_TopologyAwareness/Figs/data/beluga/scale/bc_gpu_bysocket_64m.dat};
+            \addplot[orange, pattern=dots]  table[x=nproc, y=scag] {3_Chapters/4_Chapter_TopologyAwareness/Figs/data/beluga/scale/bc_gpu_bysocket_64m.dat};
+            % \addplot[blue, pattern=dots]  table[x=nproc, y=scotch] {3_Chapters/4_Chapter_TopologyAwareness/Figs/data/beluga/scale/bc_gpu_bysocket_64m.dat};
+            \addplot[black, pattern=dots] table[x=nproc, y=def] {3_Chapters/4_Chapter_TopologyAwareness/Figs/data/beluga/scale/bc_gpu_bysocket_64m.dat};
+            
+            \nextgroupplot[title=Broadcast CPU,
+                xmode=log, log basis x=2, bar width=6, 
+                legend columns=4, legend style={anchor=north, at={(0.5, -0.3)}},
+                xticklabels={1024, 2048, 4096}, xtick={1024, 2048, 4096}]
+            \addplot[red, pattern=dots] table[x=nproc, y=bintree] {3_Chapters/4_Chapter_TopologyAwareness/Figs/data/beluga/scale/bc_cpu_bysocket_64m.dat};
+            \addplot[green, pattern=dots] table[x=nproc, y=knomial] {3_Chapters/4_Chapter_TopologyAwareness/Figs/data/beluga/scale/bc_cpu_bysocket_64m.dat};
+            \addplot[orange, pattern=dots] table[x=nproc, y=scag] {3_Chapters/4_Chapter_TopologyAwareness/Figs/data/beluga/scale/bc_cpu_bysocket_64m.dat};
+            % \addplot[blue, pattern=dots] table[x=nproc, y=scotch] {3_Chapters/4_Chapter_TopologyAwareness/Figs/data/beluga/scale/bc_cpu_bysocket_64m.dat};
+            \addplot[black, pattern=dots] table[x=nproc, y=def] {3_Chapters/4_Chapter_TopologyAwareness/Figs/data/beluga/scale/bc_cpu_bysocket_64m.dat};
+            \addlegendentry{bintree}
+            \addlegendentry{knomial}
+            \addlegendentry{scag}
+            % \addlegendentry{scotch}
+            \addlegendentry{def}
+            
+            
+            
+        \end{groupplot}
+    \end{tikzpicture}
+    \caption[Rank reordering scalibility analysis]{
+        Scalability Evaluation of 64MB messages on Beluga. Each graph scales from 32 nodes to 128 nodes and is performed on a by-socket mapping.
+    }
+    \label{fig:beluga-scale-64m}
+\end{figure*}

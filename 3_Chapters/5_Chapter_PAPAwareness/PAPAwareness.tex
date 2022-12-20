@@ -147,7 +147,7 @@ In preveous work \cite{Faraj2008StudyProcArrivalMPIColl, Alizadeh2022PAPCollDL} 
 
 \subsection{Hardware}
 Evaluated on two clusters, Beluga and Narval.
-Beluga's architecture is defined in \ref{sec:topo-eval-hardware}.
+Beluga's architecture is defined in \ref{sec:CH4-eval-hardware}.
 Narval is very similar to Beluga, but is a newer generation system.
 Navval is a fat-tree cluster built on HDR InfiniBand, which can support 200Gb/s speeds, but instead Narval uses splitter cabels to create super fat leaf switches at 100Gb/s speeds, this gives it a blocking factor of 4.7:1.
 The GPU nodes have 4 Nvidia A100 GPUs which are fully connected by NVLink and hosted by two MAD Epyc 7413 (codename Milan) for a total of 48 cores per node.

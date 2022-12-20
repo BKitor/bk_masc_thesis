@@ -138,7 +138,7 @@ We reimplement their ring and recursive doubling algorithms and evaluate them on
 To extend their work while targeting large message allreduce, we propose a new reordering heuristic for reduce-scatter-allgather allreduce.
 Furthermore, we also propose heuristics for two broadcast algorithms, knomial and binary tree broadcast.
 
-\input{3_Chapters/4_Chapter_TopologyAwareness/Figures/TopoRR_strat_pseudocode}
+\input{3_Chapters/4_Chapter_TopologyAwareness/Figs/TopoRR_strat_pseudocode}
 
 \subsection{Reduce-Scatter-Allgather Allreduce}
 Reduce-scatter-allgather (RSA) allreduce, also known as Rabenseifner's algorithm, is a popular algorithm implemented in most MPI implementations and even used in external collective libraries like UCC \cite{UCC}.
@@ -156,8 +156,8 @@ With these goals in mind, we propose the heuristic in algorithm \ref{alg:rsa} to
 This heuristics starts by mapping rank 0 (line 1), then walks to the power of 2 communication graph mapping processes that have not been mapped yet (lines 5-10). 
 While looping through all the ranks, the reference rank is updated every two mappings (lines 11-14), this ensures that communicating pairs that are distance one away are mapped as close as possible. 
 
-\input{3_Chapters/4_Chapter_TopologyAwareness/Figures/Topo_graph_rsa}
-\input{3_Chapters/4_Chapter_TopologyAwareness/Figures/rsa_pseudocode}
+\input{3_Chapters/4_Chapter_TopologyAwareness/Figs/Topo_graph_rsa}
+\input{3_Chapters/4_Chapter_TopologyAwareness/Figs/rsa_pseudocode}
 
 \subsection{Binary Tree Broadcast}
 Binary trees benefit from their simplicity.
@@ -177,8 +177,8 @@ Then, depending on if the child processes are in the communicator, we bind them 
 To account for lopsidedness, the heuristics traverses the potentially smaller side first by mapping the numerically greater child first.
 We found that this does a more consistent job of mapping the tree to the system architectures we evaluated.
 
-\input{3_Chapters/4_Chapter_TopologyAwareness/Figures/Topo_graph_bintree}
-\input{3_Chapters/4_Chapter_TopologyAwareness/Figures/bin_tree_pseudocode}
+\input{3_Chapters/4_Chapter_TopologyAwareness/Figs/Topo_graph_bintree}
+\input{3_Chapters/4_Chapter_TopologyAwareness/Figs/bin_tree_pseudocode}
 
 \subsection{Knomial Broadcast}
 Knomial is a generalization of a binomial tree, and its structure can be defined inductively.
@@ -196,8 +196,8 @@ In the recursive function, we immediately map the $k-1$ subtrees of height 0 (li
 Then we use a while loop to calculate the values for subtrees that are further away (lines 8-19).
 If the root of a subtree does exist in the communicator, we map it as close as possible to the reference rank (line 14), calculate its depth (line 15), and recurse on it as the reference rank (line 16).
 
-\input{3_Chapters/4_Chapter_TopologyAwareness/Figures/Topo_graph_knomial}
-\input{3_Chapters/4_Chapter_TopologyAwareness/Figures/knomial_pseudocode}
+\input{3_Chapters/4_Chapter_TopologyAwareness/Figs/Topo_graph_knomial}
+\input{3_Chapters/4_Chapter_TopologyAwareness/Figs/knomial_pseudocode}
 
 \subsection{Hessam's work on Binomial, Ring, and Recursive Doubling}
 
@@ -270,9 +270,9 @@ SCOTCH uses a graph bisecting method to perform graph partitioning and embedding
 Out of the box, OpenMPI relies on a static tuning table to choose a collective algorithm based on the communicator size and message size, so we applied SCOTCH to whichever algorithm the tuning table selected.
 Due to technical and timeline-related reasons, we could only evaluate SCOTCH on Beluga.
 
-\input{3_Chapters/4_Chapter_TopologyAwareness/Figures/init_mapping}
+\input{3_Chapters/4_Chapter_TopologyAwareness/Figs/init_mapping}
 
-\subsection{Hardware}\label{sec:topo-eval-hardware}
+\subsection{Hardware}\label{sec:CH4-eval-hardware}
 We evaluated our work on two heterogeneous clusters, Beluga and Cedar, both provided by Compute Canada. 
 Beluga is Infiniband based, structured as a 5:1 blocking fat tree with static routing.  
 The CPU nodes have dual socket Xeon Gold 6148 Skylake processors, and the GPU nodes use the same CPUs attached to four V100s fully connected with NVLink.
@@ -296,11 +296,11 @@ Cedar's allocations were a bit smaller, with 32 GPU nodes (communicator size of 
 The Allreduce results on Cedar are presented in figure \ref{fig:cedar-ar-32g64c}, and the Broadcast results are in figure \ref{fig:cedar-bc-32g64c}.
 While results on Cedar are not identical to Beluga due to differences in computer architecture and experiment setup, the benefits of our proposed methods are consistent across both clusters.
 
-\input{3_Chapters/4_Chapter_TopologyAwareness/Figures/log_plots/ar_beluga_128}
-\input{3_Chapters/4_Chapter_TopologyAwareness/Figures/log_plots/bc_beluga_128}
+\input{3_Chapters/4_Chapter_TopologyAwareness/Figs/log_plots/ar_beluga_128}
+\input{3_Chapters/4_Chapter_TopologyAwareness/Figs/log_plots/bc_beluga_128}
 
-\input{3_Chapters/4_Chapter_TopologyAwareness/Figures/log_plots/ar_cedar_32g_64c}
-\input{3_Chapters/4_Chapter_TopologyAwareness/Figures/log_plots/bc_cedar_32g_64c}
+\input{3_Chapters/4_Chapter_TopologyAwareness/Figs/log_plots/ar_cedar_32g_64c}
+\input{3_Chapters/4_Chapter_TopologyAwareness/Figs/log_plots/bc_cedar_32g_64c}
 
 Across all evaluated examples, at least one of the remapped algorithms performs better, or on par, with the default mapping. 
 There would be an opportunity to restructure OpenMPI's tuning table to select the most optimal remapped algorithm, providing a more performant \texttt{MPI\_Allreduce()}.
@@ -334,7 +334,7 @@ While both allocations benefit from remapping, the results are more impactful fo
 
 \subsubsection{Scalability}
 
-\input{3_Chapters/4_Chapter_TopologyAwareness/Figures/log_plots/beluga_scale}
+\input{3_Chapters/4_Chapter_TopologyAwareness/Figs/log_plots/beluga_scale}
 
 The remapping method does retain its performance wins across communicator sizes. 
 Figure \ref{fig:beluga-scale-64m} demonstrates how each algorithm compares scaling a 64MB collective from 32 nodes to 128 nodes.

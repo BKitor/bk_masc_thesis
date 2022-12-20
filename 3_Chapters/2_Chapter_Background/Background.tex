@@ -261,7 +261,7 @@ Non-blocking collectives do exist, like the point-to-point interface, they retur
 The popularity, yet simultaneous optimization challenges, have led to a large body of research on the topic of collective communication. 
 There are a plethora of strategies for designing collective algorithms, two of which we rely on for this thesis, including topology-awareness and process arrival pattern awareness.
 
-\subsubsection{Algorithm Structure}
+\subsubsection{Algorithm Structure}\label{sec:CH2-MPI-AlgStructure}
 Under the hood, collective algorithms are implemented as a series of point-to-point messages. 
 There are different ways to structure the exchanges to implement a specified collective, and different structures have different performance tradeoffs depending on the collective's parameters.
 One of the most impactful parameters in communication is the size of the message, and it is best exemplified through Hockney's model \cite{Hockney1994HockenyModel}.
@@ -280,7 +280,7 @@ At the midway point (the fourth grid in figure \ref{fig:ring-allreduce-grid}), e
 The algorithm finishes with another $p-1$ exchanges of size $n/p$, this time without the reduce, which acts as an allgather distributing the final result.
 In total, $2(p-1)$ messages of size $n/p$ are sent, with half of them requiring a reduction, this can give us a total collective time of $T_{ring} = 2(p-1)\alpha + 2((p-1)/p)n\beta + ((p-1)/p)n\gamma$.
 The ring algorithm can be generalized to a reduce-scatter followed by an allgather and maintains the $29(p-1)/p)n\beta$ term.
-This leads to another popular implementation of allreduce, Rabenseifner's algorithm, which uses a recursive doubling method to implement reduce-scatter allgather \cite{Thakur2005OptMPICH}.
+This leads to another popular implementation of allreduce, Rabenseifner's algorithm, which uses a recursive doubling method to implement reduce-scatter allgather \cite{Rabenseifner2004OptOfCollRedOps}.
 This change can lower the number of data exchanges to $2\log(p)$ but can require an extra communication stage to balance data if $p$ is not a power of 2.
 
 One-to-all type collective algorithms can often be modelled as trees where vertices are ranks, edges between vertices are messages, and the root of the tree is the root of the collective.
@@ -300,8 +300,9 @@ The hardware information includes the usual suspects like host memory characteri
 This info is relatively easy to collect, there as several libraries for exposing this info to applications, and many MPI implementations already collect this information at runtime.
 
 Acting on topology information is a whole different kind of challenge, these problems involve modelling an application's communication and accelerating it with the hardware info, and many methods have been attempted over the years.
-Some methods involve measuring all communication during a profiling run of an application, using the logs to model a communication pattern and calculate an optimal process to core binding that should be used in all future runs. 
-Other methods, like virtual topologies, rely on the application passing information to the MPI runtime, hinting at which ranks will exchange data within a communicator.
+There are ahead of time mapping methods, which involve measuring all communication during a profiling run of an application, using the logs to model a communication pattern, and using the communication pattern to calculate an optimal process to core binding before all future runs of the application. 
+Another method of applying topology awareness is virtual topologies, this is a hint applications can pass to the MPI runtime when creating new communicators.
+Virtual topologies can include multidimentional cartesian grids or user speicifed graphs, and the MPI implementation can leverage topology information to more optimaly assign ranks in the new communicatior.
 Collectives are also a target for topology awareness as the collective itself specifies the expected communication, and the implementation is given free rein to optimize the algorithm however it sees best.
 
 One noteworthy type of topology-aware collective algorithms are hierarchical algorithms, these algorithms break a larger collective into several smaller collectives that run across subsets of the communicator. 
