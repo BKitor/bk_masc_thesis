@@ -15,9 +15,10 @@
                 ylabel={Latency ($\mu$s)},
                 xtick={1048579, 16777216, 134217728},
                 xticklabels={1MB, 16MB, 128MB},
-                legend style={at={(-1.1,-0.5)}, anchor=north},
+                legend style={at={(-0.85,-0.5)}, anchor=north},
                 legend columns=3,
                 grid=major,
+                cycle list name=bk_pap_omb_cyclelist,
             ]
 
             
@@ -120,7 +121,7 @@
             
             \addlegendentry{PAP-Aware Pipelined}
             \addlegendentry{PAP-Aware No Pipeline}
-            \addlegendentry{OMPI RSA+GPU reduce}
+            \addlegendentry{RSA+GPU reduce}
             \addlegendentry{OMPI+UCC-UCP}
             \addlegendentry{OMPI+UCC-NCCL}
             \addlegendentry{Default OMPI}
@@ -128,7 +129,9 @@
         \end{groupplot}
     \end{tikzpicture}
     \caption[PAP-Aware allreduce microbenchmarks on Beluga]{
-    PAP-Awareness algorithm evaluated with MIF microbenchmark on Beluga.
+        MIF microbenchmark on Beluga.
+        Nodes range from 4 to 32, with 4 processes per node. 
+        The MIFs presented include 0 (no imbalance), 6, and 20.
     }
     \label{fig:beluga_omb_pap}
 \end{figure*}

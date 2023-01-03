@@ -267,7 +267,7 @@ There are different ways to structure the exchanges to implement a specified col
 One of the most impactful parameters in communication is the size of the message, and it is best exemplified through Hockney's model \cite{Hockney1994HockenyModel}.
 Hockney's model states that the time to send a message of $n$ bytes can be estimated as $T_{msg}=\alpha+n\beta$, where $\alpha$ represents the startup overhead cost (seconds), and $\beta$ is inverse bandwidth (seconds per byte).
 What tends to happen in practice is that small messages are bound by $\alpha$, while large messages spend most of their time bandwith bound by $n\beta$.
-This principle extends this to collective algorithms, where designs tend to fall into the same two categories, latency bound for small messages and bandwidth bound for large messages.
+This principle extends this to collective algorithms, where designs tend to fall into the same two categories, latency bound for small messages and bandwidth bound for large messages, and Thakur et al. provide analysis of most foundational collective algorithms \cite{Thakur2005OptMPICH}.
 Latency-bound algorithms try to minimize the number of messages sent as the fewer times we invoke $\alpha$, the faster the algorithm, while large message algorithms will break the data vector into components and issue multiple smaller messages minimizing the total amount of data sent.
 When dealing with reduction operations, we can add a $\gamma$ term which represents the time to perform a reduction in seconds per flop, similar to the $\beta$, this scales with $n$.
 

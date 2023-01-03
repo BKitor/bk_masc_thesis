@@ -17,56 +17,57 @@
                 legend style={at={(-0.1,-0.3)}, anchor=north},
                 legend columns=5,
                 grid=major,
+                cycle list name=bk_remap_omb_cyclelist,
             ]
             
             \nextgroupplot[title=GPU By Socket, xmode=log, log basis x=2, ymode=log, log basis y=10, restrict y to domain=0:1100, xmin=2, xmax=268435456] 
-            \addplot[red, dashed, mark=*] table[x=msize, y=bintree] {3_Chapters/4_Chapter_TopologyAwareness/Figs/data/beluga/mandm/data/bc_gpu_bysoc_128.dat};
-            \addplot[green, dashed, mark=square*] table[x=msize, y=knomial] {3_Chapters/4_Chapter_TopologyAwareness/Figs/data/beluga/mandm/data/bc_gpu_bysoc_128.dat};
-            \addplot[orange, dashed, mark=diamond*] table[x=msize, y=scag] {3_Chapters/4_Chapter_TopologyAwareness/Figs/data/beluga/mandm/data/bc_gpu_bysoc_128.dat};
+            \addplot table[x=msize, y=bintree] {3_Chapters/4_Chapter_TopologyAwareness/Figs/data/beluga/mandm/data/bc_gpu_bysoc_128.dat};
+            \addplot table[x=msize, y=knomial] {3_Chapters/4_Chapter_TopologyAwareness/Figs/data/beluga/mandm/data/bc_gpu_bysoc_128.dat};
+            \addplot table[x=msize, y=scag] {3_Chapters/4_Chapter_TopologyAwareness/Figs/data/beluga/mandm/data/bc_gpu_bysoc_128.dat};
             % \addplot table[x=msize, y=min] {3_Chapters/4_Chapter_TopologyAwareness/Figs/data/beluga/mandm/data/bc_gpu_bysoc_128.dat};
-            \addplot[blue, mark=+] table[x=msize, y=scotch] {3_Chapters/4_Chapter_TopologyAwareness/Figs/data/beluga/mandm/data/bc_gpu_bysoc_128.dat};
-            \addplot[black, mark=x] table[x=msize, y=def] {3_Chapters/4_Chapter_TopologyAwareness/Figs/data/beluga/mandm/data/bc_gpu_bysoc_128.dat};
+            \addplot table[x=msize, y=scotch] {3_Chapters/4_Chapter_TopologyAwareness/Figs/data/beluga/mandm/data/bc_gpu_bysoc_128.dat};
+            \addplot table[x=msize, y=def] {3_Chapters/4_Chapter_TopologyAwareness/Figs/data/beluga/mandm/data/bc_gpu_bysoc_128.dat};
             
             \nextgroupplot[title=CPU By Socket, xmode=log, log basis x=2, ymode=log, log basis y=10, restrict y to domain=0:1100, xmin=2, xmax=268435456]
-            \addplot[red, dashed, mark=*] table[x=msize, y=socket_disabled0_alg5_scotch0] {3_Chapters/4_Chapter_TopologyAwareness/Figs/data/beluga/cpu_128_bc.dat};
-            \addplot[green, dashed, mark=square*] table[x=msize, y=socket_disabled0_alg7_scotch0] {3_Chapters/4_Chapter_TopologyAwareness/Figs/data/beluga/cpu_128_bc.dat};
-            \addplot[orange, dashed, mark=diamond*] table[x=msize, y=socket_disabled0_alg8_scotch0] {3_Chapters/4_Chapter_TopologyAwareness/Figs/data/beluga/cpu_128_bc.dat};
+            \addplot table[x=msize, y=socket_disabled0_alg5_scotch0] {3_Chapters/4_Chapter_TopologyAwareness/Figs/data/beluga/cpu_128_bc.dat};
+            \addplot table[x=msize, y=socket_disabled0_alg7_scotch0] {3_Chapters/4_Chapter_TopologyAwareness/Figs/data/beluga/cpu_128_bc.dat};
+            \addplot table[x=msize, y=socket_disabled0_alg8_scotch0] {3_Chapters/4_Chapter_TopologyAwareness/Figs/data/beluga/cpu_128_bc.dat};
             % \addplot table[x=msize, y=socket_disabled0_alg0_scotch0] {3_Chapters/4_Chapter_TopologyAwareness/Figs/data/beluga/cpu_128_bc.dat};
-            \addplot[blue, mark=+] table[x=msize, y=socket_disabled0_alg0_scotch1] {3_Chapters/4_Chapter_TopologyAwareness/Figs/data/beluga/cpu_128_bc.dat};
-            \addplot[black, mark=x] table[x=msize, y=socket_disabled1_alg0_scotch0] {3_Chapters/4_Chapter_TopologyAwareness/Figs/data/beluga/cpu_128_bc.dat};
+            \addplot table[x=msize, y=socket_disabled0_alg0_scotch1] {3_Chapters/4_Chapter_TopologyAwareness/Figs/data/beluga/cpu_128_bc.dat};
+            \addplot table[x=msize, y=socket_disabled1_alg0_scotch0] {3_Chapters/4_Chapter_TopologyAwareness/Figs/data/beluga/cpu_128_bc.dat};
             
             
             \nextgroupplot[title=GPU By Core, xmode=log, log basis x=2, ymode=log, log basis y=10, restrict y to domain=0:1100, xmin=2, xmax=268435456]
-            \addplot[red, dashed, mark=*] table[x=msize, y=bintree] {3_Chapters/4_Chapter_TopologyAwareness/Figs/data/beluga/mandm/data/bc_gpu_bycore_128.dat};
-            \addplot[green, dashed, mark=square*] table[x=msize, y=knomial] {3_Chapters/4_Chapter_TopologyAwareness/Figs/data/beluga/mandm/data/bc_gpu_bycore_128.dat};
-            \addplot[orange, dashed, mark=diamond*] table[x=msize, y=scag] {3_Chapters/4_Chapter_TopologyAwareness/Figs/data/beluga/mandm/data/bc_gpu_bycore_128.dat};
+            \addplot table[x=msize, y=bintree] {3_Chapters/4_Chapter_TopologyAwareness/Figs/data/beluga/mandm/data/bc_gpu_bycore_128.dat};
+            \addplot table[x=msize, y=knomial] {3_Chapters/4_Chapter_TopologyAwareness/Figs/data/beluga/mandm/data/bc_gpu_bycore_128.dat};
+            \addplot table[x=msize, y=scag] {3_Chapters/4_Chapter_TopologyAwareness/Figs/data/beluga/mandm/data/bc_gpu_bycore_128.dat};
             % \addplot table[x=msize, y=min] {3_Chapters/4_Chapter_TopologyAwareness/Figs/data/beluga/mandm/data/bc_gpu_bycore_128.dat};
-            \addplot[blue, mark=+] table[x=msize, y=scotch] {3_Chapters/4_Chapter_TopologyAwareness/Figs/data/beluga/mandm/data/bc_gpu_bycore_128.dat};
-            \addplot[black, mark=x] table[x=msize, y=def] {3_Chapters/4_Chapter_TopologyAwareness/Figs/data/beluga/mandm/data/bc_gpu_bycore_128.dat};
+            \addplot table[x=msize, y=scotch] {3_Chapters/4_Chapter_TopologyAwareness/Figs/data/beluga/mandm/data/bc_gpu_bycore_128.dat};
+            \addplot table[x=msize, y=def] {3_Chapters/4_Chapter_TopologyAwareness/Figs/data/beluga/mandm/data/bc_gpu_bycore_128.dat};
             
             \nextgroupplot[title=CPU By Core, xmode=log, log basis x=2, ymode=log, log basis y=10, restrict y to domain=0:1100, xmin=2, xmax=268435456]
-            \addplot[red, dashed, mark=*] table[x=msize, y=core_disabled0_alg5_scotch0] {3_Chapters/4_Chapter_TopologyAwareness/Figs/data/beluga/cpu_128_bc.dat};
-            \addplot[green, dashed, mark=square*] table[x=msize, y=core_disabled0_alg7_scotch0] {3_Chapters/4_Chapter_TopologyAwareness/Figs/data/beluga/cpu_128_bc.dat};
-            \addplot[orange, dashed, mark=diamond*] table[x=msize, y=core_disabled0_alg8_scotch0] {3_Chapters/4_Chapter_TopologyAwareness/Figs/data/beluga/cpu_128_bc.dat};
+            \addplot table[x=msize, y=core_disabled0_alg5_scotch0] {3_Chapters/4_Chapter_TopologyAwareness/Figs/data/beluga/cpu_128_bc.dat};
+            \addplot table[x=msize, y=core_disabled0_alg7_scotch0] {3_Chapters/4_Chapter_TopologyAwareness/Figs/data/beluga/cpu_128_bc.dat};
+            \addplot table[x=msize, y=core_disabled0_alg8_scotch0] {3_Chapters/4_Chapter_TopologyAwareness/Figs/data/beluga/cpu_128_bc.dat};
             % \addplot table[x=msize, y=core_disabled0_alg0_scotch0] {3_Chapters/4_Chapter_TopologyAwareness/Figs/data/beluga/cpu_128_bc.dat};
-            \addplot[blue, mark=+] table[x=msize, y=core_disabled0_alg0_scotch1] {3_Chapters/4_Chapter_TopologyAwareness/Figs/data/beluga/cpu_128_bc.dat};
-            \addplot[black, mark=x] table[x=msize, y=core_disabled1_alg0_scotch0] {3_Chapters/4_Chapter_TopologyAwareness/Figs/data/beluga/cpu_128_bc.dat};
+            \addplot table[x=msize, y=core_disabled0_alg0_scotch1] {3_Chapters/4_Chapter_TopologyAwareness/Figs/data/beluga/cpu_128_bc.dat};
+            \addplot table[x=msize, y=core_disabled1_alg0_scotch0] {3_Chapters/4_Chapter_TopologyAwareness/Figs/data/beluga/cpu_128_bc.dat};
             
             \nextgroupplot[title=GPU By Node, xmode=log, log basis x=2, ymode=log, log basis y=10, restrict y to domain=0:1100, xmin=2, xmax=268435456]
-            \addplot[red, dashed, mark=*] table[x=msize, y=bintree] {3_Chapters/4_Chapter_TopologyAwareness/Figs/data/beluga/mandm/data/bc_gpu_bynode_128.dat};
-            \addplot[green, dashed, mark=square*] table[x=msize, y=knomial] {3_Chapters/4_Chapter_TopologyAwareness/Figs/data/beluga/mandm/data/bc_gpu_bynode_128.dat};
-            \addplot[orange, dashed, mark=diamond*] table[x=msize, y=scag] {3_Chapters/4_Chapter_TopologyAwareness/Figs/data/beluga/mandm/data/bc_gpu_bynode_128.dat};
+            \addplot table[x=msize, y=bintree] {3_Chapters/4_Chapter_TopologyAwareness/Figs/data/beluga/mandm/data/bc_gpu_bynode_128.dat};
+            \addplot table[x=msize, y=knomial] {3_Chapters/4_Chapter_TopologyAwareness/Figs/data/beluga/mandm/data/bc_gpu_bynode_128.dat};
+            \addplot table[x=msize, y=scag] {3_Chapters/4_Chapter_TopologyAwareness/Figs/data/beluga/mandm/data/bc_gpu_bynode_128.dat};
             % \addplot table[x=msize, y=min] {3_Chapters/4_Chapter_TopologyAwareness/Figs/data/beluga/mandm/data/bc_gpu_bynode_128.dat};
-            \addplot[blue, mark=+] table[x=msize, y=scotch] {3_Chapters/4_Chapter_TopologyAwareness/Figs/data/beluga/mandm/data/bc_gpu_bynode_128.dat};
-            \addplot[black, mark=x] table[x=msize, y=def] {3_Chapters/4_Chapter_TopologyAwareness/Figs/data/beluga/mandm/data/bc_gpu_bynode_128.dat};
+            \addplot table[x=msize, y=scotch] {3_Chapters/4_Chapter_TopologyAwareness/Figs/data/beluga/mandm/data/bc_gpu_bynode_128.dat};
+            \addplot table[x=msize, y=def] {3_Chapters/4_Chapter_TopologyAwareness/Figs/data/beluga/mandm/data/bc_gpu_bynode_128.dat};
             
             \nextgroupplot[title=CPU By Node, xmode=log, log basis x=2, ymode=log, log basis y=10, restrict y to domain=0:1100, xmin=2, xmax=268435456]
-            \addplot[red, dashed, mark=*] table[x=msize, y=node_disabled0_alg5_scotch0] {3_Chapters/4_Chapter_TopologyAwareness/Figs/data/beluga/cpu_128_bc.dat};
-            \addplot[green, dashed, mark=square*] table[x=msize, y=node_disabled0_alg7_scotch0] {3_Chapters/4_Chapter_TopologyAwareness/Figs/data/beluga/cpu_128_bc.dat};
-            \addplot[orange, dashed, mark=diamond*] table[x=msize, y=node_disabled0_alg8_scotch0] {3_Chapters/4_Chapter_TopologyAwareness/Figs/data/beluga/cpu_128_bc.dat};
+            \addplot table[x=msize, y=node_disabled0_alg5_scotch0] {3_Chapters/4_Chapter_TopologyAwareness/Figs/data/beluga/cpu_128_bc.dat};
+            \addplot table[x=msize, y=node_disabled0_alg7_scotch0] {3_Chapters/4_Chapter_TopologyAwareness/Figs/data/beluga/cpu_128_bc.dat};
+            \addplot table[x=msize, y=node_disabled0_alg8_scotch0] {3_Chapters/4_Chapter_TopologyAwareness/Figs/data/beluga/cpu_128_bc.dat};
             % \addplot table[x=msize, y=node_disabled0_alg0_scotch0] {3_Chapters/4_Chapter_TopologyAwareness/Figs/data/beluga/cpu_128_bc.dat};
-            \addplot[blue, mark=+] table[x=msize, y=node_disabled0_alg0_scotch1] {3_Chapters/4_Chapter_TopologyAwareness/Figs/data/beluga/cpu_128_bc.dat};
-            \addplot[black, mark=x] table[x=msize, y=node_disabled1_alg0_scotch0] {3_Chapters/4_Chapter_TopologyAwareness/Figs/data/beluga/cpu_128_bc.dat};
+            \addplot table[x=msize, y=node_disabled0_alg0_scotch1] {3_Chapters/4_Chapter_TopologyAwareness/Figs/data/beluga/cpu_128_bc.dat};
+            \addplot table[x=msize, y=node_disabled1_alg0_scotch0] {3_Chapters/4_Chapter_TopologyAwareness/Figs/data/beluga/cpu_128_bc.dat};
             
             \addlegendentry{bintree}
             \addlegendentry{knomial}

@@ -335,6 +335,17 @@
     url={https://docs.nvidia.com/deeplearning/cudnn/developer-guide/index.html}
 }
 
+@INPROCEEDINGS{Graham2016SHArP,
+    author={Graham, Richard L. and Bureddy, Devendar and Lui, Pak and Rosenstock, Hal and Shainer, Gilad and Bloch, Gil and Goldenerg, Dror and Dubman, Mike and Kotchubievsky, Sasha and Koushnir, Vladimir and Levi, Lion and Margolin, Alex and Ronen, Tamir and Shpiner, Alexander and Wertheim, Oded and Zahavi, Eitan},  
+    booktitle={2016 First International Workshop on Communication Optimizations in HPC (COMHPC)},
+    title={Scalable Hierarchical Aggregation Protocol (SHArP): A Hardware Architecture for Efficient Data Reduction},
+    year={2016},
+    volume={},
+    number={},
+    pages={1-10},
+    doi={10.1109/COMHPC.2016.006}
+}
+
 -------------------------------------------------------------------------------------------------------
 CH3 DL:
 
@@ -720,6 +731,18 @@ CH3 DL:
     series = {ICML'11}
 }
 
+@inproceedings{Recht2011HogWild,
+    author = {Recht, Benjamin and Re, Christopher and Wright, Stephen and Niu, Feng},
+    booktitle = {Advances in Neural Information Processing Systems},
+    editor = {J. Shawe-Taylor and R. Zemel and P. Bartlett and F. Pereira and K.Q. Weinberger},
+    pages = {},
+    publisher = {Curran Associates, Inc.},
+    title = {Hogwild!: A Lock-Free Approach to Parallelizing Stochastic Gradient Descent},
+    url = {https://proceedings.neurips.cc/paper/2011/file/218a0aefd1d1a4be65601cc6ddc1520e-Paper.pdf},
+    volume = {24},
+    year = {2011}
+}
+
 @inproceedings{Noel2014Dogwild,
   title={Dogwild!-distributed hogwild for cpu \& gpu},
   author={Noel, Cyprien and Osindero, Simon},
@@ -777,7 +800,58 @@ CH3 DL:
     series = {MLHPC'17}
 }
 
+@inproceedings{Renggli2019SparCML,
+    author = {Renggli, Cedric and Ashkboos, Saleh and Aghagolzadeh, Mehdi and Alistarh, Dan and Hoefler, Torsten},
+    title = {SparCML: High-Performance Sparse Communication for Machine Learning},
+    year = {2019},
+    isbn = {9781450362290},
+    publisher = {Association for Computing Machinery},
+    address = {New York, NY, USA},
+    url = {https://doi.org/10.1145/3295500.3356222},
+    doi = {10.1145/3295500.3356222},
+    booktitle = {Proceedings of the International Conference for High Performance Computing, Networking, Storage and Analysis},
+    articleno = {11},
+    numpages = {15},
+    keywords = {sparse allgather, sparse allreduce, sparse input vectors},
+    location = {Denver, Colorado},
+    series = {SC '19}
+}
 
+@inproceedings{Lian2017ACaseForDecentralizedPSGD,
+    author = {Lian, Xiangru and Zhang, Ce and Zhang, Huan and Hsieh, Cho-Jui and Zhang, Wei and Liu, Ji},
+    title = {Can Decentralized Algorithms Outperform Centralized Algorithms? A Case Study for Decentralized Parallel Stochastic Gradient Descent},
+    year = {2017},
+    isbn = {9781510860964},
+    publisher = {Curran Associates Inc.},
+    address = {Red Hook, NY, USA},
+    booktitle = {Proceedings of the 31st International Conference on Neural Information Processing Systems},
+    pages = {5336–5346},
+    numpages = {11},
+    location = {Long Beach, California, USA},
+    series = {NIPS'17}
+}
+
+@INPROCEEDINGS{Kurth2018ExascaleDLClimate,
+    author={Kurth, Thorsten and Treichler, Sean and Romero, Joshua and Mudigonda, Mayur and Luehr, Nathan and Phillips, Everett and Mahesh, Ankur and Matheson, Michael and Deslippe, Jack and Fatica, Massimiliano and Prabhat, Prabhat and Houston, Michael},
+    booktitle={SC18: International Conference for High Performance Computing, Networking, Storage and Analysis},
+    title={Exascale Deep Learning for Climate Analytics},
+    year={2018},
+    volume={},
+    number={},
+    pages={649-660},
+    doi={10.1109/SC.2018.00054}
+}
+
+@INPROCEEDINGS{Dryden2016CommQuantDPDNN,
+    author={Dryden, Nikoli and Moon, Tim and Jacobs, Sam Ade and Van Essen, Brian},
+    booktitle={2016 2nd Workshop on Machine Learning in HPC Environments (MLHPC)},
+    title={Communication Quantization for Data-Parallel Training of Deep Neural Networks},
+    year={2016},
+    volume={},
+    number={},
+    pages={1-8},
+    doi={10.1109/MLHPC.2016.004}
+}
 
 ----------------------------------------------------------------------
 Topo-Awareness Papers:
@@ -1222,6 +1296,48 @@ PAP-Awareness Papers:
     keywords = {MPI_Allreduce, Collective Communication, Distributed Deep Learning, Process Arrival Pattern, MPI},
     location = {Chattanooga, TN, USA},
     series = {EuroMPI/USA'22}
+}
+
+@article{Howard2017MobileNet,
+  author    = {Andrew G. Howard and Menglong Zhu and Bo Chen and Dmitry Kalenichenko and Weijun Wang and Tobias Weyand and Marco Andreetto and Hartwig Adam},
+  title     = {MobileNets: Efficient Convolutional Neural Networks for Mobile Vision Applications},
+  journal   = {CoRR},
+  volume    = {abs/1704.04861},
+  year      = {2017},
+  url       = {http://arxiv.org/abs/1704.04861},
+  eprinttype = {arXiv},
+  eprint    = {1704.04861},
+  timestamp = {Thu, 27 May 2021 16:20:51 +0200},
+  biburl    = {https://dblp.org/rec/journals/corr/HowardZCKWWAA17.bib},
+  bibsource = {dblp computer science bibliography, https://dblp.org}
+}
+
+@article{He2015ResNet,
+  author    = {Kaiming He and Xiangyu Zhang and Shaoqing Ren and Jian Sun},
+  title     = {Deep Residual Learning for Image Recognition},
+  journal   = {CoRR},
+  volume    = {abs/1512.03385},
+  year      = {2015},
+  url       = {http://arxiv.org/abs/1512.03385},
+  eprinttype = {arXiv},
+  eprint    = {1512.03385},
+  timestamp = {Wed, 17 Apr 2019 17:23:45 +0200},
+  biburl    = {https://dblp.org/rec/journals/corr/HeZRS15.bib},
+  bibsource = {dblp computer science bibliography, https://dblp.org}
+}
+
+@article{Huang2016DenseNet,
+  author    = {Gao Huang and Zhuang Liu and Kilian Q. Weinberger},
+  title     = {Densely Connected Convolutional Networks},
+  journal   = {CoRR},
+  volume    = {abs/1608.06993},
+  year      = {2016},
+  url       = {http://arxiv.org/abs/1608.06993},
+  eprinttype = {arXiv},
+  eprint    = {1608.06993},
+  timestamp = {Mon, 10 Sep 2018 15:49:32 +0200},
+  biburl    = {https://dblp.org/rec/journals/corr/HuangLW16a.bib},
+  bibsource = {dblp computer science bibliography, https://dblp.org}
 }
 
 -----------------------------------------------------------------------------

@@ -1,0 +1,19 @@
+\begin{table}
+    \centering
+    \caption{
+        The number of model parameters and data sizes for evaluated models.
+        The number following the model name indicates the depth of the model.
+        Models are provided as Keras Applications from \url{https://keras.io/api/applications/}.
+    }
+    \begin{tabular}{lll}
+    ~           & Parameters & Bytes (est) \\
+    MobileNet   & 4.3M       & 16MB      \\
+    DenseNet121 & 8.1M       & 33MB      \\
+    DenseNet169 & 14.3M      & 57MB      \\
+    DenseNet201 & 20.2M      & 80MB      \\
+    ResNet50    & 25.6M      & 98MB     \\
+    ResNet101   & 44.7M      & 171MB     \\
+    ResNet152   & 60.4M      & 232MB     \\
+    \end{tabular}
+    \label{tbl:hvd_model_chars}
+\end{table}

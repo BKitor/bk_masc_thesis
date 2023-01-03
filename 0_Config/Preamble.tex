@@ -167,6 +167,25 @@
 \usepgfplotslibrary{groupplots}
 \usepackage{etex}
 
+
+\pgfplotscreateplotcyclelist{bk_pap_omb_cyclelist}{
+    {magenta, densely dashdotdotted, mark=*}, 
+    {orange, densely dashdotdotted, mark=*}, 
+    {violet, densely dotted, mark=diamond*}, 
+    {blue, mark=asterisk}, 
+    {green!60!black, mark=asterisk}, 
+    {black, densely dotted, mark=diamond*}
+}
+
+\pgfplotscreateplotcyclelist{bk_remap_omb_cyclelist}{
+    {red, dashed, mark=*},
+    {green, dashed, mark=square*},
+    {orange, dashed, mark=diamond*},
+    % {violet, mark=asterisk},
+    {black, mark=x}
+}
+
+
 % Define how the ``listings'' to look.
 % \lstset{basicstyle=\footnotesize,, numbers=left, numberstyle=\small, stepnumber=1, numbersep=5pt, showspaces=false, lineskip=-1pt}
 
@@ -203,6 +222,7 @@
 \usepackage{lscape}			% For landscape
 \usepackage{adjustbox}		% To adjust table width
 \usepackage{multirow}		% For merging and splitting table cells
+
 
 %*******************************************************************************
 % CAPTIONS

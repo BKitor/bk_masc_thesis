@@ -1,0 +1,13 @@
+\begin{table}
+    \centering
+    \caption{Horovod with PAP-Aware allreduce evaluated across different pipeline segment sizes.}
+    \begin{tabular}{llllll}
+                & 1MB    & 4MB    & 16MB   & 64MB   & 128MB  \\
+    MobileNet   & 4030.3 & 4121.5 & 4150.8 & 4201.2 & 4255.8 \\
+    DenseNet121 & 7169.4 & 7180.6 & 7088.8 & 7038.7 & 7094.7 \\
+    DenseNet201 & 4193.4 & 4141.1 & 4107.1 & 4229.9 & 4193.3 \\
+    ResNet50    & 6375.8 & 6354.7 & 6050.0 & 5476.3 & 5473.7 \\
+    ResNet152   & 2818.1 & 2815.4 & 2645.7 & 2398.8 & 2397.5 \\
+    \end{tabular}
+    \label{tbl:pap_hvd_narval_shift_seg}
+\end{table}

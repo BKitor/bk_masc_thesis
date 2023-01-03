@@ -1,0 +1,16 @@
+\begin{table}
+    \centering
+    \caption{Horovod Synthetic Benchmark, 4 Nodes on Beluga.}
+    \begin{tabular}{lllllll}
+                & bkpap 4MB & bkpap nopipe & rsa    & ucp    & nccl   & ompi   \\
+    MobileNet   & 4812.7    & 4803.9       & 4819.7 & 4802.9 & 4807.3 & 4819.2 \\
+    DenseNet121 & 4091.4    & 4118.3       & 4090.4 & 4125   & 4118.4 & 4095.1 \\
+    DenseNet169 & 2937.5    & 2949.6       & 2939.1 & 3251.9 & 3232.5 & 2942.4 \\
+    DenseNet201 & 2082.2    & 2086.5       & 2084.1 & 2452.7 & 2472.1 & 2069   \\
+    ResNet50    & 1995.2    & 1987.5       & 2016.9 & 2382.3 & 2409.8 & 2012.1 \\
+    ResNet101   & 1168.8    & 1170.1       & 1165.1 & 1386   & 1401.7 & 1166.5 \\
+    ResNet152   & 864.6     & 867.3        & 860.9  & 970.8  & 962.5  & 865.9  \\
+    ~           & ~         & ~            & ~      & ~      & ~      & ~      \\
+    \end{tabular}
+    \label{tbl:bg_hvd_synth_4n}
+\end{table}

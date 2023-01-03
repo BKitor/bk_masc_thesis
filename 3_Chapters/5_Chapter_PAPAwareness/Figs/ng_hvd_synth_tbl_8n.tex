@@ -1,0 +1,16 @@
+\begin{table}
+    \centering
+    \caption{Horovod Synthetic Benchmark, 8 Nodes on Narval.}
+    \begin{tabular}{lllllll}
+                & bkpap 4MB & bkpap nopipe & rsa     & ucp     & nccl    & ompi    \\
+    MobileNet   & 7838.8    & 8002.8       & 8170.6  & 7084.7  & 7125.8  & 7880.4  \\
+    DenseNet121 & 11064.8   & 11864.9      & 14200.4 & 10273.5 & 10259.2 & 13663.5 \\
+    DenseNet169 & 9289      & 7665         & 10832.7 & 8201.9  & 8129    & 9521.4  \\
+    DenseNet201 & 6974.6    & 5772.9       & 8177.5  & 6282.9  & 6112.7  & 6879.5  \\
+    ResNet50    & 7904.9    & 5752.1       & 10658.2 & 8376.2  & 8385.2  & 6516.4  \\
+    ResNet101   & 4653.4    & 3350.6       & 6484.6  & 4692    & 4724.8  & 3756.1  \\
+    ResNet152   & 3495.6    & 2480.4       & 4804.9  & 3505.5  & 3373.5  & 3038.8  \\
+    ~           & ~         & ~            & ~       & ~       & ~       & ~       \\
+    \end{tabular}
+    \label{tbl:ng_hvd_synth_8n}
+\end{table}

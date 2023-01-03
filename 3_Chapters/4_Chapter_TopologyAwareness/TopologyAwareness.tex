@@ -226,7 +226,7 @@ To ensure the robustness of our algorithm, we evaluate different initial mapping
 Furthermore, to evaluate against more traditional topology mapping methods, we compare our heuristics against SCOTCH, a commonly used graph partitioning library previously applied to topology-aware works.
 % Through microbenchmark evaluation, we are able to demonstrate that our method can improve allreduce performance, and proper algorithm selection could lead to more-optimal allreduce perforamce.
 
-\subsection{Software Implementation}
+\subsection{Software Implementation}\label{sec:CH4-soft-impl}
 We implemented our method by modifying OpenMPI v4.0.5 \cite{gabriel2004OpenMPI}.
 Building on top of OpenMPI let us leverage the existing collective implementations as well as the algorithm selection mechanism.
 OpenMPI also has internal support for Hwloc, which makes gathering topology information easier.

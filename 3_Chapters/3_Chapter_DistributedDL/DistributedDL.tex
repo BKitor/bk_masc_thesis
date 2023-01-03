@@ -125,33 +125,65 @@ These drawbacks add a lot of complexity to the design of model-parallel networks
     \caption{Data parallel architecture of Caffe, taken from \cite{Awan2017InDepthPerfCharOfDNN}}
     \label{fig:caffe-dp-arch}
 \end{figure}
+
+
 Recall that in minibatch SGD, samples within a batch are not computationally dependent on each other, data parallelism leverages this fact to evaluate multiple samples within a minibatch concurrently and speed up the time to evaluate an epoch. 
-Each process performs a forward and backward pass on a subset of the minibatch and calculates a local weight update, and the global average of all weight updates is applied to the model for the next epoch.
+Each process performs a forward and backward pass on a subset of the minibatch and calculates a local weight update, and the global average of all weight updates is applied to the model for the next itteration.
 However, there are mathematical challenges to scaling, adding more processes implicitly increases the batch size, which impacts the model's final convergence, and larger batch sizes tend to perform poorly \cite{Keskar2016LargeBatchTraining}.
 To combat this, researchers have found that appropriately tuned update rules and regularization layers, like batch normalization, improve large batch training \cite{You2018ImgNetInMin, Goyal2017FacebookImgNet1Hour}. 
 
 The other challenge is the added communication.
-$\delta w$ needs to be identical across all ranks, this adds some form of synchronization to every epoch and can become the scaling bottleneck if not accounted for.
+$\Delta w$ needs to be identical across all ranks, this adds some synchronization and communication to every epoch and can become the scaling bottleneck if not accounted for.
 The first forays into large-scale data-parallel deep learning were built around centralized parameter server \cite{Dean2012DistBelif, Chilimbi2014ProjectAdam}.
 This architecture, outlined in figure \ref{fig:parameter-server}, designates a coordinator process to manage the global state of the model, and issue weights and minibatches to workers which calculate weight updates in parallel, then return their $\delta w$ to the server who updates the model for the next round.
 This design is fault-tolerant, workers can drop out, and training can continue without hiccups. 
 The parameter server can also be extended to a hierarchical server pool, providing more resiliency and bandwidth. 
 However, the fatal flaw of this design is how the server can become a performance choke point.
-Using communication modelling established in Section \ref{sec:CH2-MPI-AlgStructure}, a singular server would need to receive $p$ messages and perform $p$ reductions, introducing a whopping communication cost of $p(\alpha+n(\beta+\gamma))$.
-Synchronization can be relaxed at an algorithmic level by lowering the required model consistency, some methods only send $\delta w$ and periodically refresh their local copy of the model to not deviate too far \cite{Dean2012DistBelif}, while others altogether remove any synchronization and rely on the sparse nature of $w$ to mitigate race conditions \cite{Noel2014Dogwild}.
-SGD is resilient to model disruptions and can still converge even if work is lost due to synchronization errors. 
-However, parameter servers training is still not scalable enough to reach exascale.
+Using communication modelling established in Section \ref{sec:CH2-MPI-AlgStructure}, a singular server would need to receive $p$ messages and perform $p$ reductions, introducing a whopping cost of $p(\alpha+n(\beta+\gamma))$, the linear scaling w.r.t $p$ makes this architecture prohibitively expensive to run at scale.
 
-To elimitate the parameter server a decentralized approach must be taken.
-To acomplish this, the parameter server's jobs of aggregating, averaging, and distributing the model update  can be replaced by an allreduce operation.
+\begin{figure}
+    \centering
+    \includegraphics[width=15cm]{3_Chapters/3_Chapter_DistributedDL/Figs/ResNet_block_control_dependency.png}
+    \caption{ResNet block, ordering needs to be enforced on allreduce operations in the backwards pass, adapted from \cite{Li2020DLPartialColl}}
+    \label{fig:ResNet-controll-dependency}
+\end{figure}
 
+To eliminate the parameter server, a decentralized approach must be taken.
+To accomplish this, the parameter server's jobs of aggregating, averaging, and distributing the model update can be replaced by an allreduce operation.
+Caffe was the first software package where many of these ideas were evaluated, see figure \ref{fig:caffe-dp-arch}.
+Early results demonstrated how adopting tree-based allreduce/broadcast techniques could lessen communication pressure \cite{Iandola2016FireCaffe}, and further work adopting HPC techniques like communication/computation, improved data staging, and more sophisticated allreduce algorithms could greatly improve scaleability \cite{Awan2017SCaffe}.
 
-\cite{Sergeev2018Horovod}.
+Some of the earliest work noted that load imbalance would had a large impact on training performance, if any rank was signifigantly delayed, the entire training process would have to stall waiting for it to arrive.
+This led to the idea of asyncronus training.
+Thanks to it's stocastic and itteritive characteristics, the SGD algorithm is resilient to model disruptions and can still converge even if work is lost or itteratinos take missteps.
+So many reserchers have proposed SGD varriations that break consistancy assumptions to remove syncronization and increase performance.
+Dean et al. \cite{Dean2012DistBelif} propose Downpour SGD, a parameter server based algorithm where workers only send $\delta w$ during syncronization, and periodically refresh their local copy from the parameter server as to not deviate too far from the global model. 
+Recht et al. \cite{Recht2011HogWild} take it a step furthur and demonstrate that SGD doesn't need any synconizaiton at all, they show that a pool of workers can update global weights in an SMT environment witout any locking mechanisms.
+Their algoritm, which they call Hogwild, shows how data loss due to race conditions doesn't have to adverse an effect on traing, and Noel and Osindero extend this idea to a distributed envoronment with Dogwild \cite{Noel2014Dogwild}.
+
+Asyncronus traing was initaly proposed for, and easy to implement on, parameter server architectures, but these methods have been adopted in decentralized environements as well.
+
+Partial collectives \cite{Li2020DLPartialColl}
+Sparsity \cite{Renggli2019SparCML, Dryden2016CommQuantDPDNN}
+Elastic averaging/Gradient Lag, be an itteration behind on updates for more optimal communication   \cite{Kurth2018ExascaleDLClimate}
+
 \cite{Kurth2019TFatScaleAnalysisOfHvdAndCPEML}
-\cite{Mathuriya2019Cosmoflow}
+
 \cite{Ham2019DLENSOForcasts}
 
-\cite{Awan2017SCaffe}
+\cite{Awan2017InDepthPerfCharOfDNN}
+
+\subsubsection{Horovod}
+The most widely used library for orchestrating data-parallel training is Horovod \cite{Sergeev2018Horovod}, its popularity is derived from its ease of use since it builds on top of existing DL frameworks like TensorFlow and Pytorch and how it uses efficient collective libraries like MPI and NCCL.
+DL frameworks internaly represent the model as a discrete acyclic graph (DAG), where vertices are layers and edges represent the data flow between layers.
+At runtime, DAG elements are scheduled on an execution engine, and to maximize performance there is no guarantee that the ordering of elements will be the same on different runs of the same network \cite{Abadi2015TensorflowWhitepaper}. 
+Horovod ties into existing DL frameworks by hooking into the internal DAG through a \textit{distributed optimizer} class, embeds allreduce operations on the appropriate DAG vertices, and issues communication on a background thread to increase compute/communication overlap.
+However, allreduce operations in MPI require strict ordering, so when there is a potential race between two layers like in figure \ref{fig:ResNet-controll-dependency}, Horovod must determine which ranks have finished which layers schedule allreduces accordingly \cite{Kurth2019TFatScaleAnalysisOfHvdAndCPEML}.  
+To determine which layers are ready, the background thread performance bitwise and allreduce on a bit-vector where each bit represents a layer, this happens continuously through training generating frequent small size (order of 64B) CPU-based allreduces.
+When all ranks have agreed upon a set of layers to average, the weight updates are packed into a buffer (known as the TensorFusion buffer), and a large (order of 64MB) GPU-based allreduce is issued.
+Profiling of Horovod by Mohammadalizadehbakhtevari \cite{Mohammadalizadehbakhtevari2021Thesis} echos this communication pattern, with a mix of frequent small CPU-based allreduces and large GPU-based allreduce operations.
+Horovod has been shown to be capable of tackling immense scale, and fully utilize some of the world's largest systems, like 8000 Xeon Phi nodes on Cori \cite{Mathuriya2019Cosmoflow}, or 4000 V100 nodes on Sumit \cite{Kurth2018ExascaleDLClimate}.
+
 
 \begin{itemize}
     \item Math foundation of Distributed DL, \cite{Ben-Nun2019DemystifyDL}

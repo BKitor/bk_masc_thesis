@@ -23,19 +23,20 @@ This chapter approaches allreduce collective design through the lens of process 
 When designing collective algorithms, developers often assume that all processes arrive at the same time, but this is not a safe assumption.
 The order and timing that processes enter the collective can have an impact on the algorithm's performance, and this work tries to leverage the arrival imbalance to improve the overall collective performance.
 Deep learning is a difficult application to load balance due to the stochastic nature of datasets, leading to increased arrival imbalance at collectives \cite{Mohammadalizadehbakhtevari2021Thesis, Alizadeh2022PAPCollDL, Li2020DLPartialColl}. 
-While PAP-aware collective algorithms do exist, no existing algorithms target multi-node GPU deployments, so to fill this gap, we propose a UCX-RMA-based PAP distribution mechanism with an accompanying allreduce algorithm which shows \_\% improvement over default allreduce algorithms performance under arrival imbalance.  
+While PAP-aware collective algorithms do exist, no existing algorithms target multi-node GPU deployments, so to fill this gap, we propose a UCX-RMA-based PAP distribution mechanism with an accompanying allreduce algorithm.
+Our method performs better than existing state-of-the-art allreduce methods on imbalanced microbenchmarks, and the performance improvements also translate to Horovod.
 
 There are previously proposed methods and algorithms that leverage PAP awareness to accelerate collectives, this chapter starts by surveying existing work.
-We outline some analysis on how PAP affects collectives, outlining our approach to accelerate allreduce.
+We outline some analysis of how PAP affects collectives and describe our approach to accelerate allreduce.
 The main contribution is a novel cluster-wide method of sharing PAP information with an accompanying allreduce algorithm designed to perform better than existing algorithms under a processes arrival imbalance.
-We evaluate our work using an imbalance factor-inducing benchmark and show that we can see \_\% improvement over state-of-the-art algorithms.  
-
+We evaluate our work using an imbalance factor-inducing microbenchmark, which can see a 60\% improvement over default MPI implementations and 19\% over state-of-the-art(SOTA) algorithms.
+We also use our method to evaluate Horovod throughput and see that synthetic benchmarks can improve 40\% over default and 7\% over SOTA.
 
 \subsection{Related Work}
 Mamidala et al. \cite{Mamidala2004BarrierAllreduceIBAdaptive} propose a PAP-Aware tree-based algorithm that can be applied to barrier and allreduce collectives.
 Their method involves rebalancing a k-ary tree by passing a token between ranks.
 For the process holding the token, when $k-1$ child processes have arrived, the token is passed to the $k^{th}$ child through an RDMA write.
-If an arriving process is holding the token and all its child processes have arrived, it knows it's the last to arrive, so it triggers a multicast releasing all ranks from the barrier. 
+If an arriving process holds the token and all its child processes have arrived, it knows it's the last to arrive, so it triggers a multicast releasing all ranks from the barrier. 
 
 Faraj et al. \cite{Faraj2008StudyProcArrivalMPIColl} evaluate process arrival imbalance at collectives across a handful of MPI kernels.
 The PMPI profiling interface was used to introspect the kernel runtime and collect PAP statistics on two different clusters.
@@ -53,14 +54,14 @@ Qian and Afsahi \cite{Qian2009ProcArrivalSHMA2AIB} propose a method for applying
 They modify a direct alltoall algorithm so that data exchanges are not ordered.
 The algorithm is built on top of InfiniBand's RDMA semantics, which means processes need to share destination addresses that peers can write data into. 
 Their method relies on using the RDMA address as a notification mechanism alerting processes of when their peers have arrived and where to write relevant data.
-They also extend this idea to a hierarchical type algorithm, allowing them to leverage shared memory for intranode transfers.
+They also extend this idea to a hierarchical algorithm, allowing them to leverage shared memory for intranode transfers.
 
-Parsons and Pai \cite{Parsons2015ExpProcImbMPICollHierarcialSys} study process imbalance on their Cray XE6 in a similar way to Faraj et al. \cite{Faraj2008StudyProcArrivalMPIColl}.
+Parsons and Pai \cite{Parsons2015ExpProcImbMPICollHierarcialSys} study process imbalance on their Cray XE6 using methods similar to Faraj et al. \cite{Faraj2008StudyProcArrivalMPIColl}.
 They go a bit more in-depth by investigating performance counters using PAPI \cite{Mucci1999PAPI}, but they arrive at the same conclusion that the system is too complex and that none of the observable counters strongly correlate with processing imbalance. 
 The authors propose a dynamic leader selection method to build hierarchical pap-aware algorithms for reduce and broadcast.
 They use a shared memory structure for intranode communications, where the last/first processes to arrive is selected as the leader for the reduce/broadcast algorithms, respectively. 
-Since any rank could be dynamically selected as a leader, parent/child relationships for the internode binomial tree are established using control messaged with \texttt{MPI\_ANY\_SOURCE}. 
-They also propose an alltoall algorithm, but they found that the overhead of the control messages is too great, so instead they impose a static multileader hierarchical pattern.
+Since any rank could be dynamically selected as a leader, parent/child relationships for the internode binomial tree are established using control messages with \texttt{MPI\_ANY\_SOURCE}. 
+They also propose an alltoall algorithm, but they found that the overhead of the control messages is too great, so instead, they impose a static multileader hierarchical pattern.
 In order to take advantage of arrival patterns, the authors propose \textit{opportunistic message fragmentation}, criteria that leaders can use to select chunks of data to send before all processes have arrived.
 This work only applies PAP awareness at an intra-node level; while there is a leader identification mechanism to set up inter-node exchanges, it does not leverage any PAP information.
 
@@ -74,90 +75,162 @@ Through theoretical analysis, they identify a lower bound for PAP-Aware reductio
 Their solution is a greedy algorithm to build a reduction schedule, but they have no method of detecting the PAP and assume it is known beforehand.
 
 Proficz published a series of algorithms for different collectives, all based on a process arrival estimation method \cite{Proficz2018ImprvAllReduceForImbPAP, Proficz2020PAPAwareScatterGather, Proficz2021AllGatherResilientToImbPAP}.
-Their method targets a bulk-synchronous parallel type application, where there are distinct computation and communication phases.
+Their method targets bulk-synchronous parallel applications, where there are distinct computation and communication phases.
 In order to estimate a process's arrival time, application developers embed a callback to notify a background process when the computation phase is almost complete.
-This background thread uses this information to reorder processes in a collective algorithm as to make more optimal use of arrival imbalance.
-The author proposes methods of reordering direct, ring, and binomial algorithms to accelerate allreduce, scatter, gather and allgather collectives.
+This background thread uses this information to reorder processes in a collective algorithm to make more optimal use of arrival imbalance.
+The author proposes methods of reordering direct, ring, and binomial algorithms to accelerate, allreduce, scatter, gather and allgather collectives.
 
-Mohammadalizadehbakhtevari \cite{Mohammadalizadehbakhtevari2021Thesis} presented a series of ideas for handeling PAP in collectives. 
-The author proposed two methods, targeting both small and large messages, for handeling arrival syncronization and message exchanges within a node.
-The proposed work relies on shared memory, but they also evalute the efficacy of extending to a hierarchical algorithm to handle cluster-wide collectives.
+Alizadeh et al. \cite{Alizadeh2022PAPCollDL} presented a series of ideas for handling PAP in collectives. 
+The author proposed two methods, targeting both small and large messages, for handling arrival synchronization and message exchanges within a node.
+The proposed work relies on shared memory, but they also evaluate the efficacy of extending to a hierarchical algorithm to handle cluster-wide collectives.
 
 \section{Method}
-In order for ranks to determine the arrival order, we use a structure consisting of a counter for arrival position, and an array for arrival-to-rank translations.
-This datastructure resides in netowrk exposed memory on a predetermined process.
-When a process arrives at the collective, it fetch-and-increments the couter and then writes its rank into the arrival array indexed at its arrival position.
-The accessing of the counter creates a critical section, which can potentialy add overhead if not accounted for.
-The memory requirements scale linearly with the number of processes, but is well within reason for the system we evaluated on.
-Futhur, a more complicated design could distribute the arrival array so that each process exposes one index, more evenly distirbuting both memory requirements and network resource demand.
+In order for ranks to determine the arrival order, we took inspiration from the small message synchronization method used by Alizadeh et al. \cite{Alizadeh2022PAPCollDL}, but extend it to a multi-node setting.
+Synchronization depends on a data structure consisting of a counter for arrival position and an array for arrival-to-rank translations which resides in network-exposed memory on a predetermined process.
+When a process arrives at the collective, it fetch-and-increments the counter and then writes its rank into the arrival array indexed at its arrival position.
+Accessing the counter creates a critical section, which can potentially add overhead if not accounted for.
+The memory requirements scale linearly with the number of processes, but we didn't run into scaling issues with the system we used for evaluation.
+Further, a more complicated design could distribute the arrival array so that each process exposes one index, more evenly distributing both memory requirements and network resource demand.
 
-When a process arrives it can determine which ranks have arrived before it by indexing their arrival position in the arrival-to-rank translation array.
-This setups allows us to build reduction/broadcast trees in terms of process' arrvial posittion.
-One sticking point is that later arriving ranks can easily know the rank of earlier processes, but earlier processes won't know the value of later ranks untill they've arrived.
-MPI ranks must know the destination before they can send their data, so if an early ranks needs to send data to a later rank it can either poll that rank's location in remote memory, or the late rank can notify the earlier process once it arrives.
-While this does create a litle overhead, it is negligbale compared to large message transfer time.
+When a process arrives, it can determine which ranks have arrived before it by indexing their arrival position in the arrival-to-rank translation array.
+This setup allows us to build reduction/broadcast trees in terms of the process' arrival position.
+One sticking point is that later arriving ranks can easily know the rank of earlier processes, but earlier processes won't know the value of later ranks until they've arrived.
+MPI ranks must know the destination before they can send their data, so if an early rank needs to send data to a later rank, it can either poll that rank's location in remote memory, or the late rank can notify the earlier process once it arrives.
+While this does create a little overhead, it is negligible compared to large message transfer time.
 
-In terms of implementation we want to leverage a higher-level programming interface for portability, and our first choice would be MPI's one-sided communications, but the problem with MPI is that message completion and synchronization model is too burdensome. 
-The counter can be incremented though \texttt{MPI\_Fetch\_and\_op()}, but atomicity and completion has to be enforced thorugh a syncronization mechanism. 
+In terms of implementation, we want to leverage a higher-level programming interface for portability, and our first choice would be MPI's one-sided communications, but the problem with MPI is that the message completion and synchronization model is too burdensome. 
+The counter can be incremented through \texttt{MPI\_Fetch\_and\_op()}, but atomicity and completion must be enforced through a synchronization mechanism. 
 Active target communication is out of the question as one of our goals is to minimize the amount of synchronization, and \texttt{MPI\_Win\_Fence()} is a collective, so it also defeats the purpose.
 This leaves \texttt{MPI\_Win\_lock()}/\texttt{MPI\_Win\_unlock()} as the only viable synchronization mechanism.
-Alternatively, we could go a bit deeper down the stack and use a transport layer API since they provide the desired portability with an aceptable performance penalty.
-Specificly, we use UCX's RMA and Atomic operations, \texttt{ucp\_atomic\_op\_nbx()} is specified to be atomic accross all other network operations alowing us to atomicly increment the counter variable, and operation completion is gaurneteed on a per-message level, removing the requirements for the heavy barrier-like syncronizations MPI enforces.
+Alternatively, we could go a bit deeper down the stack and use a transport layer API since they provide the desired portability with an acceptable performance penalty.
+Specifically, we use UCX's RMA and Atomic operations, \texttt{ucp\_atomic\_op\_nbx()} is specified to be atomic across all other network operations allowing us to atomically increment the counter variable, and operation completion is guaranteed on a per-message level, removing the requirements for the heavy barrier-like synchronization MPI enforces.
 
-In desinging an algorithm to outperform ring/rsa, our approach to is to minimize the amount of time the last arriving process needs to take, i.e. the last process should perform less work than $2n(\beta+\gamma)$. 
-If we simplify the problem and look at a 2 process allreduce, the minimum amout of work involves recieving a message, performing a local reduction and sending a message.
-We can remove the initial recive by sending the data ahead of time to pre-determined location, and the final send will need to become a broadcast. 
-We also want to incoporate pipelining into our solution to furthur overlap the reduction message transfers.
-Therefore, out proposed solution involves the last arriving process recieving the fully reduce data of the other $n-1$ ranks before it arrives, and then triggering a pipelined local reduce/broadcast to distribute the data as efficiently as possible. 
-Theoreticly, the last proces only needs to reuduce and send one message divided accross $k$ segments, i.e. $T_{last\_proc\_reduce}=k\alpha+n(\beta+\gamma)$.
-This is roughly half of ring and rsa bandwith requirements.
+In designing an algorithm to outperform ring/RSA, our approach is to minimize the amount of time the last arriving process needs to take, and since we are targeting large messages, the last process should perform less work than $2n(\beta+\gamma)$. 
+If we simplify the problem and look at a 2 process allreduce, the minimum amount of work involves receiving a message, performing a local reduction and sending a message, i.e. $2(\alpha+n\beta)+n\gamma$.
+We can remove the initial receive by sending the data ahead of time to a pre-determined location, and the final send will need to become a broadcast, $\alpha+n\beta+T_{bcast}(n)$. 
+Theoretically, the last process only needs to reduce and send one message divided across $k$ segments, i.e. $T_{last\_proc\_reduce}=k\alpha+n(\beta+\gamma)$, while every other process sends and receives $k$ messages of totalling $n$ bytes, i.e. $k\alpha+n\beta$.
+This is roughly half of the ring and RSA bandwidth requirements.
 
-To ensure scalability, we embed our method in a hierarchical algorithm. 
-Ranks perform an intranode reduction to a local leader process, then the leader processes perform the PAP-Aware inter-node allreduce, the intra-node bcast is also incorporated into the pipeline used to distribute the data at the end of the collective. 
-The intranode reduction/bcast is a binomial-tree, while the internode reduction and broadcast are based on a linear-tree where arrival $r$ recieved data from $r-1$ and sends data to $r+1$.
+For simplicity, we use a chain reduce in to propagate the data to the last process, while it is easy to implement, it is not scalable since both $\alpha$ and $\beta$ increase with $n$.
+To mitigate scalability issues, we embed our method in a hierarchical algorithm. 
+The full algorithm performs an intranode reduction to a local leader process, then the leader processes perform the PAP-Aware inter-node allreduce, and the data is redistributed through internode and intranode broadcasts.
+To improve pipeline efficiency, we overlap the internode broadcast and intranode broadcasts, further improving broadcast efficiency.
 
 \section{Evaluation}
+\subsection{Hardware}
+We evaluated our proposed methods with a microbenchmark and a synthetic Horovod benchmark on two clusters, Beluga and Narval.
+We only focus on the GPU resources this time.
+Beluga's architecture is defined in \ref{sec:CH4-eval-hardware}.
+Narval is very similar to Beluga but is made up of newer-generation hardware.
+Narval is a fat-tree cluster with a 4.7:1 blocking ratio, it is built on HDR InfiniBand, which can support 200Gb/s speeds, however, Narval uses splitter cables to create fat leaf switches at 100Gb/s.
+The GPU nodes have 4 Nvidia A100 GPUs, which are fully connected by NVLink.
+The GPUs are and hosted by two AMD Epyc 7413 (codename Milan), which have 24 cores each, the host to device connections are split across both CPUs, with GPUs 0 and 1 connected to socket 0 and GPUs 2 and 3 connected to socket 1. 
+One important detail in the PCIe architecture is that the Epyc 7413 CPUs have 128 PCIe Gen4 lanes (as opposed to Xeon Gold 6148 with 48 Gen 3 lanes), so Narval has considerably more bandwidth for host-to-device transfer, and GPUs don't have to compete over a PCIe switch.
+
+\subsection{Implementation}
+The proposed pap-aware algorithm is implemented as a collective component in OpenMPI 5.0.0-rc6, compiled with GCC 9.3, CUDA 11.0, and UCX 1.13.0. 
+Two variations of the algorithm are presented, a pipelined version with a segment size of 4MB and a non-pipelined version.
+Multiple pipeline segment sizes were evaluated, but it was found that they tend perform similarly, so only the 4MB size is presented.
+We present the default OpenMPI's results, however as outlined in section \ref{sec:CH4-soft-impl}, OpenMPI's GPU support is lacklustre, so we also provide a modified version of OpenMPI's RSA algorithm that leverages a GPU kernel reduction. 
+We also present results from two contemporary collective libraries, Unified Communication Collective (UCC) \cite{UCC} and Nvidia Collective Communication Library (NCCL) \cite{NCCL}.
+NCCL is a high-performance collective library provided by Nvidia, it uses a multi-ring communication pattern specifically designed to make full use of Nvidia hardware.
+UCC is a portable, high-performance collective interface designed to support multiple collective implementations.
+The default implementation is built on top of UCX, and they can also perform GPU collectives by wrapping NCCL; this is how we evaluated OpenMPI with NCCL by leveraging UCC as a frontend.
+We collected results with UCC 1.0.0 and NCCL 2.7.8.
+
 \subsection{Syncronizatoin method benchmark}
 In deciding to use UCX over MPI, we wrote a benchmark to evaluate the overhead of one-sided operations and synchronization, the structure of which is provided in algorithm \ref{alg:sync_struct_bmark}.
 The core of the benchmark is evaluating how long it takes to atomically increment a memory location and perform a write to a separate location.
-We built two implementaions of this benchmark, one with MPI and the other with UCX. 
-The most critical parts of the benchmarks would be the remote syncronization calls (lines 9 and 11), this is where the differneces between MPI and UCX will become apperent.  
-In order to ensure memory completion in MPI, users need to open and close and access epoch, this is done with blocking calls to \texttt{MPI\_Win\_lock()}/\texttt{MPI\_Win\_unlock()} before and after each rempote memory call.
-On the other hand, completion in UCX is gaurenteed at a per-operation level. 
-Every communication call returns a pointer to a memory reigon which indicates the status of the operation, and at some point in the future (during a call to \texttt{ucp\_progress()}) the UCX runtime will update that address to indicate completion.
+We built two implementations of this benchmark, one with MPI and the other with UCX. 
+The most critical parts of the benchmarks would be the remote synchronization calls (lines 9 and 11), this is where the differences between MPI and UCX will become apparent.  
+In order to ensure memory completion in MPI, users need to open and close and access epoch, this is done by blocking calls to \texttt{MPI\_Win\_lock()}/\texttt{MPI\_Win\_unlock()} before and after each remote memory call.
+
+On the other hand, completion in UCX is guaranteed at a per-operation level. 
+Every communication call returns a pointer to a structure which indicates the status of the operation, and at some point in the future (during a call to \texttt{ucp\_progress()}), the UCX runtime will trigger a callback which modifies the pointer to indicate completion.
 So to wait for remote memory completion, the UCX benchmark polls the pointer while calling \texttt{ucp\_progress()} until completion.
 
 We ran our benchmark on Narval, a 200G HDR InfiniBand cluster, using 32 nodes and scaling from 1 to 32 processes per node, and the results are presented in figure \ref{fig:sync_bmark_32n}.
 As is evident, the synchronization with MPI has much more overhead than UCX.
 The benchmark time of UCX scales linearly with the number of processes from 10$\mu s$ for 32 processes to 400$\mu s$ for 1024.
-MPI has more overhead, as with 32 processes, it still takes 312$\mu s$, and scales exponentially to 453737$\mu s$ at 1024 processes.
-Therefore, we decided to use UCX to build our PAP management mechanism, as UCX provides wrappers around the nececary RDMA and atomic network operations, there is no enforced synchronization model, and there are strong guarantees on operation completion. 
+MPI has more overhead, as with 32 processes, it still takes 312$\mu s$ and scales exponentially to 453737$\mu s$ at 1024 processes.
+Therefore, we decided to use UCX to build our PAP management mechanism, as UCX provides wrappers around the necessary RDMA and atomic network operations, there is no enforced synchronization model, and there are strong guarantees on operation completion. 
 
 \input{3_Chapters/5_Chapter_PAPAwareness/Figs/alg_sync_struct_mbark}
 \input{3_Chapters/5_Chapter_PAPAwareness/Figs/eval_sync_bmark}
 
-\subsection{Software}
-We evaluated the PAP impact using a microbenchmark similar to \cite{Faraj2008StudyProcArrivalMPIColl}, presentied in listing \ref{alg:mif_microbmark}.
-The benchmark evaluates allreduce performance for different maximum imbalance factors. 
-It does this by applying a random delay to each process, with process 0 recieving no delay and process $n-1$ recievein the full delay (lines 15-21).
-The delay is applied through a call to usleep (line 25).
-In preveous work \cite{Faraj2008StudyProcArrivalMPIColl, Alizadeh2022PAPCollDL} delays were applied thorugh a random computation, this work opted to use usleep as it provides a more percise controll.
+\subsection{Microbenchmark}
+We evaluated the PAP impact using a microbenchmark similar to \cite{Faraj2008StudyProcArrivalMPIColl}, and \cite{Li2020DLPartialColl}, presented in listing \ref{alg:mif_microbmark}.
+The benchmark evaluates allreduce performance for specified maximum imbalance factors. 
+It does this by assigning a random imbalance factor to each process (line 15), with process 0 receiving no delay (line 11) and process $n-1$ receiving the full delay (line 13).
+The delay is a factor of the message size, so we perform a ping-pong test to determine the latency of the message size we are about to evaluate (lines 2-6).
+Each rank multiplies its imbalance factor by the message latency and applies the delay through a call to usleep (line 25).
+We present results with no imbalance (0 MIF), results with a MIF of 6 since this value was identified to be a common imbalance for multi-node Horovod by Alizadeh et al. \cite{Alizadeh2022PAPCollDL}, and a MIF of 20 to represent large imbalances.
 
 \input{3_Chapters/5_Chapter_PAPAwareness/Figs/alg_mif_bmark}
 
-\subsection{Hardware}
-Evaluated on two clusters, Beluga and Narval.
-Beluga's architecture is defined in \ref{sec:CH4-eval-hardware}.
-Narval is very similar to Beluga, but is a newer generation system.
-Navval is a fat-tree cluster built on HDR InfiniBand, which can support 200Gb/s speeds, but instead Narval uses splitter cabels to create super fat leaf switches at 100Gb/s speeds, this gives it a blocking factor of 4.7:1.
-The GPU nodes have 4 Nvidia A100 GPUs which are fully connected by NVLink and hosted by two MAD Epyc 7413 (codename Milan) for a total of 48 cores per node.
-
 \input{3_Chapters/5_Chapter_PAPAwareness/Figs/omb_beluga}
+Results on Beluga are presented in figure \ref{fig:beluga_omb_pap}.
+Since we based our work on a chain algorithm, the best results are with 4 nodes.
+The pipelined version of the algorithm doesn't perform that well, there is a noticeable loss in performance when the pipelining kicks in at 8MB, and performance loss can be as bad as 130\%.
+This is likely due to increased software added by the pipeline, however, even though microbenchmark results are poor, the pipelining still manages to provide a noticeable speedup within Horovod, we cover this section \ref{sec:CH5-eval-horovod}.
+
+The non-pipelined version has a lacklustre performance when there is no imbalance.
+Compared to the outright fastest algorithm, NCCL, performance drags from -28\% to -39\%.
+However, as we increase the imbalance factor, the non-pipelined pap-aware algorithm starts to take the lead, it outperforms NCCL by 10\% at 6 MIF and leads by 20\% at 20 MIF.
+But this only works at small node counts, as the node-count increases, the performance disappears, but this is to be expected since the chain algorithm foundation is not scalable.
+At 8 nodes with a MIF of 20, non-pipelined pap-aware is still the fastest by 13\%, however other algorithms outperform it at a MIF of 6, and NCCL is by far the fastest, beating the pap-aware algorithm by 28\%.
+
+The non-pipelined pap-aware algorithm beats the default OMPI across the board, but this is most likely due to OpenMPI's inability to use GPU resources.
+A more comparable baseline would be the GPU-kernel RSA.
+Performance without imbalance is comparable at 4 nodes, with pap-aware being 24\% faster at 8MB but -18\% slower at 128MB, and GPU-RSA is faster for every larger node count.
+For MIF 6, the pap-aware is more performant at 4 and 8 nodes, with a maximum improvement of 35\% and 13\%, respectively, and at MIF 20, pap-aware beats GPU-RSA on 16 nodes, with a max of 21\% at 8MB, and 4.5\% at 128MB.
+Frankly, the pap-aware algorithm does not scale well past 16 nodes as the performance leaves much to be desired  on 32 nodes, however, if the MIF were to be increased past 20, there is still a likelihood that the pap-aware algorithm would be competitive, however, we aren't targeting exceptionally large MIFs. 
 
 \input{3_Chapters/5_Chapter_PAPAwareness/Figs/omb_narval}
 
-% \input{some sort of table for Horovod Performance}
+The pap-aware algorithm on Narval has similar characteristics relative to the preexisting methods, however, the performance difference is larger.
+The pipelined version presents similar performance issues, and with no imbalance, NCCL is still the fastest, but the performance gap between NCCL and the non-pipelined pap-aware algorithm is smaller.
+On 4 nodes, the non-pipelined PAP aware algorithm's performance gap shrinks from -30\% on Beluga to -20\% on Narval, and when we scale up to a MIF of 6, the performance gain jumps from 10\% on Beluga to 15\% on Narval.
 
-\section{I can't belive it's not a conclusion ™}
-High level recap
+Performance is also greatly improved compared to GPU-kernel RSA.
+When there is no imbalance no 4 nodes, the non-pipelined pap-aware algorithm outperforms GPU-Kenrle RSA by 70\%, and this even extends to 8 nodes with performance improvements ranging from 35\% to 66\%.
+However, the scalability issues are still present, non-pipelined pap-aware is 10\% faster than GPU-RSA on 16 nodes, but there are no gains to be found at 32 nodes and beyond.
+
+\subsection{Horovod}\label{sec:CH5-eval-horovod}
+Horovod's synthetic benchmark loads a pre-defined model into memory and simulated several iterations of a training run using randomly generated samples.
+While this benchmark does not stress the file system, which is often a bottleneck in practice, it provides a realistic measure of the computation and communication requirements of using Horovod in production.
+Experiments were run useing Horovod 0.20.3 and Tensorflow 2.4.1.
+
+\input{3_Chapters/5_Chapter_PAPAwareness/Figs/hvd_model_chars}
+
+The predefined models were supplied through Keras, and table \ref{tbl:hvd_model_chars} provides details on the models we evaluated.
+We evaluate a series of CNN architectures across a range of sizes scaling from 16MB to 232 MB.
+MobileNet is composed of several 3x3 and 1x1 convolutions and leverages depthwise separable convolutions to minimize model size \cite{Howard2017MobileNet}.
+ResNet leverages skip connections, which in effect, learns the residual of the model and allows deeper models to be developed \cite{He2015ResNet}.
+DenseNets extend the residual to a vector of previous layers, providing more information resue within the model and an even stronger learning ability \cite{Huang2016DenseNet}.
+The dataflow dependencies in MobileNet and DenseNet are linear, however, the skip connection in ResNets introduce a set of weight that can be learned, adding complexity to the ordering of allreduce operations \ref{fig:ResNet-controll-dependency}.
+
+\input{3_Chapters/5_Chapter_PAPAwareness/Figs/hvd_bg}
+
+The pap-aware algorithms' microbenchmark performance gains seen on Beluga don't translate to Horovod, as demonstrated in table \ref{tbl:pap_hvd_beluga_full}.
+NCCL and UCC have the greatest model throughput for most models.
+Some insights can be gained from the model characteristics, though.
+The small model sizes don't show much variation between different collective implementations, there's only a 1\% difference between the minimum and maximum throughput for MobileNet and DenseNt121 across all node sizes. 
+However, as we scale up the model size, NCCL and UCC tend to run away with performance, beating every other collective by up to 20\%.
+
+\input{3_Chapters/5_Chapter_PAPAwareness/Figs/hvd_ng}
+\input{3_Chapters/5_Chapter_PAPAwareness/Figs/hvd_ng_bkpap_shift.tex}
+
+However, the pap-aware collective has potential on Narval, as demonstrated in table \ref{tbl:pap_hvd_narval_full}.
+When running on 4 nodes, the two strongest algorithms are the pipelined and non-pipelined pap-aware algorithms, either pap-aware algorithm has a 5\% advantage over any non-pap-aware algorithm.
+Scaling to larger node counts is still an issue, as the pap-aware algorithms perform the strongest at 4 nodes.
+
+The pipelined algorithm provides more throughput than the non-pipelined version in many scenarios, which contradicts the microbenchmark experiments.
+Table \ref{tbl:pap_hvd_narval_shift_seg} compares the effect of different pipeline segment sizes on model training.
+The segment size does not face much effect on the smaller models with a 1-5\% difference between the min and max throughput, however, both ResNet models show a 15\% gap in favour of the pipelined algorithm, in both cases, 1MB and 4MB perform the same, 16MB is a step slower and performance plateaus at 64MB and 128Mb.
+The effect of pipelining also correlates to the node count, as scaling results in table \ref{tbl:pap_hvd_narval_full} show a tangible performance difference for pipelining DenseNet at 8 nodes, which wasn't apparent at 4 nodes.
+The amount of loss also scales with node size, a 17\% difference with ResNet152 on 4 nodes becomes a 56\% difference on 16 nodes, yet the microbenchmark does not capture this relationship at all.
+
+\section{I can't believe it's not a conclusion ™}
+High-level recap
 

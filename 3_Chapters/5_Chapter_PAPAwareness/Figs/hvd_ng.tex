@@ -1,0 +1,34 @@
+\begin{table}
+    \centering
+    \caption{
+        Horovod performance on Narval with different models and allreduce algorithm.
+        All values are measured in images/second.
+    }
+    \begin{tabular}{lllllll}
+     4 nodes    & \textbf{PAP 4MB} & \textbf{PAP} & \textbf{RSA} & \textbf{UCC} & \textbf{NCCL} & \textbf{OMPI} \\
+    MobileNet   & \textbf{4229.9}    & 4179.2       & 4034.2  & 3599.7  & 3497.1  & 4039.1  \\
+    DenseNet121 & \textbf{7279.5}    & 7158.4       & 7194.3  & 5365.4  & 5214.4  & 6906.9  \\
+    DenseNet169 & 5534.3    & \textbf{5809.7}       & 5525.1  & 4117.1  & 4103.9  & 4850.3  \\
+    DenseNet201 & 4184.0      & \textbf{4331.6}       & 4116.2  & 3334.4  & 3383.1  & 3553.2  \\
+    ResNet50    & \textbf{6336.9}    & 5475.4       & 6025.2  & 4042.6  & 4166.4  & 3670.2  \\
+    ResNet101   & \textbf{3896.2}    & 3269.7       & 3604.3  & 2526.0    & 2469.8  & 2157.8  \\
+    ResNet152   & \textbf{2817.5}    & 2397.4       & 2661.2  & 1928.5  & 1835.8  & 1583.7  \\ \hline
+    8 nodes     & ~ & ~ & ~     & ~     & ~    & ~    \\ 
+    MobileNet   & 8237.8    & \textbf{8569.6}       & 8065.2  & 6945.1  & 7150.4  & 7786.1  \\
+    DenseNet121 & 11064.8   & 11864.9      & \textbf{14200.4} & 10273.5 & 10259.2 & 13663.5 \\
+    DenseNet169 & 9289.0      & 7665.0         & \textbf{10832.7} & 8201.9  & 8129.0    & 9521.4  \\
+    DenseNet201 & 6974.6    & 5772.9       & \textbf{8177.5}  & 6282.9  & 6112.7  & 6879.5  \\
+    ResNet50    & 7904.9    & 5752.1       & \textbf{10658.2} & 8376.2  & 8385.2  & 6516.4  \\
+    ResNet101   & 4653.4    & 3350.6       & \textbf{6484.6}  & 4692.0    & 4724.8  & 3756.1  \\
+    ResNet152   & 3495.6    & 2480.4       & \textbf{4804.9}  & 3505.5  & 3373.5  & 3038.8  \\ \hline
+    16 nodes    & ~ & ~ & ~     & ~     & ~    & ~    \\
+    MobileNet   & \textbf{15500.5}   & 14852.2      & 14978.3 & 13210.6 & 13105.6 & 15359.0   \\
+    DenseNet121 & 17693.5   & 14696.4      & \textbf{27745.2} & 18087.6 & 17994.3 & 26292.3 \\
+    DenseNet169 & 11768.4   & 9074.9       & \textbf{21418.1} & 14743.9 & 14733.6 & 18570.8 \\
+    DenseNet201 & 8852.1    & 6549.4       & \textbf{15940.3} & 11521.7 & 11329.8 & 12619.8 \\
+    ResNet50    & 8749.9    & 5797.2       & \textbf{19167}   & 14262.9 & 14398.7 & 12259.1 \\
+    ResNet101   & 5146.2    & 3328.9       & \textbf{10239}   & 7670.6  & 7716.5  & 6908.1  \\
+    ResNet152   & 3836.6    & 2448.6       & \textbf{7435}    & 5753.4  & 5746.5  & 5259.2  \\
+    \end{tabular}
+    \label{tbl:pap_hvd_beluga_full}
+\end{table}
