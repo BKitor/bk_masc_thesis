@@ -231,6 +231,10 @@ The segment size does not face much effect on the smaller models with a 1-5\% di
 The effect of pipelining also correlates to the node count, as scaling results in table \ref{tbl:pap_hvd_narval_full} show a tangible performance difference for pipelining DenseNet at 8 nodes, which wasn't apparent at 4 nodes.
 The amount of loss also scales with node size, a 17\% difference with ResNet152 on 4 nodes becomes a 56\% difference on 16 nodes, yet the microbenchmark does not capture this relationship at all.
 
-\section{I can't believe it's not a conclusion ™}
-High-level recap
-
+\section{Conclustion}
+Process imbalance is a common issue when scaling applications, and deep learning is certainly subject to this challenge.
+While it is possible to tackle this issue at an application level, it has been shown that developing a completely balanced program is practically impossible.
+However, it is still possible to mitigate many imbalance issues within MPI.
+To mitigate process imbalance in Horovod, we developed an \texttt{MPI\_Allreduce} algorithm targeting large GPU buffers, built on top of a UCX-based process arrival exchange scheme.  
+While scalability is an issue due to algorithmic design choices, we still demonstrate that our method can outperform state-of-the-art collective algorithm while under process imbalance.
+We also demonstrate how our PAP-Aware method can increase the performance of deep learning training through Horovod synthetic benchmarks.

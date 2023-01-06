@@ -24,9 +24,11 @@ To train a model, a training algorithm will try to find some value for $w$ which
 \end{equation} 
 Where $\ell:\mathcal{H}\times X\longrightarrow \mathbb{R}^+$ is the loss function for an individual sample. 
 
-Many optimization algorithms can solve equation \ref{eq:argmin-loss}, but the most widely adopted algorithm is minibatch stochastic gradient descent.
-Standard gradient descent relies on a continuous optimization space, but the dataset is not a continuous space, therefore, a stochastic method is used \cite{Robbins1951StochasticAproxmethod}.
-Basic stochastic gradient decent samples one data point at a time, but on modern hardware, we can increase device utilization and throughput by sampling multiple data points using a batch method \cite{Le2011OnOptMethodsforDL}.
+Many optimization algorithms can solve equation \ref{eq:argmin-loss}, but the most widely adopted algorithm is minibatch stochastic gradient descent (SGD).
+Standard gradient descent relies on a continuous optimization space to intelligently sample points, but the datasets used in DL are not continuous.
+SGD methods used in practice randomly sample points in the dataset, and while they do converge, they tend to take much longer than traditional gradient descent \cite{Robbins1951StochasticAproxmethod}.
+Traditional gradient decent samples one data point at a time, but on modern hardware, we can increase device utilization and throughput by sampling multiple data points using a batch method \cite{Le2011OnOptMethodsforDL}.
+Batch methods sample a set of data points, calculate an update step for each sample, and apply the average of the udpates to the model. 
 
 \begin{algorithm}
     \caption{Minibatch SGD}
@@ -43,21 +45,22 @@ Basic stochastic gradient decent samples one data point at a time, but on modern
     \end{algorithmic}
 \end{algorithm}
 
-Minibatch SGD (algorithm \ref{alg:MinibatchSGD}) iterates over the dataset a predefined number of times, but other stopping criteria can include an evaluation threshold on an external validation dataset or a collapse in the loss function.
+Algorithm \ref{alg:MinibatchSGD} provides a textbook example of a minibatch SGD algorithm.
+The main loop of the algorithm iterates over the entire dataset in what's known as an epoch, this is often done a predefined number of times, but other stopping criteria can include an evaluation threshold on an external validation dataset or a collapse in the loss function.
 A batch of data is sampled from the training dataset in line 2, the dataset is shuffled between epochs to generate different minibatches for each epoch.
 The minibatch samples are propagated through the model in the forward pass on line 4, and the set of forward pass results is used to calculate a set of gradients in line 5. 
 Line 6 uses an update function to calculate the weight updates, this function is responsible for combining the gradients of all the samples into weight updates to be applied to the next iteration of the model (line 7).
 
-While this algorithm seems simple, the research space is massive, spanning from the model's architecture to tweaking parts of the training algorithm, and there are several gotchas to watch out for.
-It is possible for the optimization space to have multiple minimums, so researchers have proposed techniques to help find global minimums. 
+While this algorithm seems straightforward, the research space is massive, spanning from the model's architecture to tweaking parts of the training algorithm.
+It is possible for the optimization space to have multiple minimums, and deliberate steps need to be taken to ensure the global minimum was found. 
 The update calculation is essential, and the model will not converge if not properly managed, if update steps are too large, the model will not generalize and will be unstable, but if updates are too small, then training can take an exceedingly long time.
-Weight initialization is one angle to tackle these issues since the final accuracy can be heavily influenced by $w^{(0)}$, initialization methods include random values, informed decisions, or transfer learning from other pre-trained models \cite{Glorot2010XavierInitalization}.
+Weight initialization is another issue since the final accuracy can be heavily influenced by $w^{(0)}$, initialization methods include random values, informed decisions, or transfer learning from other pre-trained models \cite{Glorot2010XavierInitalization}.
 The weight update rule $u$ has also undergone a lot of research.
 The most straightforward rule, $u_{sgd}(g)=-\eta \cdot g$, simply multiplies the gradient by a learning rate $\eta$, but the learning rate can be changed over time, with a common practice of exponentially shrinking the gradient with larger values of $t$.
 The update rule can also include momentum, which uses the difference between current and past weights to influence update magnitude, and modern methods, like Adam \cite{Kingma2015Adam}, leverage the first and second moments of the gradient to update learning rates individually for each weight in the model.
 
 The model's architecture also plays an important role.
-The founding idea for neural networks was to approximate the structure of neurons in the brain mathematically.
+The founding idea for neural networks was to mathematically approximate the structure of neurons in the brain.
 Individual neurons take a set of inputs, calculate a weighted sum across a set of weights, apply an activation function to introduce nonlinearity, and pass the output on to other neurons. 
 Neurons are organized into layers, often structured in a fully connected manner where the output of one neuron is connected to every neuron in the next layer.
 The number of neurons in a layer defines the model's width, and the number of layers in the model defines the depth.
@@ -66,29 +69,31 @@ However, different layer types have been proposed which can extract different fe
 Further, many different activation functions can be used, with popular choices including sigmoid and rectified linear units \cite{Nair2010ReLU}.
 
 However, one prevalent trend of DL (in fact, this is where the 'deep' in \textit{deep learning} comes from) is that larger models and larger datasets give better performance \cite{Kaplan2020ScalingLawsForNLModels, Ben-Nun2019DemystifyDL}.
-There is a consistent trend of larger models training on larger datasets, however, the more these factors scale so does the required training time.
+There is a consistent trend of larger models training on larger datasets, however, the more these factors scale, so does the required training time.
 To address these issues, several parallelization strategies have been applied.
+
 Individual layer operations were the initial target for optimization, and many hardware providers have released software libraries designed to run layer-specific operations like convolutions and GEMM as fast as possible, examples include Intel's MKL and Nvidia's CUDNN \cite{MKL, cuDNN}. 
 The compute-intensive nature of DL models has led to the wide adoption of GPUs as the massively parallel capabilities of these accelerators can blast through training and inference orders of magnitude faster than CPUs.
-
 GPUs still have a limit to how many TFLOPs they can drive, and there are limits to the amount of accelerator memory, but both of these limits can be broken by scaling across a cluster.
-So this thesis focuses on DL parallelization across GPU clusters.
-Some problems can't fit into a single GPU or even a single node with multiple GPUs, and a multi-node distributed training strategy needs to be adopted.
-There are common strategies for parallelizing deep learning, each has its own benefit, and often, multiple of these strategies can be combined.
 
 \section{Parallel Deep Learning}
+Mapping DL training to a distributed memory environment creates several unique challenges.
+The three most common strategies for parallelizing DL are hyperparameter search, where model architectures are evaluated concurrently; model parallelism, where a model's weights are distributed across resources; and data parallelism, which leverages parallelism in the training algorithm to concurrently evaluate samples in a batch.
+Each method has its own strength targeting a slightly different aspect of DL scaling while having its own performance characteristics that need to be accounted for.
 
 \subsection{Hyperparameter search}
 The features specifying a DL model can be lumped into two categories, parameters and hyperparameters.
 Parameters are values that are filled by the optimization algorithm and are essentially a synonym for the model's weights, while hyperparameters focus on specifying the structure of the model and remain unchanged during training.
-Hyperparameters include structural features of the model like the number and types of layers, activation functions, and the loss function, and they can also extend to the training algorithm with tunables like learning rate, learning rate decay, and batch size.
-The setup has an outsized impact on model performance, so often, a lot of model development time goes into hyperparameter selection, however, each new hyperparameter add another search dimension and exponentially increases the search space.
+Hyperparameters include structural features of the model like the number and types of layers, activation functions, and loss function, and they can also extend to the training algorithm with tunables like learning rate, learning rate decay, and batch size.
+The setup has an outsized impact on model performance, so often, a lot of model development time goes into hyperparameter selection, however, each new hyperparameter adds another search dimension and exponentially increases the search space.
 Therefore, automated hyperparameter search strategies are a popular target for parallelization at scale.
 
-Hyperparameter search is incredibly compute-intensive and does not generate that much communication, which makes it a great candidate for parallelization.
+Most hyperparameter search methods investigate the search algorithm. 
 Initially proposed search algorithms include sequential search heuristics, like grid search \cite{Hadjis2016Omnivore}, where a series of candidates are identified, models are trained for each, and the search space is iteratively refined based on the training results.
 More clever techniques could use evolutionary algorithms \cite{Young2017EvolveNLWithHPC, Real2017LargeScaleEvolutionOfCV}, which generates a population of candidate models and iteratively removes underperforming models and replaces them with higher-performing models with random perturbations, or reinforcement learning \cite{Zoph2017NeuralArchSearchReinformceLearn} which uses gradient-based optimization to discover more optimal model architectures.
-Large-scale hyperparameter search systems are often based on a parameter server/worker design, where the parameter server manages the search algorithm and issues models for worker nodes to train and evaluate.
+
+Hyperparameter search is incredibly compute-intensive and does not generate that much communication, which makes it a great candidate for parallelization.
+Large-scale hyperparameter search systems are often based on a server/worker design, where the centralized server manages the search algorithm and issues models for worker nodes to train and evaluate.
 These systems generate relatively little communication as model architectures can be specified in a few bytes, workers can take hours to train a model, and they have been relatively easy to scale to exceedingly large systems \cite{Young2017EvolveNLWithHPC}.
 
 \subsection{Model Parallelism}
@@ -99,7 +104,7 @@ These systems generate relatively little communication as model architectures ca
     \label{fig:model-parallel-decomposition}
 \end{figure}
 Model parallelism splits the model's architecture into chunks and distributes partitions across processing resources.
-There are multiple decomposition strategies, but the two most general ones are decomposition by layer and spatial decomposition, both outlined in figure \ref{fig:model-parallel-decomposition}.
+The two dimensions the model can be decomposed across are layer-wise decomposition or spacial decomposition, both outlined in figure \ref{fig:model-parallel-decomposition}.
 Layer-wise model parallelism uses individual layers as units for work and issues one or more layers on each processing resource \cite{Abadi2015TensorflowWhitepaper}. 
 Spatial decomposition takes a finer-grained approach, it breaks individual layers into sections and can map a single layer across multiple ranks \cite{VanEssen2015LBANN}.
 It is also possible for both strategies can be used in parallel, which provides flexibility to map network elements to compute to maximize machine utilization \cite{Dean2012DistBelif}.
@@ -126,25 +131,24 @@ These drawbacks add a lot of complexity to the design of model-parallel networks
     \label{fig:caffe-dp-arch}
 \end{figure}
 
-
 Recall that in minibatch SGD, samples within a batch are not computationally dependent on each other, data parallelism leverages this fact to evaluate multiple samples within a minibatch concurrently and speed up the time to evaluate an epoch. 
-Each process performs a forward and backward pass on a subset of the minibatch and calculates a local weight update, and the global average of all weight updates is applied to the model for the next itteration.
+Each process performs a forward and backward pass on a subset of the minibatch and calculates a local weight update, and the global average of all weight updates is applied to the model for the next iteration.
 However, there are mathematical challenges to scaling, adding more processes implicitly increases the batch size, which impacts the model's final convergence, and larger batch sizes tend to perform poorly \cite{Keskar2016LargeBatchTraining}.
 To combat this, researchers have found that appropriately tuned update rules and regularization layers, like batch normalization, improve large batch training \cite{You2018ImgNetInMin, Goyal2017FacebookImgNet1Hour}. 
 
 The other challenge is the added communication.
-$\Delta w$ needs to be identical across all ranks, this adds some synchronization and communication to every epoch and can become the scaling bottleneck if not accounted for.
+$\Delta w$ needs to be identical across all ranks, this adds synchronization and communication to every epoch and can become the scaling bottleneck.
 The first forays into large-scale data-parallel deep learning were built around centralized parameter server \cite{Dean2012DistBelif, Chilimbi2014ProjectAdam}.
 This architecture, outlined in figure \ref{fig:parameter-server}, designates a coordinator process to manage the global state of the model, and issue weights and minibatches to workers which calculate weight updates in parallel, then return their $\delta w$ to the server who updates the model for the next round.
 This design is fault-tolerant, workers can drop out, and training can continue without hiccups. 
 The parameter server can also be extended to a hierarchical server pool, providing more resiliency and bandwidth. 
-However, the fatal flaw of this design is how the server can become a performance choke point.
+However, the fatal flaw of this design is how the server can become a communication choke point.
 Using communication modelling established in Section \ref{sec:CH2-MPI-AlgStructure}, a singular server would need to receive $p$ messages and perform $p$ reductions, introducing a whopping cost of $p(\alpha+n(\beta+\gamma))$, the linear scaling w.r.t $p$ makes this architecture prohibitively expensive to run at scale.
 
 \begin{figure}
     \centering
     \includegraphics[width=15cm]{3_Chapters/3_Chapter_DistributedDL/Figs/ResNet_block_control_dependency.png}
-    \caption{ResNet block, ordering needs to be enforced on allreduce operations in the backwards pass, adapted from \cite{Li2020DLPartialColl}}
+    \caption{ResNet block, allreduce ordering needs to be enforced on allreduce operations in the backwards pass, adapted from \cite{Li2020DLPartialColl}}
     \label{fig:ResNet-controll-dependency}
 \end{figure}
 
@@ -153,45 +157,77 @@ To accomplish this, the parameter server's jobs of aggregating, averaging, and d
 Caffe was the first software package where many of these ideas were evaluated, see figure \ref{fig:caffe-dp-arch}.
 Early results demonstrated how adopting tree-based allreduce/broadcast techniques could lessen communication pressure \cite{Iandola2016FireCaffe}, and further work adopting HPC techniques like communication/computation, improved data staging, and more sophisticated allreduce algorithms could greatly improve scaleability \cite{Awan2017SCaffe}.
 
-Some of the earliest work noted that load imbalance would had a large impact on training performance, if any rank was signifigantly delayed, the entire training process would have to stall waiting for it to arrive.
-This led to the idea of asyncronus training.
-Thanks to it's stocastic and itteritive characteristics, the SGD algorithm is resilient to model disruptions and can still converge even if work is lost or itteratinos take missteps.
-So many reserchers have proposed SGD varriations that break consistancy assumptions to remove syncronization and increase performance.
-Dean et al. \cite{Dean2012DistBelif} propose Downpour SGD, a parameter server based algorithm where workers only send $\delta w$ during syncronization, and periodically refresh their local copy from the parameter server as to not deviate too far from the global model. 
-Recht et al. \cite{Recht2011HogWild} take it a step furthur and demonstrate that SGD doesn't need any synconizaiton at all, they show that a pool of workers can update global weights in an SMT environment witout any locking mechanisms.
-Their algoritm, which they call Hogwild, shows how data loss due to race conditions doesn't have to adverse an effect on traing, and Noel and Osindero extend this idea to a distributed envoronment with Dogwild \cite{Noel2014Dogwild}.
+Some of the earliest work noted that load imbalance would have a large impact on training performance, if any individual rank were significantly delayed, the entire training process would have to stall waiting for it to arrive.
+This led to the idea of asynchronous training.
+Thanks to its stochastic and iterative characteristics, the SGD algorithm is resilient to model disruptions and can still converge even if work is lost or iterations take missteps.
+So many researchers have proposed SGD variations that break consistency assumptions to remove synchronization and increase performance.
+Dean et al. \cite{Dean2012DistBelif} propose Downpour SGD, a parameter server-based algorithm where workers only send $\delta w$ during synchronization and infrequently receive a local copy from the parameter server so as not to deviate too far from the global model. 
+Recht et al. \cite{Recht2011HogWild} take it a step further and demonstrate that SGD doesn't need any synchronization at all, they show that a pool of workers can update global weights in an SMT environment without any locking mechanisms.
+Their algorithm, which they call Hogwild, shows how data loss due to race conditions does not adversely affect training.
+Noel and Osindero extend this idea to a distributed environment with Dogwild \cite{Noel2014Dogwild}.
 
-Asyncronus traing was initaly proposed for, and easy to implement on, parameter server architectures, but these methods have been adopted in decentralized environements as well.
+Asynchronous training was initially proposed for, and is easy to implement on, parameter server architectures, but they do not completely mitigate the scaling issue of centralized systems.
+Using and MPI based distributed training library, Kurth et al. proposed gradient lag, a method where weight updates are an iteration behind, i.e. line 7 in algorithm \ref{alg:MinibatchSGD} becomes $w^{(t+1)}\leftarrow w_{mb} + \Delta w^{(t-1)}$, to increases computation/communication overlap, and allow training to fully utilize large scale systems \cite{Kurth2018ExascaleDLClimate}.
 
-Partial collectives \cite{Li2020DLPartialColl}
-Sparsity \cite{Renggli2019SparCML, Dryden2016CommQuantDPDNN}
-Elastic averaging/Gradient Lag, be an itteration behind on updates for more optimal communication   \cite{Kurth2018ExascaleDLClimate}
+While loosening the constraints of minibatch SGD can lower synchronization and increase performance, it requires technical expertise in both HPC communication and DL training, making the barrier to entry incredibly costly.
+Often, techniques are built on standardized HCP libraries, and so there is a vested interest for legacy HCP researchers to adapt existing methods to emerging DL methods.
 
-\cite{Kurth2019TFatScaleAnalysisOfHvdAndCPEML}
+\subsection{Collective Optimizations for Deep Learning}
+Early works targeted a lot of low-hanging fruit involving how HPC libraries treated communication.
+Caffe was one of the first libraries to provide data-parallel training and was a proving ground for allreduce techniques in DL.
+Awan et al. \cite{Awan2017InDepthPerfCharOfDNN} identify a handful of issues with Caffe, including the bulk-synchronous-parallel structure and lack of efficient communication, and they demonstrate that preexisting MPI algorithms can greatly improve performance.
+In further work, they propose S-Caffe \cite{Awan2017SCaffe}, a fork adapted for scalability, they leverage non-blocking operations to increase overlap and propose a DL-targeted hierarchical \texttt{MPI\_Reduce} for large GPU buffers.
 
-\cite{Ham2019DLENSOForcasts}
+Cho et al. propose their own hierarchical topology-aware allreduce algorithm for large GPU buffers, which they dub BlueConnect \cite{Cho2019BlueConnect}. 
+Their method decomposes RSA into multiple reduce-scatters and allgathers and maps each pair of collectives to a layer in the cluster's hierarchy.
+They evaluate their work by embedding it in Caffe2, further demonstrating deep learning's reliance on large message allreduce.
 
-\cite{Awan2017InDepthPerfCharOfDNN}
+Bayatpour et al. \cite{Bayatpour2018SALaR} design a pipelined hierarchical allreduce algorithm for large messages on CPU systems, with a focus on overlapping the internode and intranode stages to maximize utilization, the bandwidth usage improvements showed increased performance on multiple DL frameworks including CNTK and Horovod. 
+Chu et al. \cite{Chu2020NVGroup} propose a similar algorithm but with support for GPUs, which also shows increased Horovod performance.
+In order to maximize the usage of intranode resources, their method leverages persistent kernels, this allows them to saturate NVLink while seamlessly performing the local reduction, greatly increasing overall performance. 
+To integrate the GPU kernel-based communication with the network, the authors define a communication management engine that pipelines data between the intranode and internode stages.
 
-\subsubsection{Horovod}
+All these DL-focused allreduce algorithms target large message sizes, and they share a lot of techniques, including hierarchical structures, pipelining, and GPU-based reductions.
+The hierarchical structure is a form of implicit topology awareness and ensures that the most performant interconnect are used as much as possible.
+Pipelining allows the overlap of multiple types of communication if resources can shuffle data concurrently, this lower overall allreduce latency. 
+GPU-Kernels greatly diminish the time spent performing local reduction computations, and while there is a penalty in the form of host-to-device copies, these can be designed around and hidden.
+Therefore, future large-message algorithms should attempt to leverage these techniques where possible to maximize performance. 
+
+Outside of raw performance, there are other angles to tackle allreduce performance.
+Since process imbalance can be an issue with deep learning, there have been attempts to mitigate the impact of synchronization using PAP awareness.
+Proficz proposes a PAP estimation method \cite{Proficz2018ImprvAllReduceForImbPAP} targeting allreduce.
+As the application approaches the collective, it notifies the MPI runtime that synchronization is imminent, which allows the library to construct a collective schedule minimizing process idle time, and the author demonstrates how PAP awareness can accelerate training on CFIAR-10.
+Alizadeh et al. \cite{Alizadeh2022PAPCollDL} analyze the impact of process imbalance on Horovod and demonstrate that allreduce operations are frequently subject to process arrival imbalance. 
+Further, they demonstrate that hierarchical algorithms are more imbalance tolerant than flat algorithms and that hierarchical algorithms can increase training throughput.
+
+There are a handful of methods that leverage characteristics specific to DL to increase communication efficiency.
+Key observations include gradient update sparsity and SGD's ability to recover from missteps during training.
+Renggli et al. \cite{Renggli2019SparCML} proposed a communication method that leverages gradient sparsity to minimize the amount of data communicated.
+They encode update vectors as a set of index/value tuples which can greatly compress update vectors depending on the amount of sparsity.
+To apply their work to DL, the authors define an allreduce algorithm that can adaptively switch between sparse and dense data representation as sparsity decreases during the allreduce operation and validate their work by integrating it within CNTK.
+Dryden et al. \cite{Dryden2016CommQuantDPDNN} combine update sparsity with SGD resilience to propose adaptive quantization. 
+Quantization is a method for encoding 32-bit values as a single-bit, the authors' method selects a portion of the update values and sends a vector of 32-bit values where bit 31 is the update indicator and bits 30-0 are the value's index.
+They implemented their work in LBANN and show that they can achieve increased performance without sacrificing accuracy.
+
+Another handful of ideas involves breaking the constraints of MPI.
+For example, collectives require all the processes to participate, but it's often a small handful of stragglers that have the largest impact on application performance. 
+Therefore, Li et al. \cite{Li2020DLPartialColl} proposed partial collectives, once enough participants have reached the collective, the operation triggers and participating processes reuse values from previous iterations for the ranks that haven't arrived.
+They validate that this method will converge even with data-resue, they implement their own distributed training library and demonstrate how it outperforms incumbent DL libraries like Horovod.
+
+Dryden et al. \cite{Dryden2018Aluminum} identified that MPI is unaware of GPU streams, forcing application developers to be ham-fisted when synchronizing between MPI and CUDA.
+Their proposal, Aluminum, is a collective library that accepts a CUDA stream when performing non-blocking allreduce operations and does an efficient job mitigating synchronization issues between MPI and CUDA.
+They also validate their library by demonstrating improved strong and weak scaling of LBANN.
+
+\subsection{Horovod}\label{sec:CH3-horovod}
 The most widely used library for orchestrating data-parallel training is Horovod \cite{Sergeev2018Horovod}, its popularity is derived from its ease of use since it builds on top of existing DL frameworks like TensorFlow and Pytorch and how it uses efficient collective libraries like MPI and NCCL.
-DL frameworks internaly represent the model as a discrete acyclic graph (DAG), where vertices are layers and edges represent the data flow between layers.
-At runtime, DAG elements are scheduled on an execution engine, and to maximize performance there is no guarantee that the ordering of elements will be the same on different runs of the same network \cite{Abadi2015TensorflowWhitepaper}. 
+DL frameworks internally represent the model as a discrete acyclic graph (DAG), where vertices are layers and edges represent the data flow between layers.
+At runtime, DAG elements are scheduled on an execution engine, and to maximize performance, there is no guarantee that the ordering of elements will be the same on different runs of the same network \cite{Abadi2015TensorflowWhitepaper}. 
 Horovod ties into existing DL frameworks by hooking into the internal DAG through a \textit{distributed optimizer} class, embeds allreduce operations on the appropriate DAG vertices, and issues communication on a background thread to increase compute/communication overlap.
 However, allreduce operations in MPI require strict ordering, so when there is a potential race between two layers like in figure \ref{fig:ResNet-controll-dependency}, Horovod must determine which ranks have finished which layers schedule allreduces accordingly \cite{Kurth2019TFatScaleAnalysisOfHvdAndCPEML}.  
 To determine which layers are ready, the background thread performance bitwise and allreduce on a bit-vector where each bit represents a layer, this happens continuously through training generating frequent small size (order of 64B) CPU-based allreduces.
 When all ranks have agreed upon a set of layers to average, the weight updates are packed into a buffer (known as the TensorFusion buffer), and a large (order of 64MB) GPU-based allreduce is issued.
 Profiling of Horovod by Mohammadalizadehbakhtevari \cite{Mohammadalizadehbakhtevari2021Thesis} echos this communication pattern, with a mix of frequent small CPU-based allreduces and large GPU-based allreduce operations.
-Horovod has been shown to be capable of tackling immense scale, and fully utilize some of the world's largest systems, like 8000 Xeon Phi nodes on Cori \cite{Mathuriya2019Cosmoflow}, or 4000 V100 nodes on Sumit \cite{Kurth2018ExascaleDLClimate}.
-
-
-\begin{itemize}
-    \item Math foundation of Distributed DL, \cite{Ben-Nun2019DemystifyDL}
-    \item Lit review of DL (Awan's work + more), establish that Allreduce is Key
-    \item Existing Deep learning libraries (Tensorflow, Pytorch, Horovod, DeepSpeed)
-    \item Potentially some DL profiling (Python based)
-\end{itemize}
-
+Horovod has been shown to be capable of tackling immense scale and fully utilize some of the world's largest systems, like 8000 Xeon Phi nodes on Cori \cite{Mathuriya2019Cosmoflow}, or 4000 V100 nodes on Sumit \cite{Kurth2018ExascaleDLClimate}.
 
 
 \clearpage
