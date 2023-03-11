@@ -1,0 +1,78 @@
+\begin{figure}
+    \centering
+    \begin{tikzpicture}[
+        gpusty/.style={draw, rectangle,
+            minimum height=1cm,
+            minimum width=1cm,
+            fill=lime!70!black
+        },
+        cpusty/.style={draw, rectangle,
+            minimum height=1cm,
+            minimum width=1cm,
+            fill=blue!70
+        },
+        memsty/.style={draw, rectangle,
+            minimum height=0.6cm,
+            minimum width=1cm,
+            fill=black!20
+        },
+        nicsty/.style={draw, rectangle,
+            minimum height=1cm,
+            minimum width=1cm,
+            fill=purple!70
+        },
+        darrowsty/.style={draw, double arrow,
+            fill=lime!30!white,
+            font=\footnotesize,
+        },
+        memarrowsty/.style={draw, double arrow,
+            minimum height=1cm,
+            minimum width=0.6cm,
+            fill=black!40,
+            font=\footnotesize,
+            rotate=90,
+        }
+    ]
+    
+    \node[gpusty] at (-1.7,-1.5) (g0) {GPU0};
+    \node[gpusty] at (1.7,-1.5) (g1) {GPU1};
+    \node[gpusty] at (-1.7,1.5) (g2) {GPU2};
+    \node[gpusty] at (1.7,1.5) (g3) {GPU3};
+    
+    \node[nicsty] at (-3.5, 0) (n) {NIC};
+
+    \node[cpusty] at (-1.5, 3.5) (c0) {CPU0};
+    \node[cpusty] at (1.5, 3.5) (c1) {CPU1};
+    
+    \node[memsty] at (-1.2, 5.1) (m0) {NUMA0};
+    \node[memsty] at (1.2, 5.1) (m1) {NUMA1};
+
+    \node[darrowsty, minimum height=2cm] at (0,-1.5) () {NVLink};
+    \node[darrowsty, minimum height=2cm] at (0,1.5) () {NVLink};
+    \node[darrowsty, rotate=90, minimum height=2.1cm] at (-1.5, 0) () {NVLink};
+    \node[darrowsty, rotate=90, minimum height=2.1cm] at (1.5, 0) () {NVLink};
+    \node[darrowsty, rotate=45, minimum height=3cm] at (0,0) () {NVLink};
+    \node[darrowsty, rotate=-45, minimum height=3cm] at (0,0) () {NVLink};
+
+    \node[draw, double arrow, 
+        minimum height=1cm,
+        fill=blue!40,
+    ] at (0, 3.5) () {UPI};
+    
+    \node[memarrowsty] at (-1.2, 4.4) () {};
+    \node[memarrowsty] at (1.2, 4.4) () {};
+
+    \draw[<->] (n) -- (-3.5,3.5) node[above]{PCIe x16} -- (c0) ;
+    \draw[<->] (g0) -- (-2.7,-1.5) -- (-2.7,2.7) -- (-1.8, 2.7) -- (c0.240);
+    \draw[<->] (g2) -- (-1.7,2.5) -- (-1.2, 2.5) -- (c0.300);
+    \draw[<->] (g1) -- (2.7,-1.5) -- node[below,sloped] {PCIe x16} (2.7,2.7)  -- (1.8, 2.7) -- (c1.300);
+    \draw[<->] (g3) -- (1.7,2.5) -- (1.2, 2.5) -- (c1.240);
+    
+    \end{tikzpicture}
+    \caption[Topology of Multi-GPU Node]{
+    Sample architecture for GPU node.
+    There are 4 GPUs fully connected with NVLink device-to-device interconnects. 
+    The GPUs are connected to the CPU through PCIe, with each CPU managing 2 GPUs. 
+    The network card is also attached to the CPU0 with PCIe.}
+    \label{fig:nvidia_redstone}
+\end{figure}

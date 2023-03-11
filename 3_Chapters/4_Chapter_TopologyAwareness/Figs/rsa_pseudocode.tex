@@ -1,24 +1,48 @@
-\begin{algorithm}
-  \caption{Reduce Scatter Allgather Heuristic}
-  \label{alg:rsa}
-  \begin{algorithmic}[1]
-    \Require Number of processes p, physical topology distance matrix D
-    \Ensure  Mapping array M representing the new rank for each process
+% \begin{algorithm}
+%   \caption{Reduce Scatter Allgather Heuristic}
+%   \label{alg:rsa}
+%   \begin{algorithmic}[1]
+%     \Require Number of processes p, physical topology distance matrix D
+%     \Ensure  Mapping array M representing the new rank for each process
 
-    \State M[0] = 0;
-    \State ref\_rank = 0;
-    \State mask = 1;
-    \While {\textit{there exist more processes to map}}
-      \While {\textit{ ref\_rank $\oplus$ mask is already mapped }}
-        \State mask *= 2;
-      \EndWhile
-      \State new\_rank = mask $\oplus$ ref\_rank;
-      \State target\_core = find\_closest\_core(ref\_rank, D);
-      \State M[new\_rank] = target\_core;
-      \If {\textit{two processes have been mapped close to ref\_rank}}
-        \State ref\_rank = new\_rank;
-        \State mask = 1;
-      \EndIf
-      \EndWhile
-  \end{algorithmic}
+%     \State M[0] = 0;
+%     \State ref\_rank = 0;
+%     \State mask = 1;
+%     \While {\textit{there exist more processes to map}}
+%       \While {\textit{ ref\_rank $\oplus$ mask is already mapped }}
+%         \State mask *= 2;
+%       \EndWhile
+%       \State new\_rank = mask $\oplus$ ref\_rank;
+%       \State target\_core = find\_closest\_core(ref\_rank, D);
+%       \State M[new\_rank] = target\_core;
+%       \If {\textit{two processes have been mapped close to ref\_rank}}
+%         \State ref\_rank = new\_rank;
+%         \State mask = 1;
+%       \EndIf
+%       \EndWhile
+%   \end{algorithmic}
+% \end{algorithm}
+
+\begin{algorithm}
+    \caption{Reduce Scatter Allgather Remapping Heuristic}
+    \label{alg:rsa}
+    \DontPrintSemicolon
+    \KwIn{Number of processes p, physical topology distance matrix D}
+    \KwOut{Mapping array M representing the new rank for each process}
+    
+     M[0] = 0 \;
+     ref\_rank = 0 \;
+     mask = 1 \;
+    \While {\textit{there exist more processes to map}}{
+        \While {\textit{ ref\_rank $\oplus$ mask is already mapped }}{
+             mask *= 2 \;
+         }
+         new\_rank = mask $\oplus$ ref\_rank \;
+         target\_core = find\_closest\_core(ref\_rank, D) \;
+         M[new\_rank] = target\_core \;
+        \If {\textit{two processes have been mapped close to ref\_rank}}{
+             ref\_rank = new\_rank \;
+             mask = 1 \;
+         }
+    }
 \end{algorithm}

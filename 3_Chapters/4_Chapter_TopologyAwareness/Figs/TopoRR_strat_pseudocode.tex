@@ -1,16 +1,29 @@
+% \begin{algorithm}[h]
+%         \For {t = 0 \textbf{to} $\frac{|D|}{B}*epochs$} {
+%          $\Bar{x}\leftarrow$ Vector of $B$ Random elements from $D$ \;
+%          $w_{mb}\leftarrow w^{(t)}$ \;
+%          $f\leftarrow \ell(w_{mb},\Bar{x},h(\Bar{x}))$ \;
+%          $g_{mb}\leftarrow \nabla \ell(w_{mb}, f)$ \;
+%          $\Delta w \leftarrow u(g_{mb}, w^{(0,...,t)}, t)$ \;
+%          $w^{(t+1)}\leftarrow w_{mb} + \Delta w$ \;
+%         }
+%     \caption{Minibatch SGD}
+%     \label{alg:MinibatchSGD}
+% \end{algorithm}
+
 \begin{algorithm}
     \caption{General Mapping Heuristic Strategy}
     \label{alg:toporr-strat}
-    \begin{algorithmic}[1]
-        \Require Number of Processes $p$, physical topology distance matrix $D$
-        \Ensure  Mapping array $M$ representing the new rank for each process
-        \State Bind rank 0 to its current core
-        \State Set rank 0 as the reference rank
-        \While{There are processes to map}
-            \State Select the target rank to map
-            \State Find an unmapped core with the minimum distance to the reference core  
-            \State Bind the target rank to the selected core
-            \State Optionally update the reference core
-        \EndWhile
-    \end{algorithmic}
+    \DontPrintSemicolon
+
+        \KwIn{Number of Processes $p$, physical topology distance matrix $D$}
+        \KwOut{Mapping array $M$ representing the new rank for each process}
+         Bind rank 0 to its current core \;
+         Set rank 0 as the reference rank \;
+        \While{There are processes to map} {
+             Select the target rank to map \;
+             Find an unmapped core with the minimum distance to the reference core   \;
+             Bind the target rank to the selected core \;
+             Optionally update the reference core \;
+        }
 \end{algorithm}

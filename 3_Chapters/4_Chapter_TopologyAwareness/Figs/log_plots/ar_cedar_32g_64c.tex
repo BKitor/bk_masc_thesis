@@ -17,7 +17,7 @@
                 legend style={at={(-0.1,-0.3)}, anchor=north},
                 legend columns=5,
                 grid=major,
-                cycle list name=bk_remap_omb_cyclelist,
+                cycle list name=bk_remap_omb_cdr_cyclelist,
             ]
             
             \nextgroupplot[title=GPU By Socket, xmode=log, log basis x=2, ymode=log, log basis y=10, restrict y to domain=0:1100, xmin=2, xmax=268435456] 
@@ -70,7 +70,7 @@
             
         \end{groupplot}
     \end{tikzpicture}
-    \caption[Rank reordered allreduce microbenchmark results on Cedar]{
+    \caption[Rank Reordered Allreduce Microbenchmark Results on Cedar]{
         OSU Microbenchmark allreduce evaluation on Cedar.
         GPU runs have 32 nodes with 4 processes per node, totalling 128 GPUs.
         CPU runs have 64 nodes with 32 processes per node, totalling 2048 processes.

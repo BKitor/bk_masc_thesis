@@ -1,0 +1,66 @@
+\begin{figure}
+    \centering
+    \begin{tikzpicture}[
+        nnodesty/.style={draw, circle, minimum width=0.5cm},
+        psty0/.style={fill=blue!40},
+        psty1/.style={fill=yellow!40},
+        psty2/.style={fill=red!40},
+        passtxtsty/.style={midway,sloped,below,font=\scriptsize},
+        imgsty/.style={draw, rectangle, 
+            minimum height=1cm,
+            minimum width=1cm,
+        },
+        arrsty/.style={single arrow, rotate=-90,draw, minimum height=0.5cm, minimum width=0.5cm},
+    ]
+    
+    \foreach \x in {0,1,2}
+        \foreach \y in {0,1,2}
+            \node[nnodesty,psty0] at (\x,\y) (n\x\y0) {};
+            
+    \foreach \x in {0,1,2}
+        \foreach \y in {0,1,2}
+            \node[nnodesty,psty1] at (\x+4,\y) (n\x\y1) {};
+            
+    \foreach \x in {0,1,2}
+        \foreach \y in {0,1,2}
+            \node[nnodesty,psty2] at (\x+8,\y) (n\x\y2) {};
+            
+    \foreach \nn in {0,1,2}
+        \foreach \x in {0,1,2}
+            \foreach \y in {0,1,2}{
+                \draw (n\x0\nn) -- (n\y1\nn);
+                \draw (n\x1\nn) -- (n\y2\nn);
+            }
+
+    \node[rectangle, draw, minimum height=0.5cm, minimum width=4cm] at (5,-4) (avgbuf) {$\Delta w = 1/p * \sum_{i=0}^p \Delta w_i$};
+    \node[draw,rectangle, above=3.5cm of n121] (initw) {$w^{t+1} = u(w^t,\Delta w, t)$};
+
+    \foreach \nn in {0,1,2}{
+        \node[imgsty, psty\nn, above=of n02\nn,xshift=0.4cm,yshift=0.1cm] () {}; 
+        \node[imgsty,psty\nn,above=of n02\nn,xshift=0.5cm] () {}; 
+        \node[imgsty,psty\nn,above=of n02\nn,xshift=0.6cm,yshift=-0.1cm] () {}; 
+        \node[arrsty,above=0.2cm of n02\nn, yshift=0.125cm, xshift=-0.25cm] (im\nn) {};
+        
+        \draw[->, very thick] (n02\nn) ++(-0.5, 0) -- node [passtxtsty] {Forward Pass} +(0,-2);
+        \draw[->, very thick] (n20\nn) ++(0.5, 0) -- node [passtxtsty] {Backward Pass} +(0,2);
+        \node[arrsty,below=0.2cm of n10\nn, yshift=0.325cm, xshift=0.25cm] (dw\nn) {};
+        \node[rectangle, draw, minimum height=0.5cm, minimum width=2cm, below=of n10\nn] (dw\nn){$\Delta w_\nn$};  
+        \draw[->] (dw\nn) -- node[midway,passtxtsty] {\texttt{MPI\_Reduce}} (avgbuf);
+
+    }
+
+    \draw[->](initw.200)-- ++(0,-0.5) -- ++(-2,0) -- node[midway,passtxtsty,above] {\texttt{MPI\_Bcast}} (n220);
+    \draw[->](initw.270) -- ++(0,-0.5) -- ++(1,0) -- node[midway, passtxtsty,above] {\texttt{MPI\_Bcast}} (n221);
+    \draw[->] (initw.345) -- ++(0,-0.5) -- ++(3.6,0) -- node[midway,passtxtsty,above] {\texttt{MPI\_Bcast}} (n222);
+
+    \draw[->] (avgbuf.east) -- ++(4.5,0) -- node[midway, passtxtsty,below] {Apply weight updates} ++(0,10) --(initw.east);
+    
+    \end{tikzpicture}
+    \caption[Decentralized Data Parallelism Implemented in Caffe]{
+        Decentralized data parallel architecture of Caffe.
+        Instead of direct updates to a parameter server, weight updates are reduced to some specified leader, and weights for the next round of training are broadcast.
+        This allows for more optimal reduce/broadcast algorithms as opposed to the linear reduce/broadcast enforced by parameter servers.
+        Adapted from \cite{Awan2017InDepthPerfCharOfDNN}
+    }
+    \label{fig:caffe-dp-arch}
+\end{figure}

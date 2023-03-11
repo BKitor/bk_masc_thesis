@@ -1,8 +1,54 @@
 \begin{figure}
     \centering
-    \includegraphics[width=4.5in]{3_Chapters/2_Chapter_Background/Figs/pap_theory.png}
-    \caption[Outline of process arrival patterns theory]{
-        An outline of process arrival pattern theory for four processes, taken from \cite{Faraj2008StudyProcArrivalMPIColl}.
+    \begin{tikzpicture}[
+        lvnsty/.style={draw, rectangle, 
+            minimum width=1cm,
+            minimum height=0.5cm,
+        },
+        arnsty/.style={draw, rectangle, fill=black,
+            minimum width=1cm,
+            minimum height=0.5cm,
+        },
+    ]
+    
+    \draw (1,0) -- (9,0);
+    \node at (0.7,0) {$\overline{a}$};
+    
+    \draw [->, dotted] (2, 3) node[above] () {$p_0$} -- +(0, -8);
+    \draw [->, dotted] (4, 3) node[above] () {$p_1$} -- +(0, -8);
+    \draw [->, dotted] (6, 3) node[above] () {$p_2$} -- +(0, -8);
+    \draw [->, dotted] (8, 3) node[above] () {$p_3$} -- +(0, -8);
+
+    \node[arnsty] at (2,1.5) (a0) {};
+    \node[arnsty] at (4,-2) (a1) {};
+    \node[arnsty] at (6,2) (a2) {};
+    \node[arnsty] at (8,-1.5) (a3) {};
+    
+    \node[lvnsty] at (2,-3.4) (f0) {};
+    \node[lvnsty] at (4,-4) (f1) {};
+    \node[lvnsty] at (6,-3.7) (f2) {};
+    \node[lvnsty] at (8,-3) (f3) {};
+
+    \draw[<->] (a0.240) -- node[midway, left] {$\delta_0$} +(0,-1.25);
+    \draw[<->] (a1.120) -- node[midway, left] {$\delta_1$} +(0,1.75);
+    \draw[<->] (a2.240) -- node[midway, left] {$\delta_2$} +(0,-1.75);
+    \draw[<->] (a3.120) -- node[midway, left] {$\delta_3$} +(0,1.25);
+
+    \foreach \p in {0,1,2,3}{
+        \node[right=0.05cm of a\p] {$a_\p$};
+        \node[right=0.05cm of f\p] {$f_\p$};
+        \draw[<->, dashed] (a\p.300) -- node[right, midway] {$e_\p$} (f\p.60);
+    }
+
+    \draw[dotted] (a2.north east) -- +(3.5,0);
+    \draw[dotted] (a1.north east) -- +(5.5,0);
+    \draw [<->] (10,2.25) -- node[midway, right] {$\omega$} (10,-1.75);
+    
+    \end{tikzpicture}
+    \caption[Process Arrival Pattern Theory]{
+        An outline of process arrival pattern theory for four processes.
+        Indications are given for arrival time $a_i$, average arrival time $\overline{a}$, departure time $f_i$, time spent in collective $e_i$, deviation from average arrival time $\delta_i$, and maximum imbalance $\omega$.
+        Adapted from \cite{Faraj2008StudyProcArrivalMPIColl}.
     }
     \label{fig:pap-theory}
 \end{figure}

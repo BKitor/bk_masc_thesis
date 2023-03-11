@@ -17,7 +17,7 @@
                 legend style={at={(-0.1,-0.3)}, anchor=north},
                 legend columns=5,
                 grid=major,
-                cycle list name=bk_remap_omb_cyclelist,
+                cycle list name=bk_remap_omb_blg_cyclelist,
             ]
             
             \nextgroupplot[title=GPU By Socket, xmode=log, log basis x=2, ymode=log, log basis y=10, restrict y to domain=0:1100, xmin=2, xmax=268435456] 
@@ -69,16 +69,16 @@
             \addplot table[x=msize, y=node_disabled0_alg0_scotch1] {3_Chapters/4_Chapter_TopologyAwareness/Figs/data/beluga/cpu_128_bc.dat};
             \addplot table[x=msize, y=node_disabled1_alg0_scotch0] {3_Chapters/4_Chapter_TopologyAwareness/Figs/data/beluga/cpu_128_bc.dat};
             
-            \addlegendentry{bintree}
-            \addlegendentry{knomial}
-            \addlegendentry{Recursive Doubling}
+            \addlegendentry{Bintree}
+            \addlegendentry{Knomial}
+            \addlegendentry{Scatter Allgather}
             % \addlegendentry{Remaping}
             \addlegendentry{SCOTCH}
             \addlegendentry{OMPI}
             
         \end{groupplot}
     \end{tikzpicture}
-    \caption[Rank reordered broadcast microbenchmark results on Beluga]{
+    \caption[Rank Reordered Broadcast Microbenchmark Results on Beluga]{
         OSU Microbenchmark broadcast evaluation on Beluga with 128 nodes.
         GPU nodes have 4 processes each, totalling 512 GPUs total, and CPU allocations have 32 processes per node for 4096 processes total.
         Message sizes range from 1B to 128MB on GPU resources and 4B to 64MB on CPU resources.

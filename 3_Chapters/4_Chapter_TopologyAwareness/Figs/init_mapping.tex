@@ -1,10 +1,10 @@
 \begin{figure}
   \centering
   \begin{tikzpicture}[every node/.style = {shape=circle, draw, align=center}]
-    \node at (0.5, 4.6) [draw=none, text=blue] {Node 0\\Numa 0};
-    \node at (2.5, 4.6) [draw=none, text=red] {Node 0\\Numa 1};
-    \node at (5.5, 4.6) [draw=none, text=blue] {Node 1\\Numa 0};
-    \node at (7.5, 4.6) [draw=none, text=red] {Node 1\\Numa 1};
+    \node at (0.5, 4.6) [draw=none, text=blue] {Node 0\\NUMA 0};
+    \node at (2.5, 4.6) [draw=none, text=red] {Node 0\\NUMA 1};
+    \node at (5.5, 4.6) [draw=none, text=blue] {Node 1\\NUMA 0};
+    \node at (7.5, 4.6) [draw=none, text=red] {Node 1\\NUMA 1};
   
     \node at (0, 3) [fill=blue!20] {0};
     \node at (1, 3) [fill=blue!20] {2};
@@ -36,8 +36,8 @@
     \node at (7, 0) [fill=red!20] {5};
     \node at (8, 0) [fill=red!20] {7};
   \end{tikzpicture}
-  \caption[OpenMPI Process to core binding options]{
-      Example of by-package, by-core and by-node initial mappings on 2 nodes with 2 2-core processors per node. 
+  \caption[OpenMPI Process to Core Binding Options]{
+      Example of by-package, by-core and by-node initial mappings on 2 nodes with two 2-core processors per node. 
       The blue dots represent package 0, and the red dots represent package 1.
   }
   \label{fig:init-mappings}

@@ -1,4 +1,4 @@
-\begin{figure}
+\begin{figure}[t]
     \centering
     \begin{tikzpicture}
         \begin{loglogaxis}[
@@ -16,8 +16,9 @@
         \addplot table[x=ranks, y=ucp] {3_Chapters/5_Chapter_PAPAwareness/Figs/data/bk_eval_ss_32n.dat};
         \end{loglogaxis}
     \end{tikzpicture}
-    \caption[MPI vs UCX RMA synchronization performance benchmark results]{
-    Comparison of RMA synchronization methods with 32 nodes on Narval, the number of processes per node is scaled from 1 to 1024 processes total.
+    \caption[MPI vs UCX RMA Synchronization Performance Benchmark Results]{
+        Comparison of RMA synchronization methods with 32 nodes on Narval.
+        The number of processes per node is scaled from 1 to 32, giving 32 to 1024 processes in total.
     }
     \label{fig:sync_bmark_32n}
 \end{figure}

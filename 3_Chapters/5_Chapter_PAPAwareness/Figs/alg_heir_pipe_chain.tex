@@ -1,0 +1,83 @@
+\begin{algorithm}
+    \caption{PAP-Aware Pieplined Hierarchical Chain Allreduce}
+    \label{alg:heir_pipe_chain}
+    \DontPrintSemicolon
+    % \KwIn{$buf$ - the buffer to perform an in-place allreduce on, $size$ - size of buffer, $seg\_size$ - segment size of pipeline, $intra\_comm$ - \texttt{MPI\_Communicator} for within the node, $inter\_comm$ - \texttt{MPI\_Communicator} for across nodes}
+    % \KwIn{$buf$ - the buffer to perform an in-place allreduce on, $size$ - the size of $buf$, $intra\_comm$ - \texttt{MPI\_Communicator} for within the node, $inter\_comm$ - \texttt{MPI\_Communicator} for across nodes}
+    \KwIn{A buffer of data with a datatype and size, an \texttt{MPI\_OP} to apply, a segment size for pipelining, and intra- and inter-node communicators.}
+    \KwOut{An allreduce is performed in place on buf or on a specified output buffer.}
+   \SetKwFunction{MPIReduce}{MPI\_Reduce}
+   \SetKwFunction{MPIReducelocal}{MPI\_Reduce\_local}
+   \SetKwFunction{MPIBcast}{MPI\_Bcast}
+   \SetKwFunction{MPIIbcast}{MPI\_Ibcast}
+   \SetKwFunction{MPICommrank}{MPI\_Comm\_rank}
+   \SetKwFunction{MPICommsize}{MPI\_Comm\_size}
+   \SetKwFunction{MPIIrecv}{MPI\_Irecv}
+   \SetKwFunction{MPIRecv}{MPI\_Recv}
+   \SetKwFunction{MPISend}{MPI\_Send}
+   \SetKwFunction{MPIWait}{MPI\_Wait}
+   \SetKwFunction{MPIWaitall}{MPI\_Waitall}
+   
+   % \MPIReduce{buf, size, 0, intra\_comm} \;
+   Perform intra-node \MPIReduce{} \;
+
+   \If{rank is leader of node}{
+       $arrival$ = get\_arrival() \;
+       
+       \If{not the first to arrive}{
+            $parent\_rank$ = get\_previous\_arrival() \;
+       }
+       
+       \If{the first to arrive}{
+            Receive $child\_rank$ from \texttt{MPI\_ANY\_SOURCE} and send data\; 
+            % \MPIRecv{\&child\_rank, MPI\_ANY\_SOURCE} \;
+            % \MPISend{buf, child\_rank} \;
+       }\ElseIf{the second-last to arrive}{
+            Inform $parent\_rank$ of arrival, receive data from $parent\_rank$ and perform local reduction \;
+            Calculate $child\_rank$ based on processes that have already arrived \; 
+            Send data to pre-posted buffer on $child\_rank$ \;
+            % \MPIRecv{\&tmp\_buf, MPI\_ANY\_SOURCE} \;
+            % \MPIReducelocal{buf, tmp\_buf} \;
+            % $child\_rank$ = calc\_child\_rank() \;
+            % \MPISend{buf, child\_rank} \;
+       }\ElseIf{the last to arive}{
+            Ensure the pre-posted buffer has data and perform local reduction \;
+            Re-issue pre-posted buffer;
+            % \MPIWait{pre\_posted\_req} \;
+            % \MPIReducelocal{buf, pre\_posted\_buf} \;
+            % \MPIIrecv{pre\_posted\_buf, MPI\_ANY\_SOURCE, \&pre\_posted\_req} \;
+       }\Else{
+            Inform $parent\_rank$ of arrival, receive data from $parent\_rank$ and perform local reduction \;
+            Receive $child\_rank$ from \texttt{MPI\_ANY\_SOURCE} and send data\; 
+            % \MPIRecv{\&tmp\_buf, MPI\_ANY\_SOURCE} \;
+            % \MPIReducelocal{buf, tmp\_buf} \;
+            % \MPIRecv{\&child\_rank, MPI\_ANY\_SOURCE} \;
+            % \MPISend{buf, child\_rank} \;
+       }
+
+        $last\_arrival$ = get\_last\_arrival() \;
+        
+        % \MPIIbcast{buf, seg\_size, last\_arrival, inter\_comm, \&pipe\_bc\_req[0]} \;
+        Issue first inter-node \MPIIbcast from $last\_arrival$ \;
+        \For{ The number of segments minus 1 }{
+            Wait for the previous iteration of \MPIIbcast to complete \;
+            Issue inter- and intra-node \MPIIbcast on the appropriate segments \;
+            % \MPIWaitall{pipe\_bc\_req} \;
+            % \MPIIbcast{buf+$seg\_size * (i+1)$, seg\_size, last\_arrival, inter\_comm, \&pipe\_bc\_req[0]} \;
+            % \MPIIbcast{buf+$seg\_size * i$, seg\_size, 0, intra\_comm, \&pipe\_bc\_req[1]} \;
+        }
+        Wait for the last inter-node \MPIIbcast to complete \;
+        Start the last intra-node \MPIIbcast and complete any outstanding requests \;
+        % \MPIWaitall{pipe\_bc\_req} \;
+        % \MPIIbcast{buf+$seg\_size * (num\_segments -1)$, seg\_size, 0, intra\_comm, \&pipe\_bc\_req[1]} \;
+        % \MPIWait{pipe\_bc\_req[1]} \;
+    }\Else{
+        \For{Each segment in the buffer}{
+            Issue and complete intra-node \MPIIbcast for each pipeline segment \;
+           %  \MPIIbcast{$buf+(seg\_size*i)$, seg\_size, 0, intra\_comm, \&intra\_bc\_req} \;
+           % \MPIWait{intra\_bc\_req}
+        }
+   }
+   % }
+    % \MPIBcast{buf, 0, intra\_comm} \;
+\end{algorithm}

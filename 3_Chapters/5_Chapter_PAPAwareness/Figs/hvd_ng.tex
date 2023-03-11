@@ -1,8 +1,9 @@
 \begin{table}
     \centering
-    \caption{
+    \caption[PAP-Aware Horovod Performance on Narval]{
         Horovod performance on Narval with different models and allreduce algorithm.
         All values are measured in images/second.
+        Highest throuput results are in bold.
     }
     \begin{tabular}{lllllll}
      4 nodes    & \textbf{PAP 4MB} & \textbf{PAP} & \textbf{RSA} & \textbf{UCC} & \textbf{NCCL} & \textbf{OMPI} \\
@@ -30,5 +31,5 @@
     ResNet101   & 5146.2    & 3328.9       & \textbf{10239}   & 7670.6  & 7716.5  & 6908.1  \\
     ResNet152   & 3836.6    & 2448.6       & \textbf{7435}    & 5753.4  & 5746.5  & 5259.2  \\
     \end{tabular}
-    \label{tbl:pap_hvd_beluga_full}
+    \label{tbl:pap_hvd_narval_full}
 \end{table}

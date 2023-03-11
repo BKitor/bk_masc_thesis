@@ -1,0 +1,59 @@
+\begin{figure}
+    \centering
+        \begin{tikzpicture}[
+        elemsty/.style={
+            draw, rectangle, rounded corners,
+        },
+        cdsty/.style={
+            draw, fill=blue!20,align=center,rounded corners,
+            font=\scriptsize,
+        },
+        cdlinesty/.style={
+            red,dashed
+        }
+    ]
+    
+    \foreach \x in {0,1}{
+        \node[elemsty] at (\x*7,0) (add1\x) {addition};
+        \node[elemsty,below left=of add1\x, xshift=1cm] (convbn1\x) {Conv-BN};
+        \node[elemsty,below right=of add1\x, xshift=-1cm] (convbn2\x) {Conv-BN};
+        \node[elemsty,below=of convbn2\x] (convbnrelu1\x) {Conv-BN-ReLU};
+        \node[elemsty,below=4cm of add1\x] (mp1\x) {Max Pool};
+    }
+    \node[below=of mp10] (fp) {forward pass};
+    \node[below=of mp11] (bp) {backward pass};
+
+    \draw[->] (fp) -- (mp10);
+    \draw[->] (mp10) -- (convbnrelu10);
+    \draw[->] (convbnrelu10) -- (convbn20);
+    \draw[->] (convbnrelu10) -- (convbn20);
+    \draw[->] (convbn20) -- (add10);
+    \draw[->] (convbn10) -- (add10);
+    \draw[->] (add10) -- +(0,0.5);
+    \draw[<-] (convbn10) -- +(0,-1.5) -- (mp10);
+    
+    \draw[<-] (bp) -- (mp11);
+    \draw[<-] (mp11) -- (convbnrelu11);
+    \draw[<-] (convbnrelu11) -- (convbn21);
+    \draw[<-] (convbnrelu11) -- (convbn21);
+    \draw[<-] (convbn21) -- (add11);
+    \draw[<-] (convbn11) -- (add11);
+    \draw[<-] (add11) -- +(0,0.5);
+    \draw[->] (convbn11) -- +(0,-1.5) -- (mp11);
+
+    \node[cdsty, above=0.1cm of convbn11.150] (cd0) {1) All-\\Reduce};
+    \node[cdsty, above right=0.1cm of convbn21] (cd1) {2) All-\\Reduce};
+    \node[cdsty, above right=0.1cm of convbnrelu11] (cd2) {3) All-\\Reduce};
+    \node[cdsty, right=0.1cm of mp11] (cd3) {4) All-\\Reduce};
+
+    \draw[<->,cdlinesty] (cd0) -- ++(0,1.5) -- node[above,near end] {control dependency} ++(5.15,0) -- ++(cd1);
+    \draw[->,cdlinesty] (cd1) -- (cd2);
+    \draw[->,cdlinesty] (cd2) -- ++(0,-1) -- (cd3);
+        
+    \end{tikzpicture}
+    \caption[Ambiguity in ResNet Block Operation Ordering]
+    {ResNet blocks generate ambiguity in terms of reduction order.
+    Distributed DL frameworks must handle allreduce ordering in order to avoid deadlocks and data corruption.
+    Figure adapted from \cite{Li2020DLPartialColl}}
+    \label{fig:ResNet-controll-dependency}
+\end{figure}

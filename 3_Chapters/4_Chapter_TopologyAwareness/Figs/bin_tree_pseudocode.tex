@@ -1,29 +1,60 @@
+% \begin{algorithm}
+%   \caption{Binary Tree Heuristic}
+%   \label{alg:bintree}
+%   \begin{algorithmic}[1]
+%     \Require Number of Processes p, physical topology distance matrix D
+%     \Ensure  Mapping array M representing the new rank for each process
+
+%     \State M[0] = 0;
+%     \State REC\_BIN\_MAP(0)
+
+%     \Procedure{rec\_bin\_map}{ref\_rank}
+%     \State level = $\lfloor log_2(ref\_rank + 1)\rfloor$;
+%     \State delta = $2^{level}$;
+%     \State c1 = ref\_rank + delta;
+%     \State c2 = ref\_rank + 2*delta;
+
+%     \If{\textit{c2 $<$ p}}
+%     \State M[c2] = find\_closest\_core(ref\_rank, D);
+%     \State REC\_BIN\_MAP(child2)
+%     \EndIf
+
+%     \If{\textit{c1 $<$ p}}
+%     \State M[c1] = find\_closest\_core(ref\_rank, D);
+%     \State REC\_BIN\_MAP(child1)
+%     \EndIf
+
+%     \EndProcedure
+%   \end{algorithmic}
+% \end{algorithm}
+
 \begin{algorithm}
-  \caption{Binary Tree Heuristic}
-  \label{alg:bintree}
-  \begin{algorithmic}[1]
-    \Require Number of Processes p, physical topology distance matrix D
-    \Ensure  Mapping array M representing the new rank for each process
-
-    \State M[0] = 0;
-    \State REC\_BIN\_MAP(0)
-
-    \Procedure{rec\_bin\_map}{ref\_rank}
-    \State level = $\lfloor log_2(ref\_rank + 1)\rfloor$;
-    \State delta = $2^{level}$;
-    \State c1 = ref\_rank + delta;
-    \State c2 = ref\_rank + 2*delta;
-
-    \If{\textit{c2 $<$ p}}
-    \State M[c2] = find\_closest\_core(ref\_rank, D);
-    \State REC\_BIN\_MAP(child2)
-    \EndIf
-
-    \If{\textit{c1 $<$ p}}
-    \State M[c1] = find\_closest\_core(ref\_rank, D);
-    \State REC\_BIN\_MAP(child1)
-    \EndIf
-
-    \EndProcedure
-  \end{algorithmic}
+    \caption{Binary Tree Remapping Heuristic}
+    \label{alg:bintree}
+    \DontPrintSemicolon
+    
+    \KwIn{ Number of Processes p, physical topology distance matrix D}
+    \KwOut{  Mapping array M representing the new rank for each process}
+    \SetKwFunction{RecBinMapping}{rec\_bin\_mapping}
+    \SetKwProg{vFn}{void}{\{}{\}}
+    
+    \vFn{rec\_bin\_mapping(int ref\_rank)}{
+        level = $\lfloor log_2(ref\_rank + 1)\rfloor$ \;
+        delta = $2^{level}$ \;
+        c1 = ref\_rank + delta \;
+        c2 = ref\_rank + 2*delta \;
+        
+        \If{\textit{c2 $<$ p}}{
+            M[c2] = find\_closest\_core(ref\_rank, D) \;
+            \RecBinMapping{c2} \;
+        }
+        
+        \If{\textit{c1 $<$ p}}{
+            M[c1] = find\_closest\_core(ref\_rank, D) \;
+            \RecBinMapping{c1} \;
+        }
+    }
+    
+    M[0] = 0 \;
+    \RecBinMapping{0} \;
 \end{algorithm}

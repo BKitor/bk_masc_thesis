@@ -1,0 +1,109 @@
+\begin{figure}
+    \centering
+    \begin{tikzpicture}[
+        botsty/.style={
+            draw, rectangle, fill=black!30,
+            minimum height=1cm,
+            minimum width=3cm,
+            font=\large
+        },
+        libfabsty/.style={
+            draw, rectangle, fill=blue!20,
+            minimum height=2.5cm,
+            minimum width=5.5cm,
+        }, 
+        libfabitemsty/.style={
+            draw, rectangle, fill=blue!40,
+            minimum height=1.3cm,
+            minimum width=2cm,
+            align=center,
+            font=\footnotesize,
+        }, 
+        ucxsty/.style={
+            draw, rectangle, fill=orange!20,
+            minimum height=4cm,
+            minimum width=5.5cm,
+        },        
+        ucxitemsty/.style={
+            draw, rectangle, fill=orange!40,
+            minimum height=1.3cm,
+            minimum width=2cm,
+            align=center,
+            font=\footnotesize,
+        }, 
+        ncclmainsty/.style={
+            draw, rectangle, fill=green!30,
+            minimum height=2.5cm,
+            minimum width=3cm,
+        },
+        ncclitemsty/.style={
+            draw, rectangle, fill=green!50,
+            minimum height=1.3cm,
+            minimum width=2cm,
+            align=center,
+            font=\footnotesize,
+        },
+        mpiitemsty/.style={
+            draw, rectangle, fill=black!10,
+            minimum height=1.3cm,
+            minimum width=2cm,
+            align=center,
+            font=\footnotesize,
+        }
+    ]
+
+    \node[botsty] (0,0) (GPUd) {GPU drivers};
+    \node[botsty] (shmem) [right=0.9cm of GPUd] {shared mem};
+    \node[botsty] (verbs) [right=0.9cm of shmem] {IB verbs};
+    \node[botsty] (NICd) [right=0.9cm of verbs] {NIC drivers};
+    
+    \node[libfabsty] (libfabmain) [above=0.3cm of GPUd, xshift=1.25cm] {};
+    \node[font=\large] (libfabtitle) [below=0.2cm of libfabmain.north] {Libfabric};
+    \node[libfabitemsty] (libfabdd) [above=0.3cm of libfabmain.223] {Device\\Discovery};
+    \node[libfabitemsty] (libfabtrans) [right=0.5cm of libfabdd] {Data\\Transmission};
+    
+    \node[ucxsty] (ucxmain) [right=0.5cm of libfabmain, yshift=0.75cm] {};
+    \node[font=\large] (libfabtitle) [below=0.2cm of ucxmain.north] {UCX};
+    \node[ucxitemsty] (ucxts) [above=0.2cm of ucxmain.240] {Transport\\Selection};
+    \node[ucxitemsty] (ucxtrans) [right=0.3cm of ucxts] {Data\\Transmission};
+    \node[ucxitemsty] (ucxdm) [above=0.3cm of ucxts] {Device\\Management};
+    \node[ucxitemsty] (ucxmr) [right=0.3cm of ucxdm] {Topology\\Detection};
+
+    \node[draw, rectangle, fill=yellow!40, font=\large,
+            minimum height=0.5cm,
+            minimum width=6cm,
+    ] (ucc) [above=0.3cm of ucxmain.50, xshift=1.5cm] {UCC};
+    
+    \node[ncclmainsty] (ncclmain) [right=0.4cm of ucxmain.15, font=\large] {};
+    \node[below=0.2cm of ncclmain.north, font=\large] {NCCL};
+    \node[ncclitemsty] (ncclcoll) [above=0.3cm of ncclmain.south] {GPU Optimized\\Collectives};
+
+    \draw (-1.5,3.7) -- ++(5.5,0) -- ++(0,1.3) -- ++(3,0) -- ++(0,1) -- ++(6.5,0) -- ++(0,2.9) 
+        -- node[midway, below, font=\large]{MPI} ++(-15,0) -- (-1.5, 3.7);
+        
+    \node[mpiitemsty] (mpids) [above=1.1cm of libfabmain.137] {Device\\Selection};
+    \node[mpiitemsty] (mpift) [above= of mpids] {Fault\\Tolerance};
+    \node[mpiitemsty] (mpidtype) [right=0.8cm of mpift] {Datatype\\Engine};
+    \node[mpiitemsty] (mpivt) [right= 0.8cm of mpidtype] {Virtal\\Topologies};
+    \node[mpiitemsty] (mpiprocmgmt) [right=0.8cm of mpivt] {Process\\Management};
+    \node[mpiitemsty] (mpitd) [right=0.8cm of mpiprocmgmt] {Topology\\Detection};
+    \node[draw, rectangle, fill=black!10, font=\footnotesize,
+        minimum height=0.6cm,
+        minimum width=5cm,
+    ] (mpicoll) [right=0.7cm of mpids.north east, yshift=-0.3cm] {Collective Communication};
+
+    \node[draw, rectangle,
+        minimum width=15cm,
+        font=\large,
+        fill=black!30
+        ] (apps)[above=1.1cm of mpivt, xshift=0.5cm] {Applications (Horovod, Gadget, NEK5000, Trilinos, PETSc)};
+    
+    \end{tikzpicture}
+    \caption[MPI Software Stack]{
+        The division of responsibilities for MPI software in HPC systems.
+        The MPI layer provides tools for process orchestration and communication.
+        MPI implementations often call into either Libfabric or UCX to access network resources. 
+        External collective libraries like NCCL and UCC can also be leveraged for collective communications.
+    }
+    \label{fig:hpc_software_arch}
+\end{figure}

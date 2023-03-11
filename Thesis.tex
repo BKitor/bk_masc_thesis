@@ -63,12 +63,12 @@
 %	INSERT THE DETAILS OF YOUR THESIS
 %	REMOVE THE '%' TO UNCOMMENT LINE
 
-\title{So Much Pain}
+\title{Novel Allreduce Algorithms for Distributed Deep Learning}
 \author{Benjamin Kitor}
 \supervisor{Dr. Ahmad Afsahi}
-\dept{Electrical And Computer Engineering}
+\dept{Department of Electrical And Computer Engineering}
 \degree{Master of Applied Science}
-\copyrightyear{2022}
+\copyrightyear{2023}
 \beforepreface
 
 
@@ -85,7 +85,7 @@
 %*******************************************************************************
 % 0.5 - STATEMENT OF ORIGINALITY - (Required for PhD only)
 %*******************************************************************************
-\include{2_Preface/2_StatementOfOriginality}   
+% \include{2_Preface/2_StatementOfOriginality}   
 
 %*******************************************************************************
 % 0.6.1 - Table of Contents
@@ -119,25 +119,26 @@
 % 0.6.4 - List of Code Snippets
 %*******************************************************************************
 % Print the List of Code Snippets
-\PageCodeSnippetstrue
+% \PageCodeSnippetstrue
+\PageAlgorithmstrue
 
 % To disable, use the following:
-%\PageCodeSnippetsfalse
+\PageCodeSnippetsfalse
 
 %*******************************************************************************
 % 0.6.5 - List of Equations
 %*******************************************************************************
 % Print a list of all equations
-\PageEquationstrue
+% \PageEquationstrue
 
 % To disable, use the following:
-%\PageEquationsfalse
+\PageEquationsfalse
 
 %*******************************************************************************
 % 0.6.6 - Glossary
 %*******************************************************************************
 % The Glossary 
-\PageGlossariestrue
+% \PageGlossariestrue
 
 % To disable, use the following:
 %\PageGlossariesfalse
@@ -154,12 +155,16 @@
 %\printglossary % Print the terms glossary
 %\printglossary[title = Glossary of Terms] % Print the terms glossary
 %\printglossary[type=symbol, title=Glossary of Symbols] % Prints the acronym glossary
-%\printglossary[type=\acronymtype,title=Glossary of Abbreviations] % Prints the abbreviation glossary
+% \printglossary[type=\acronymtype,title=Glossary of Abbreviations] % Prints the abbreviation glossary
+
+
 
 %*******************************************************************************
 % 0.6.x - Apply Apply After Preface - DO NOT MODIFY
 %*******************************************************************************
 % Create afterpreface sections
+
+\printglossary[type=\acronymtype,title=List of Abbreviations] % Prints the abbreviation glossary
 \afterpreface
 
 
@@ -187,12 +192,13 @@
 \phantomsection
 
 % Uncomment for a plain bibliography else use IEEE style below
-%\bibliographystyle{plain}
+% \bibliographystyle{plain}
 %\bibliography{4_References/References}
 
 % IEEE Bibliography
 \bibliographystyle{IEEEtran}
 \bibliography{IEEEabrv,4_References/References}
+% \bibliography{4_References/References}
 
 \clearpage
 

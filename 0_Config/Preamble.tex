@@ -177,13 +177,24 @@
     {black, densely dotted, mark=diamond*}
 }
 
-\pgfplotscreateplotcyclelist{bk_remap_omb_cyclelist}{
+\pgfplotscreateplotcyclelist{bk_remap_omb_cdr_cyclelist}{
     {red, dashed, mark=*},
     {green, dashed, mark=square*},
     {orange, dashed, mark=diamond*},
     % {violet, mark=asterisk},
     {black, mark=x}
 }
+
+\pgfplotscreateplotcyclelist{bk_remap_omb_blg_cyclelist}{
+    {red, dashed, mark=*},
+    {green, dashed, mark=square*},
+    {orange, dashed, mark=diamond*},
+    {violet, mark=asterisk},
+    {black, mark=x}
+}
+
+% \usepackage[ruled,vlined,linesnumbered,resetcount,algochapter,dotocloa]{algorithm2e}
+\usepackage[ruled,vlined,linesnumbered,resetcount,algochapter]{algorithm2e}
 
 
 % Define how the ``listings'' to look.
@@ -282,7 +293,7 @@
 % ->  This section defines imports for block diagrams and flow charts
 
 \usepackage{tikz}
-\usetikzlibrary{arrows,automata,arrows.meta,patterns}
+\usetikzlibrary{arrows,automata,arrows.meta,patterns,shapes.arrows}
 
 
 % Block Diagram
@@ -306,10 +317,6 @@
 }
 \usetikzlibrary {arrows.meta}
 
-
-
-\usepackage{algorithm}
-\usepackage{algpseudocode}
 
 %*******************************************************************************
 % HYPERLINKS (must be last)

@@ -1,0 +1,88 @@
+\begin{figure}
+    \centering
+    \begin{tikzpicture}[
+        hasty/.style={draw,single arrow, minimum height=1cm, minimum width=0.2cm},
+        dasty/.style={draw,single arrow, minimum height=1cm, minimum width=0.2cm,rotate=-150},
+        bsty/.style={draw, rectangle, minimum height=0.5cm, minimum width=1.25cm, font=\tiny},
+        fsty/.style={font=\tiny},
+    ]
+    
+        \def \bkxscale {1.25}
+        \def \bkyscale {0.5}
+            \foreach \y\ly in {15/D,16/C,17/B,18/A} 
+                \foreach \x\lx in {0cm / 0,1cm / 1,2cm / 2,3cm / 3} 
+                    \node[bsty] at (\x*\bkxscale,\y*\bkyscale) (f\x\y) {$\ly_{\lx}$};
+            \foreach \y in {10,11,12,13} 
+                \foreach \x in {0,1,2,3} 
+                    \node[bsty] at (\x*\bkxscale,\y*\bkyscale) (d\x\y) {};
+            \foreach \y in {10,11,12,13} 
+                \foreach \x in {5,6,7,8} 
+                    \node[bsty] at (\x*\bkxscale,\y*\bkyscale) (e\x\y) {};
+            \foreach \y in {15,16,17,18} 
+                \foreach \x in {5,6,7,8}
+                    \node[bsty] at (\x*\bkxscale,\y*\bkyscale) (g\x\y) {};
+            \foreach \y in {5,6,7,8}
+                \foreach \x in {0,1,2,3}
+                    \node[bsty] at (\x*\bkxscale,\y*\bkyscale) (a\x\y) {$ABCD_{0}$};
+
+            \node[] at (-0.2*\bkxscale, 20*\bkyscale) (ld) {Data}; 
+            \draw[->] (ld) -- (1.2*\bkxscale, 20*\bkyscale);
+            \foreach \x in {0,1,2,3}
+                \node at (\x*\bkxscale, 19*\bkyscale) () {\x};
+            \foreach \x/\l in {5/0,6/1,7/2,8/3}
+                \node at (\x*\bkxscale, 19*\bkyscale) () {\l};
+                
+            \node[rotate=90] at (-1.2*\bkxscale, 17.7*\bkyscale) (lr) {Rank}; 
+            \draw[->] (lr) -- (-1.2*\bkxscale, 15.7*\bkyscale);
+            \foreach \y/\l in {15/D,16/C,17/B,18/A} 
+                \node at (-0.8*\bkxscale, \y*\bkyscale) () {$r_\l$};
+            \foreach \y/\l in {10/D,11/C,12/B,13/A} 
+                \node at (-0.8*\bkxscale, \y*\bkyscale) () {$r_\l$};
+            \foreach \y/\l in {5/D,6/C,7/B,8/A} 
+                \node at (-0.8*\bkxscale, \y*\bkyscale) () {$r_\l$};
+            % \foreach \y/\l in {0/D,1/C,2/B,3/A} 
+            %     \node at (-0.8*\bkxscale, \y*\bkyscale) () {$r_\l$};
+            
+
+            \node[hasty] at (4*\bkxscale, 16.5*\bkyscale) (){};
+            \node[dasty] at (4*\bkxscale, 14*\bkyscale) (){};
+            \node[hasty] at (4*\bkxscale, 11.5*\bkyscale) (){};
+            \node[dasty] at (4*\bkxscale, 9*\bkyscale) (){};
+            % \node[hasty] at (4*\bkxscale, 6.5*\bkyscale) (){};
+            % \node[dasty] at (4*\bkxscale, 4*\bkyscale) (){};
+            
+            \node[fsty] at (5*\bkxscale, 18*\bkyscale) () {$AB0$};
+            \node[fsty] at (6*\bkxscale, 18*\bkyscale) () {$AB_1$};
+            \node[fsty] at (5*\bkxscale, 16*\bkyscale) () {$CD_0$};
+            \node[fsty] at (6*\bkxscale, 16*\bkyscale) () {$CD_1$};
+            \node[fsty] at (7*\bkxscale, 17*\bkyscale) () {$AB_2$};
+            \node[fsty] at (8*\bkxscale, 17*\bkyscale) () {$AB_3$};
+            \node[fsty] at (7*\bkxscale, 15*\bkyscale) () {$CD_2$};
+            \node[fsty] at (8*\bkxscale, 15*\bkyscale) () {$CD_3$};
+            
+            \node[fsty] at (0*\bkxscale, 13*\bkyscale) () {$ABCD_0$};
+            \node[fsty] at (1*\bkxscale, 13*\bkyscale) () {$AB_1$};
+            \node[fsty] at (0*\bkxscale, 11*\bkyscale) () {$CD_0$};
+            \node[fsty] at (1*\bkxscale, 11*\bkyscale) () {$ABCD_1$};
+            \node[fsty] at (2*\bkxscale, 12*\bkyscale) () {$ABCD_2$};
+            \node[fsty] at (3*\bkxscale, 12*\bkyscale) () {$AB_3$};
+            \node[fsty] at (2*\bkxscale, 10*\bkyscale) () {$CD_2$};
+            \node[fsty] at (3*\bkxscale, 10*\bkyscale) () {$ABCD_3$};
+            
+            \node[fsty] at (5*\bkxscale, 13*\bkyscale) () {$ABCD_0$};
+            \node[fsty] at (6*\bkxscale, 13*\bkyscale) () {$ABCD_1$};
+            \node[fsty] at (5*\bkxscale, 11*\bkyscale) () {$ABCD_0$};
+            \node[fsty] at (6*\bkxscale, 11*\bkyscale) () {$ABCD_1$};
+            \node[fsty] at (7*\bkxscale, 12*\bkyscale) () {$ABCD_2$};
+            \node[fsty] at (8*\bkxscale, 12*\bkyscale) () {$ABCD_3$};
+            \node[fsty] at (7*\bkxscale, 10*\bkyscale) () {$ABCD_2$};
+            \node[fsty] at (8*\bkxscale, 10*\bkyscale) () {$ABCD_3$};
+            
+        
+    \end{tikzpicture}
+    \caption[RSA Allreduce Algorithm]{
+        An implementation of the RSA allreduce algorithm using distance doubling/vector halving.
+        Each grid represents a step in the algorithm, where rows are ranks and columns are segments of the data vector.
+    }
+    \label{fig:rsa-allreduce-grid} 
+\end{figure}

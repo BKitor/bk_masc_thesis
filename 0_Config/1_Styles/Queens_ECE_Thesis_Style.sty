@@ -182,6 +182,7 @@ quthesis documentation.}}{}
 \newif\ifPageGlossaries
 \newif\ifPageContents
 \newif\ifPageCodeSnippets
+\newif\ifPageAlgorithms
 \newif\ifPageEquations
 
 % Set Default States for Optional Pages
@@ -190,6 +191,7 @@ quthesis documentation.}}{}
 \PageGlossariesfalse
 \PageContentsfalse
 \PageCodeSnippetsfalse
+\PageAlgorithmsfalse
 \PageEquationsfalse
 
 % Create the PDF
@@ -209,9 +211,8 @@ quthesis documentation.}}{}
 
 	\begin{center}
 		\mbox{}\\[1.0in]
-		A thesis submitted to the Graduate Program in \@dept\space in conformity with the requirements for the Degree of \@degree
+		A thesis submitted to the Graduate Program in the \@dept\space in conformity with the requirements for the Degree of \@degree
 	\end{center}
-
     
     \begin{center}
     	\singlespacing
@@ -259,12 +260,13 @@ quthesis documentation.}}{}
     	\tableofcontents
 		\clearpage
 	\fi
-    
+ 
     % Tables of Tables page
     \ifPageTables
         \addcontentsline{toc}{chapter}{List of Tables}
         \index{List of Tables}
-        \listoftables
+        % \listoftables
+        \listof{table}{List of Tables}
         \clearpage
     \fi
     
@@ -272,7 +274,8 @@ quthesis documentation.}}{}
     \ifPageFigures
         \addcontentsline{toc}{chapter}{List of Figures}
         \index{List of Figures}
-        \listoffigures
+        % \listoffigures
+        \listof{figure}{List of Figures}
         \clearpage
     \fi
     
@@ -281,6 +284,14 @@ quthesis documentation.}}{}
 	    \addcontentsline{toc}{chapter}{List of Code Listings}
 	    \index{List of Code Listings}
 		\lstlistoflistings
+	    \clearpage
+    \fi
+    
+    % Table of Algorithms
+    \ifPageAlgorithms
+	    \addcontentsline{toc}{chapter}{List of Algorithms}
+	    \index{List of Algorithms}
+		\listofalgorithms
 	    \clearpage
     \fi
     

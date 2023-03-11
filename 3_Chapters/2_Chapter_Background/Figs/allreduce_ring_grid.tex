@@ -1,88 +1,119 @@
 \begin{figure}
     \centering
-    \begin{tikzpicture}[auto]
+    \begin{tikzpicture}[
+        hasty/.style={draw,single arrow, minimum height=1cm, minimum width=0.2cm},
+        dasty/.style={draw,single arrow, minimum height=1cm, minimum width=0.2cm,rotate=-150},
+        bsty/.style={draw, rectangle, minimum height=0.5cm, minimum width=1.25cm, font=\tiny},
+    ]
     
         \def \bkxscale {1.25}
         \def \bkyscale {0.5}
-        \begin{scope}[every node/.style={draw, rectangle}, minimum height=0.5cm, minimum width=1.25cm, font=\tiny]
-            \foreach \y in {0,1,2,3} \foreach \x in {0,1,2,3} \node at (\x*\bkxscale,\y*\bkyscale) (a\x\y) {$ABCD_{0}$};
-            \foreach \y in {10,11,12,13} \foreach \x in {0,1,2,3} \node at (\x*\bkxscale,\y*\bkyscale) (d\x\y) {};
-            \foreach \y in {10,11,12,13} \foreach \x in {5,6,7,8} \node at (\x*\bkxscale,\y*\bkyscale) (e\x\y) {};
-            \foreach \y\ly in {15/D,16/C,17/B,18/A} \foreach \x\lx in {0cm / 3,1cm / 2,2cm / 1,3cm / 0} \node at (\x*\bkxscale,\y*\bkyscale) (f\x\y) {$\ly_{\lx}$};
-            \foreach \y in {15,16,17,18} \foreach \x in {5,6,7,8} \node at (\x*\bkxscale,\y*\bkyscale) (g\x\y) {};
-        
-            \draw[line width=1pt, double distance=3pt, arrows = {-Latex[length=0pt 3 0]}] (3.5*\bkxscale, 16.5*\bkyscale) -- (4.5*\bkxscale, 16.5*\bkyscale);
-            \draw[line width=1pt, double distance=3pt, arrows = {-Latex[length=0pt 3 0]}] (3.5*\bkxscale, 11.5*\bkyscale) -- (4.5*\bkxscale, 11.5*\bkyscale);
-            \draw[line width=1pt, double distance=3pt, arrows = {-Latex[length=0pt 3 0]}] (3.5*\bkxscale, 6.5*\bkyscale) -- (4.5*\bkxscale, 6.5*\bkyscale);
-            \draw[line width=1pt, double distance=3pt, arrows = {-Latex[length=0pt 3 0]}] (4.5*\bkxscale, 14.5*\bkyscale) -- (3.5*\bkxscale, 13.5*\bkyscale);
-            \draw[line width=1pt, double distance=3pt, arrows = {-Latex[length=0pt 3 0]}] (4.5*\bkxscale, 9.5*\bkyscale) -- (3.5*\bkxscale, 8.5*\bkyscale);
-            \draw[line width=1pt, double distance=3pt, arrows = {-Latex[length=0pt 3 0]}] (4.5*\bkxscale, 4.5*\bkyscale) -- (3.5*\bkxscale, 3.5*\bkyscale);
+            \foreach \y\ly in {15/D,16/C,17/B,18/A} 
+                \foreach \x\lx in {0cm / 0,1cm / 1,2cm / 2,3cm / 3} 
+                    \node[bsty] at (\x*\bkxscale,\y*\bkyscale) (f\x\y) {$\ly_{\lx}$};
+            \foreach \y in {10,11,12,13} 
+                \foreach \x in {0,1,2,3} 
+                    \node[bsty] at (\x*\bkxscale,\y*\bkyscale) (d\x\y) {};
+            \foreach \y in {10,11,12,13} 
+                \foreach \x in {5,6,7,8} 
+                    \node[bsty] at (\x*\bkxscale,\y*\bkyscale) (e\x\y) {};
+            \foreach \y in {15,16,17,18} 
+                \foreach \x in {5,6,7,8}
+                    \node[bsty] at (\x*\bkxscale,\y*\bkyscale) (g\x\y) {};
+            \foreach \y in {0,1,2,3}
+                \foreach \x in {0,1,2,3}
+                    \node[bsty] at (\x*\bkxscale,\y*\bkyscale) (a\x\y) {$ABCD_{0}$};
+
+            \node[] at (-0.2*\bkxscale, 20*\bkyscale) (ld) {Data}; 
+            \draw[->] (ld) -- (1.2*\bkxscale, 20*\bkyscale);
+            \foreach \x in {0,1,2,3}
+                \node at (\x*\bkxscale, 19*\bkyscale) () {\x};
+            \foreach \x/\l in {5/0,6/1,7/2,8/3}
+                \node at (\x*\bkxscale, 19*\bkyscale) () {\l};
+                
+            \node[rotate=90] at (-1.2*\bkxscale, 17.7*\bkyscale) (lr) {Rank}; 
+            \draw[->] (lr) -- (-1.2*\bkxscale, 15.7*\bkyscale);
+            \foreach \y/\l in {15/D,16/C,17/B,18/A} 
+                \node at (-0.8*\bkxscale, \y*\bkyscale) () {$r_\l$};
+            \foreach \y/\l in {10/D,11/C,12/B,13/A} 
+                \node at (-0.8*\bkxscale, \y*\bkyscale) () {$r_\l$};
+            \foreach \y/\l in {5/D,6/C,7/B,8/A} 
+                \node at (-0.8*\bkxscale, \y*\bkyscale) () {$r_\l$};
+            \foreach \y/\l in {0/D,1/C,2/B,3/A} 
+                \node at (-0.8*\bkxscale, \y*\bkyscale) () {$r_\l$};
             
-            \node at (5*\bkxscale, 17*\bkyscale) (comebacktome) {$AB_0$};
-            \node at (6*\bkxscale, 16*\bkyscale) (comebacktome) {$BC_1$};
-            \node at (7*\bkxscale, 15*\bkyscale) (comebacktome) {$CD_2$};
-            \node at (8*\bkxscale, 18*\bkyscale) (comebacktome) {$AD_3$};
+
+            \node[hasty] at (4*\bkxscale, 16.5*\bkyscale) (){};
+            \node[dasty] at (4*\bkxscale, 14*\bkyscale) (){};
+            \node[hasty] at (4*\bkxscale, 11.5*\bkyscale) (){};
+            \node[dasty] at (4*\bkxscale, 9*\bkyscale) (){};
+            \node[hasty] at (4*\bkxscale, 6.5*\bkyscale) (){};
+            \node[dasty] at (4*\bkxscale, 4*\bkyscale) (){};
             
-            \node at (0*\bkxscale, 12*\bkyscale) (comebacktome) {$AB_0$};
-            \node at (1*\bkxscale, 11*\bkyscale) (comebacktome) {$BC_1$};
-            \node at (2*\bkxscale, 10*\bkyscale) (comebacktome) {$CD_2$};
-            \node at (3*\bkxscale, 13*\bkyscale) (comebacktome) {$AD_3$};
-            \node at (0*\bkxscale, 11*\bkyscale) (comebacktome) {$ABC_0$};
-            \node at (1*\bkxscale, 10*\bkyscale) (comebacktome) {$BCD_1$};
-            \node at (2*\bkxscale, 13*\bkyscale) (comebacktome) {$ACD_2$};
-            \node at (3*\bkxscale, 12*\bkyscale) (comebacktome) {$ABD_3$};
+            \node[bsty] at (5*\bkxscale, 17*\bkyscale) () {$AB_0$};
+            \node[bsty] at (6*\bkxscale, 16*\bkyscale) () {$BC_1$};
+            \node[bsty] at (7*\bkxscale, 15*\bkyscale) () {$CD_2$};
+            \node[bsty] at (8*\bkxscale, 18*\bkyscale) () {$AD_3$};
             
-            \node at (5*\bkxscale, 12*\bkyscale) (comebacktome) {$AB_0$};
-            \node at (6*\bkxscale, 11*\bkyscale) (comebacktome) {$BC_1$};
-            \node at (7*\bkxscale, 10*\bkyscale) (comebacktome) {$CD_2$};
-            \node at (8*\bkxscale, 13*\bkyscale) (comebacktome) {$AD_3$};
-            \node at (5*\bkxscale, 11*\bkyscale) (comebacktome) {$ABC_0$};
-            \node at (6*\bkxscale, 10*\bkyscale) (comebacktome) {$BCD_1$};
-            \node at (7*\bkxscale, 13*\bkyscale) (comebacktome) {$ACD_2$};
-            \node at (8*\bkxscale, 12*\bkyscale) (comebacktome) {$ABD_3$};
-            \node at (5*\bkxscale, 10*\bkyscale) (comebacktome) {$ABCD_0$};
-            \node at (6*\bkxscale, 13*\bkyscale) (comebacktome) {$ABCD_1$};
-            \node at (7*\bkxscale, 12*\bkyscale) (comebacktome) {$ABCD_2$};
-            \node at (8*\bkxscale, 11*\bkyscale) (comebacktome) {$ABCD_3$};
+            \node[bsty] at (0*\bkxscale, 12*\bkyscale) () {$AB_0$};
+            \node[bsty] at (1*\bkxscale, 11*\bkyscale) () {$BC_1$};
+            \node[bsty] at (2*\bkxscale, 10*\bkyscale) () {$CD_2$};
+            \node[bsty] at (3*\bkxscale, 13*\bkyscale) () {$AD_3$};
+            \node[bsty] at (0*\bkxscale, 11*\bkyscale) () {$ABC_0$};
+            \node[bsty] at (1*\bkxscale, 10*\bkyscale) () {$BCD_1$};
+            \node[bsty] at (2*\bkxscale, 13*\bkyscale) () {$ACD_2$};
+            \node[bsty] at (3*\bkxscale, 12*\bkyscale) () {$ABD_3$};
             
-            \node at (0*\bkxscale, 7*\bkyscale) (comebacktome) {$AB_0$};
-            \node at (1*\bkxscale, 6*\bkyscale) (comebacktome) {$BC_1$};
-            \node at (2*\bkxscale, 5*\bkyscale) (comebacktome) {$CD_2$};
-            \node at (3*\bkxscale, 8*\bkyscale) (comebacktome) {$AD_3$};
-            \node at (0*\bkxscale, 6*\bkyscale) (comebacktome) {$ABC_0$};
-            \node at (1*\bkxscale, 5*\bkyscale) (comebacktome) {$BCD_1$};
-            \node at (2*\bkxscale, 8*\bkyscale) (comebacktome) {$ACD_2$};
-            \node at (3*\bkxscale, 7*\bkyscale) (comebacktome) {$ABD_3$};
-            \node at (0*\bkxscale, 5*\bkyscale) (comebacktome) {$ABCD_0$};
-            \node at (1*\bkxscale, 8*\bkyscale) (comebacktome) {$ABCD_1$};
-            \node at (2*\bkxscale, 7*\bkyscale) (comebacktome) {$ABCD_2$};
-            \node at (3*\bkxscale, 6*\bkyscale) (comebacktome) {$ABCD_3$};
-            \node at (0*\bkxscale, 8*\bkyscale) (comebacktome) {$ABCD_0$};
-            \node at (1*\bkxscale, 7*\bkyscale) (comebacktome) {$ABCD_1$};
-            \node at (2*\bkxscale, 6*\bkyscale) (comebacktome) {$ABCD_2$};
-            \node at (3*\bkxscale, 5*\bkyscale) (comebacktome) {$ABCD_3$};
+            \node[bsty] at (5*\bkxscale, 12*\bkyscale) () {$AB_0$};
+            \node[bsty] at (6*\bkxscale, 11*\bkyscale) () {$BC_1$};
+            \node[bsty] at (7*\bkxscale, 10*\bkyscale) () {$CD_2$};
+            \node[bsty] at (8*\bkxscale, 13*\bkyscale) () {$AD_3$};
+            \node[bsty] at (5*\bkxscale, 11*\bkyscale) () {$ABC_0$};
+            \node[bsty] at (6*\bkxscale, 10*\bkyscale) () {$BCD_1$};
+            \node[bsty] at (7*\bkxscale, 13*\bkyscale) () {$ACD_2$};
+            \node[bsty] at (8*\bkxscale, 12*\bkyscale) () {$ABD_3$};
+            \node[bsty] at (5*\bkxscale, 10*\bkyscale) () {$ABCD_0$};
+            \node[bsty] at (6*\bkxscale, 13*\bkyscale) () {$ABCD_1$};
+            \node[bsty] at (7*\bkxscale, 12*\bkyscale) () {$ABCD_2$};
+            \node[bsty] at (8*\bkxscale, 11*\bkyscale) () {$ABCD_3$};
             
-            \node at (5*\bkxscale, 7*\bkyscale) (comebacktome) {$ABCD_0$};
-            \node at (6*\bkxscale, 6*\bkyscale) (comebacktome) {$ABCD_1$};
-            \node at (7*\bkxscale, 5*\bkyscale) (comebacktome) {$ABCD_2$};
-            \node at (8*\bkxscale, 8*\bkyscale) (comebacktome) {$ABCD_3$};
-            \node at (5*\bkxscale, 6*\bkyscale) (comebacktome) {$ABC_0$};
-            \node at (6*\bkxscale, 5*\bkyscale) (comebacktome) {$BCD_1$};
-            \node at (7*\bkxscale, 8*\bkyscale) (comebacktome) {$ACD_2$};
-            \node at (8*\bkxscale, 7*\bkyscale) (comebacktome) {$ABD_3$};
-            \node at (5*\bkxscale, 5*\bkyscale) (comebacktome) {$ABCD_0$};
-            \node at (6*\bkxscale, 8*\bkyscale) (comebacktome) {$ABCD_1$};
-            \node at (7*\bkxscale, 7*\bkyscale) (comebacktome) {$ABCD_2$};
-            \node at (8*\bkxscale, 6*\bkyscale) (comebacktome) {$ABCD_3$};
-            \node at (5*\bkxscale, 8*\bkyscale) (comebacktome) {$ABCD_0$};
-            \node at (6*\bkxscale, 7*\bkyscale) (comebacktome) {$ABCD_1$};
-            \node at (7*\bkxscale, 6*\bkyscale) (comebacktome) {$ABCD_2$};
-            \node at (8*\bkxscale, 5*\bkyscale) (comebacktome) {$ABCD_3$};
+            \node[bsty] at (0*\bkxscale, 7*\bkyscale) () {$AB_0$};
+            \node[bsty] at (1*\bkxscale, 6*\bkyscale) () {$BC_1$};
+            \node[bsty] at (2*\bkxscale, 5*\bkyscale) () {$CD_2$};
+            \node[bsty] at (3*\bkxscale, 8*\bkyscale) () {$AD_3$};
+            \node[bsty] at (0*\bkxscale, 6*\bkyscale) () {$ABC_0$};
+            \node[bsty] at (1*\bkxscale, 5*\bkyscale) () {$BCD_1$};
+            \node[bsty] at (2*\bkxscale, 8*\bkyscale) () {$ACD_2$};
+            \node[bsty] at (3*\bkxscale, 7*\bkyscale) () {$ABD_3$};
+            \node[bsty] at (0*\bkxscale, 5*\bkyscale) () {$ABCD_0$};
+            \node[bsty] at (1*\bkxscale, 8*\bkyscale) () {$ABCD_1$};
+            \node[bsty] at (2*\bkxscale, 7*\bkyscale) () {$ABCD_2$};
+            \node[bsty] at (3*\bkxscale, 6*\bkyscale) () {$ABCD_3$};
+            \node[bsty] at (0*\bkxscale, 8*\bkyscale) () {$ABCD_0$};
+            \node[bsty] at (1*\bkxscale, 7*\bkyscale) () {$ABCD_1$};
+            \node[bsty] at (2*\bkxscale, 6*\bkyscale) () {$ABCD_2$};
+            \node[bsty] at (3*\bkxscale, 5*\bkyscale) () {$ABCD_3$};
             
-        \end{scope}
+            \node[bsty] at (5*\bkxscale, 7*\bkyscale) () {$ABCD_0$};
+            \node[bsty] at (6*\bkxscale, 6*\bkyscale) () {$ABCD_1$};
+            \node[bsty] at (7*\bkxscale, 5*\bkyscale) () {$ABCD_2$};
+            \node[bsty] at (8*\bkxscale, 8*\bkyscale) () {$ABCD_3$};
+            \node[bsty] at (5*\bkxscale, 6*\bkyscale) () {$ABC_0$};
+            \node[bsty] at (6*\bkxscale, 5*\bkyscale) () {$BCD_1$};
+            \node[bsty] at (7*\bkxscale, 8*\bkyscale) () {$ACD_2$};
+            \node[bsty] at (8*\bkxscale, 7*\bkyscale) () {$ABD_3$};
+            \node[bsty] at (5*\bkxscale, 5*\bkyscale) () {$ABCD_0$};
+            \node[bsty] at (6*\bkxscale, 8*\bkyscale) () {$ABCD_1$};
+            \node[bsty] at (7*\bkxscale, 7*\bkyscale) () {$ABCD_2$};
+            \node[bsty] at (8*\bkxscale, 6*\bkyscale) () {$ABCD_3$};
+            \node[bsty] at (5*\bkxscale, 8*\bkyscale) () {$ABCD_0$};
+            \node[bsty] at (6*\bkxscale, 7*\bkyscale) () {$ABCD_1$};
+            \node[bsty] at (7*\bkxscale, 6*\bkyscale) () {$ABCD_2$};
+            \node[bsty] at (8*\bkxscale, 5*\bkyscale) () {$ABCD_3$};
+            
         
     \end{tikzpicture}
-    \caption[Outline of ring allreduce algorithm]{
+    \caption[Ring Allreduce Algorithm]{
         Ring allreduce algorithm. Each grid represents a step in the algorithm, where rows are ranks and columns are segments of the data vector.
     }
     \label{fig:ring-allreduce-grid} 

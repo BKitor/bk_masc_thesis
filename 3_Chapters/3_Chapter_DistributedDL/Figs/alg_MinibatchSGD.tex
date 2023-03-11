@@ -1,0 +1,13 @@
+\begin{algorithm}[h]
+    \DontPrintSemicolon
+    \For {t = 0 \textbf{to} $\frac{|D|}{B}*epochs$} {
+        $\Bar{x}\leftarrow$ Vector of $B$ Random elements from $D$ \;
+        $w_{mb}\leftarrow w^{(t)}$ \;
+        $f\leftarrow \ell(w_{mb},\Bar{x},h(\Bar{x}))$ \;
+        $g_{mb}\leftarrow \nabla \ell(w_{mb}, f)$ \;
+        $\Delta w \leftarrow u(g_{mb}, w^{(0,...,t)}, t)$ \;
+        $w^{(t+1)}\leftarrow w_{mb} + \Delta w$ \;
+    }
+    \caption{Minibatch SGD}
+    \label{alg:MinibatchSGD}
+\end{algorithm}

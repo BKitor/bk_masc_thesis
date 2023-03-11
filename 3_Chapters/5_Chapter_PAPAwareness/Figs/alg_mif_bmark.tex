@@ -1,41 +1,89 @@
-\begin{algorithm}
-  \caption{Allreduce MIF microbenchmark}
-  \label{alg:mif_microbmark}
-  \begin{algorithmic}[1]
-    \Require Number of itterations $n$, Number of warmups $w$, communicator $comm$, message range $m$, specified mif $f$
-    % \Ensure Array of tupples $t$ coresponding to the avg, min, and max allreduce time for each message in $m$
+% \begin{algorithm}
+%   \caption{Allreduce MIF microbenchmark}
+%   \label{alg:mif_microbmark}
+%   \begin{algorithmic}[1]
+%     \Require Number of itterations $n$, Number of warmups $w$, communicator $comm$, message range $m$, specified mif $f$
+%     % \Ensure Array of tupples $t$ coresponding to the avg, min, and max allreduce time for each message in $m$
     
-    \For {each $msg\_size$ in $m$}
-        \If{mpi rank is 0}
-            \State $msg\_lat$ = ping\_pong($m$, $comm\_size - 1$)
-        \ElsIf{mpi rank is $comm\_size - 1$}
-            \State ping\_pong($m$, 0)\Comment{Find latency for a message of size $msg\_size$}
-        \EndIf
-        \State MPI\_Bcast($msg\_lat, comm$) 
+%     \For {each $msg\_size$ in $m$}
+%         \If{mpi rank is 0}
+%             \State $msg\_lat$ = ping\_pong($m$, $comm\_size - 1$)
+%         \ElsIf{mpi rank is $comm\_size - 1$}
+%             \State ping\_pong($m$, 0)\Comment{Find latency for a message of size $msg\_size$}
+%         \EndIf
+%         \State MPI\_Bcast($msg\_lat, comm$) 
         
-        \State $t\_total = 0$
-        \For{$i$ in 0 to $w + i$}
-            \If{mpi rank is 0}
-                \State $imbalance\_factor = 0$ \Comment{Rank 0 has no delay}
-            \ElsIf{mpi rank is $comm\_size - 1$}
-                \State $imbalance\_factor = f$\Comment{The last rank has the full MIF}
-            \Else
-                \State $imbalance\_factor$ = rand\_num\_between($0, f$) \Comment{Other ranks are between $[0,f]$}
-            \EndIf
-            \State $sleep\_time = imbalance\_factor * msg\_lat$
-            \State MPI\_Barrier($comm$)
-            \State usleep($sleep\_time$) \Comment{Apply randomly calculated delay}
-            \State $t\_start$ = MPI\_Wtime()
-            \State MPI\_Allreduce($msg\_size, comm$)
-            \State $t\_total += (i-w >= 0)$ ? 0 : MPI\_wtime() - $t\_start$\Comment{save timings if not doing a warmup run}
-        \EndFor
-        \State $t\_total /= i$
-        \State MPI\_Reduce($t\_total, t\_sum, 0$, MPI\_SUM, $comm$)
-        % \State MPI\_Reduce($t\_total, t\_min, 0$, MPI\_MIN, $comm$)
-        % \State MPI\_Reduce($t\_total, t\_max, 0$, MPI\_MAX, $comm$)
-        \State print($t\_sum / comm\_size$)
-        % \State $t\_avg = t\_sum / comm\_size$
-        % \State $t[msg\_size] = (t\_avg, t\_min, t\_max)$
-    \EndFor
-  \end{algorithmic}
+%         \State $t\_total = 0$
+%         \For{$i$ in 0 to $w + i$}
+%             \If{mpi rank is 0}
+%                 \State $imbalance\_factor = 0$ \Comment{Rank 0 has no delay}
+%             \ElsIf{mpi rank is $comm\_size - 1$}
+%                 \State $imbalance\_factor = f$\Comment{The last rank has the full MIF}
+%             \Else
+%                 \State $imbalance\_factor$ = rand\_num\_between($0, f$) \Comment{Other ranks are between $[0,f]$}
+%             \EndIf
+%             \State $sleep\_time = imbalance\_factor * msg\_lat$
+%             \State MPI\_Barrier($comm$)
+%             \State usleep($sleep\_time$) \Comment{Apply randomly calculated delay}
+%             \State $t\_start$ = MPI\_Wtime()
+%             \State MPI\_Allreduce($msg\_size, comm$)
+%             \State $t\_total += (i-w >= 0)$ ? 0 : MPI\_wtime() - $t\_start$\Comment{save timings if not doing a warmup run}
+%         \EndFor
+%         \State $t\_total /= i$
+%         \State MPI\_Reduce($t\_total, t\_sum, 0$, MPI\_SUM, $comm$)
+%         % \State MPI\_Reduce($t\_total, t\_min, 0$, MPI\_MIN, $comm$)
+%         % \State MPI\_Reduce($t\_total, t\_max, 0$, MPI\_MAX, $comm$)
+%         \State print($t\_sum / comm\_size$)
+%         % \State $t\_avg = t\_sum / comm\_size$
+%         % \State $t[msg\_size] = (t\_avg, t\_min, t\_max)$
+%     \EndFor
+%   \end{algorithmic}
+% \end{algorithm}
+
+\begin{algorithm}
+  \caption{Allreduce MIF Microbenchmark}
+  \label{alg:mif_microbmark}
+    \KwIn{ Number of itterations $n$, Number of warmups $w$, communicator $comm$, message range $m$, specified mif $f$ }
+    % \KwOut{ Array of tupples $t$ coresponding to the avg, min, and max allreduce time for each message in $m$ }
+    \SetKwFunction{MPIBcast}{MPI\_Bcast}
+    \SetKwFunction{MPIBarrier}{MPI\_Barrier}
+    \SetKwFunction{MPIAllreduce}{MPI\_Allreduce}
+    \SetKwFunction{MPIReduce}{MPI\_Reduce}
+    \SetKwFunction{MPIWtime}{MPI\_Wtime}
+    
+    \For {$msg\_size$ \textbf{in} $m$}{
+        \If{0 == mpi\_rank}{
+             $msg\_lat$ = ping\_pong($msg\_size$, $comm\_size - 1$) \;
+        }
+        \ElseIf{$comm\_size - 1$ == mpi\_rank}{
+             ping\_pong($msg\_size$, 0) \;
+        }
+        \MPIBcast{$msg\_lat, comm$}  \;
+        
+        $t\_total = 0$ \;
+        \For{$i$ \textbf{in} 0 \textbf{to} $w + i$}{
+            \If{0 == mpi\_rank}{
+                $imbalance\_factor = 0$  \;
+            }
+            \ElseIf{$comm\_size - 1$ == mpi\_rank}{
+                $imbalance\_factor = f$ \;
+            }
+            \Else{
+                $imbalance\_factor$ = rand\_num\_between($0, f$)  \;
+            }
+            $sleep\_time = imbalance\_factor * msg\_lat$ \;
+            \MPIBarrier{$comm$} \;
+            usleep($sleep\_time$)  \;
+            $t\_start$ = \MPIWtime{} \;
+            \MPIAllreduce{$msg\_size, comm$} \;
+            $t\_total += (i-w >= 0)$ ? 0 : \MPIWtime{} - $t\_start$ \;
+        }
+        $t\_total /= i$ \;
+        \MPIReduce{$t\_total, t\_sum, 0$, MPI\_SUM, $comm$} \;
+        %  MPI\_Reduce($t\_total, t\_min, 0$, MPI\_MIN, $comm$) \;
+        %  MPI\_Reduce($t\_total, t\_max, 0$, MPI\_MAX, $comm$) \;
+        print($t\_sum / comm\_size$) \;
+        %  $t\_avg = t\_sum / comm\_size$ \;
+        %  $t[msg\_size] = (t\_avg, t\_min, t\_max)$ \;
+    }
 \end{algorithm}

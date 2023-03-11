@@ -1,24 +1,51 @@
-\begin{algorithm}
-  \caption{Generic sturcture of syncronization structure benchmark}
-  \label{alg:sync_struct_bmark}
-  \begin{algorithmic}[1]
-    \Require Number of itterations $n$, Number of warmups $w$, communicator $comm$, remote memory $m$
-    \Ensure The cost of syncronization $t$
+% \begin{algorithm}
+%   \caption{Generic sturcture of syncronization structure benchmark}
+%   \label{alg:sync_struct_bmark}
+%   \begin{algorithmic}[1]
+%     \Require Number of itterations $n$, Number of warmups $w$, communicator $comm$, remote memory $m$
+%     \Ensure The cost of syncronization $t$
     
-    \State $t\_sum =$ 0
-    \For{ $i$ in 0 to $w + i$}
-        \If{mpi rank is 0}
-            \State reset\_remote\_memory($m$)\Comment{prepare $m$ for syncronization}
-        \EndIf
-        \State MPI\_Barrier($comm$)
-        \State $t\_start =$ MPI\_Wtime()
-        \State remote\_fetch\_and\_add(\&$m[0]$, 1, \&$fadd\_val$)\Comment{Atomicly incremet remote value}
-        \State wait\_preverous\_remote\_mem\_op()\Comment{Ensure memory operation completes}
-        \State remote\_write(\&$m[fadd\_val+1]$, $rand\_val$)\Comment{Write to buffer based on f}
-        \State wait\_preverous\_remote\_mem\_op()\Comment{Ensure remote memory operation completes}
-        \State $t\_sum += (i-w >= 0)$ ? 0 : MPI\_wtime() - $t\_start$\Comment{save timings if not doing a warmup run}
-    \EndFor
-    \State MPI\_Reduce($t\_sum$, MPI\_SUM, 0) \Comment{Reduce measure runtimes to rank 0}
-    \State $t = (t\_sum/n)/comm\_size$ \Comment{Return the measured time devided by the world size and the number of itterations}
-  \end{algorithmic}
+%     \State $t\_sum =$ 0
+%     \For{ $i$ in 0 to $w + i$}
+%         \If{mpi rank is 0}
+%             \State reset\_remote\_memory($m$)\Comment{prepare $m$ for syncronization}
+%         \EndIf
+%         \State MPI\_Barrier($comm$)
+%         \State $t\_start =$ MPI\_Wtime()
+%         \State remote\_fetch\_and\_add(\&$m[0]$, 1, \&$fadd\_val$)\Comment{Atomicly incremet remote value}
+%         \State wait\_preverous\_remote\_mem\_op()\Comment{Ensure memory operation completes}
+%         \State remote\_write(\&$m[fadd\_val+1]$, $rand\_val$)\Comment{Write to buffer based on f}
+%         \State wait\_preverous\_remote\_mem\_op()\Comment{Ensure remote memory operation completes}
+%         \State $t\_sum += (i-w >= 0)$ ? 0 : MPI\_wtime() - $t\_start$\Comment{save timings if not doing a warmup run}
+%     \EndFor
+%     \State MPI\_Reduce($t\_sum$, MPI\_SUM, 0) \Comment{Reduce measure runtimes to rank 0}
+%     \State $t = (t\_sum/n)/comm\_size$ \Comment{Return the measured time devided by the world size and the number of itterations}
+%   \end{algorithmic}
+% \end{algorithm}
+
+\begin{algorithm}
+    \caption{Process Arrival Synchronization Benchmark}
+    \label{alg:sync_struct_bmark}
+    \DontPrintSemicolon
+    \KwIn{Number of iterations $n$, Number of warmups $w$, communicator $comm$, remote memory $m$}
+    \KwOut{The cost of synchronization $t$}
+    \SetKwFunction{MPIReduce}{MPI\_Reduce}
+    \SetKwFunction{MPIBarrier}{MPI\_Barrier}
+    \SetKwFunction{MPIWtime}{MPI\_Wtime}
+    
+    $t\_sum =$ 0 \;
+    \For{ $i$ in 0 to $w + i$}{
+        \If{mpi rank is 0}{
+             reset\_remote\_memory($m$) \;
+        }
+        \MPIBarrier{$comm$} \;
+        $t\_start =$ \MPIWtime{} \;
+        remote\_fetch\_and\_add(\&$m[0]$, 1, \&$fadd\_val$) \;
+        wait\_preverous\_remote\_mem\_op() \;
+        remote\_write(\&$m[fadd\_val+1]$, $rand\_val$) \;
+        wait\_preverous\_remote\_mem\_op() \;
+        $t\_sum += (i-w >= 0)$ ? 0 : \MPIWtime{} - $t\_start$ \;
+    }
+    \MPIReduce{$t\_sum$, MPI\_SUM, 0} \;
+    $t = (t\_sum/n)/comm\_size$  \;
 \end{algorithm}

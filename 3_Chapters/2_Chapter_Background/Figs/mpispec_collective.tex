@@ -1,8 +1,86 @@
+
 \begin{figure}
-	\centering
-	\includegraphics[width = 4.5in]{3_Chapters/2_Chapter_Background/Figs/mpispec_collective.png}
-	\caption[Demonstration of collective communications]{
-     Demonstration of collective communications taken from \cite{mpi40}.
+    \centering
+    \begin{tikzpicture}[
+        ssty/.style={draw, rectangle, minimum height=0.5cm, minimum width=0.5cm},
+        asty/.style={draw, single arrow, minimum height=2.5cm, minimum width=0.5cm},
+        fsty/.style={font=\footnotesize},
+        ]
+
+    \node[] at (0.1, 12.5) (ld) {Data};
+    \draw[->] (ld) -- (1.5,12.5);
+    \node[rotate=90] at (-1.5, 11.2) (rd) {Ranks};
+    \draw[->] (rd) -- (-1.5,10);
+
+    % broadcast init
+    \foreach \x in {0,...,5}{
+        \node at (\x/2, 12) () {\x};
+        \foreach \y in {18,...,23}
+            \node[ssty] at (\x/2, \y/2) () {}; 
+    }
+    \node[fsty] at (0,23/2) () {$A_0$};
+    
+    \foreach \y/\l in {23/A,22/B,21/C,20/D,19/E,18/F}
+        \node at (-0.7,\y/2) () {$r_\l$};
+
+    % Broadcast final
+    \foreach \x in {12,...,17}{
+        \foreach \y in {18,...,23}
+            \node[ssty] at (\x/2, \y/2) () {}; 
+    }
+    \foreach \x/\l in {12/0,13/1,14/2,15/3,16/4,17/5}
+        \node at (\x/2,12) () {$\l$};
+        
+    \foreach \y in {18,...,23}
+        \node at (12/2, \y/2) () {$A_0$};
+    
+    \node[asty] at (8.5/2, 10.5) () {Broadcas};
+
+    % Scatter Init
+    \foreach \x in {0,...,5}{
+        \foreach \y in {9,...,14}
+            \node[ssty] at (\x/2, \y/2) () {}; 
+    }
+    \foreach \x in {0,...,5}
+        \node[fsty] at (\x/2,14/2) () {$A_\x$};
+        
+    \foreach \y/\l in {14/A,13/B,12/C,11/D,10/E,9/F}
+        \node at (-0.7,\y/2) () {$r_\l$};
+
+    % Scatter final 
+    \foreach \x in {12,...,17}{
+        \foreach \y in {9,...,14}
+            \node[ssty] at (\x/2, \y/2) () {}; 
+    }
+    \foreach \y/\l in {9/5,10/4,11/3,12/2,13/1,14/0}
+        \node[fsty] at (12/2,\y/2) () {$A_\l$};
+        
+    \node[asty] at (8.5/2, 6.5) () {Scatter};
+    \node[asty, shape border rotate=180] at (8.5/2, 5) () {Gather};
+
+    % allgather init
+    \foreach \x in {0,...,5}{
+        \foreach \y in {0,...,5}
+            \node[ssty] at (\x/2, \y/2) () {}; 
+    }
+    \foreach \l/\y in {A/5,B/4,C/3,D/2,E/1,F/0}
+        \node[fsty] at (0,\y/2) () {$\l_0$};
+    \foreach \y/\l in {5/A,4/B,3/C,2/D,1/E,0/F}
+        \node at (-0.7,\y/2) () {$r_\l$};
+
+    % allgather final
+    \foreach \x/\lx in {12/A,13/B,14/C,15/D,16/E,17/F}{
+        \foreach \y in {0,...,5}{
+            \node[ssty] at (\x/2, \y/2) () {}; 
+            \node[fsty] at (\x/2, \y/2) () {$\lx_0$}; 
+        }
+    }
+    \node[asty] at (8.5/2, 1.5) () {Allgather};
+
+    
+    \end{tikzpicture}
+	\caption[Collective Communications]{
+     Demonstration of collective communications adapted from \cite{mpi40}.
      Columns specify each process' rank, and rows specify elements in the input vector.
      }
 	\label{fig:mpispec_collectives}

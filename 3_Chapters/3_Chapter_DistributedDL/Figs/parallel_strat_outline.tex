@@ -1,0 +1,113 @@
+\begin{figure}
+    \centering
+        \begin{tikzpicture}[
+        nsty/.style={draw,circle,minimum height=0.5cm},
+        psty0/.style={fill=blue!40},
+        psty1/.style={fill=yellow!40},
+        psty2/.style={fill=red!40},
+        imgsty/.style={draw,rectangle,fill=white,
+            minimum height=1.5cm,
+            minimum width=1.5cm,
+        },
+        arrowsty/.style={draw, single arrow, rotate=-90,
+            fill=white,
+            minimum height=0.7cm,
+        },
+        snsty/.style={draw,circle,minimum height=0.2cm},
+        simgsty/.style={draw,rectangle,minimum height=0.5cm,minimum width=0.5cm},
+        sarrowsty/.style={draw, single arrow, rotate=-90,
+            fill=white,
+            minimum height=0.4cm,
+            minimum width=0.01cm,
+        },
+    ]
+
+    \foreach \x in {0,1,2}
+        \foreach \y in {0,1,2}
+            \node[snsty,psty0] at (\x/2-4.5, \y/2+2) (s\x\y0) {};
+    \node[simgsty,psty0] at (-4,4) (si0) {};
+    \draw[->] (si0) -- node[midway,right, font=\tiny]{Input} (s120);
+    \draw[->] (s100) -- node[midway,right, font=\tiny]{Output} +(0,-0.5);
+    \node[left=0.01cm of s020.130] {$p_0$};
+            
+    \foreach \x in {0,1,2}
+        \foreach \y in {0,1,2}
+            \node[snsty,psty1] at (\x/2-6, \y/2) (s\x\y1) {};
+    \node[simgsty,psty1] at (-5.5,2) (si1) {};
+    \draw[->] (si1) -- node[midway,right, font=\tiny]{Input} (s121);
+    \draw[->] (s101) -- node[midway,right, font=\tiny]{Output} +(0,-0.5);
+    \node[left=0.01cm of s021.130] {$p_1$};
+    
+            
+    \foreach \x in {0,1,2}
+        \foreach \y in {0,1,2}
+            \node[snsty,psty2] at (\x/2-3, \y/2) (s\x\y2) {};
+    \node[simgsty,psty2] at (-2.5,2) (si2) {};
+    \draw[->] (si2) -- node[midway,right, font=\tiny]{Input} (s122);
+    \draw[->] (s102) -- node[midway,right, font=\tiny]{Output} +(0,-0.5);
+    \node[left=0.01cm of s022.130] {$p_2$};
+
+    \foreach \n in {0,1,2}
+        \foreach \x in {0,1,2}
+            \foreach \y in {0,1,2}{
+                \draw[] (s\x0\n) -- (s\y1\n);
+                \draw[] (s\x2\n) -- (s\y1\n);
+            }
+
+
+    \foreach \x in {0,1,2}
+        \foreach \y in {0,1,2}
+            \node[nsty,psty\x] at (\x,\y) (n\x\y) {};
+            
+    \foreach \x in {4,5,6}
+        \foreach \y in {0,1,2}
+            \node[nsty,psty\y] at (\x,\y) (n\x\y) {};
+            
+            
+    \foreach \x in {0,1,2}
+        \foreach \y in {0,1,2}{
+            \draw[] (n\x0) -- (n\y1);
+            \draw[] (n\x2) -- (n\y1);
+        }
+    \foreach \x in {4,5,6}
+        \foreach \y in {4,5,6}{
+            \draw[] (n\x0) -- (n\y1);
+            \draw[] (n\x2) -- (n\y1);
+        }
+        
+    \foreach \x in {0,1,2}{
+        \node[left=0.01cm of n\x2.110] {$p_\x$};
+        \node[left=0.01cm of n4\x.110] {$p_\x$};
+    }
+
+    \node[imgsty] at (0.9,4.3) (){};
+    \node[imgsty] at (1,4.2) (){};
+    \node[imgsty] at (1.1,4.1) (){};
+    \node[arrowsty] at (1,2.9) (arrowinsp) {};
+    \node[right=0.1cm of arrowinsp.before tip] {Input};
+    \node[arrowsty] at (1,-0.7) (arrowoutsp) {};
+    \node[right=0.1cm of arrowoutsp.before tip] {Output};
+    
+    \node[imgsty] at (4.9,4.3) (){};
+    \node[imgsty] at (5,4.2) (){};
+    \node[imgsty] at (5.1,4.1) (){};
+    \node[arrowsty] at (5,2.9) (arrowinlp) {};
+    \node[right=0.1cm of arrowinlp.before tip] {Input};
+    \node[arrowsty] at (5,-0.7) (arrowoutlp) {};
+    \node[right=0.1cm of arrowoutlp.before tip] {Output};
+
+    \draw[dashed] (-1.2,5) -- +(0,-7);
+    \draw[dashed] (3.1,5) -- +(0,-7);
+    \node[align=center, font=\footnotesize] at (-4,-1.5) {a) Data Parallelism};
+    \node[align=center, font=\footnotesize] at (1,-1.7) {b) Model Parallelism\\(Spacial Decomposition)};
+    \node[align=center, font=\footnotesize] at (5,-1.7) {c) Model Parallelism\\(Layer Decomposition)};
+    
+    \end{tikzpicture}
+    \caption[Methods of Decomposing Deep Learning for Parallel Execution]{
+        Methods for partitioning a neural network across resources.
+        Method a) uses data parallelism, where each process gets its own copy of the model and its own shard of the dataset. 
+        Methods b) and c) use model parallelism, where the model is divided up across the width (spacial decomposition) or by layers (layer decomposition).
+        Adapted from \cite{Ben-Nun2019DemystifyDL}.
+    }
+    \label{fig:dl_parallel_decomp}
+\end{figure}

@@ -1,0 +1,48 @@
+\begin{figure}
+    \centering
+    \begin{tikzpicture}[
+        wkrsty/.style={
+            rounded corners, ultra thick,
+            draw, rectangle,
+            minimum height=1.5cm,
+            minimum width=1.5cm,
+            fill=blue!30,
+        },
+        svrsty/.style={
+            font=\large, fill=green!30,
+            draw, rectangle, rounded corners,
+            minimum height=1.5cm,
+            minimum width=10cm,
+        },
+        arrowsty/.style={->, very thick},
+        msgsty/.style={midway},
+    ]
+    
+    \node[svrsty] at (0,0) (svr) {Parameter Sever};
+
+    \node[above=0.2cm of svr, font=\large] {$w^{t+1} =w^t - \frac{\eta}{p} \sum^{p}_{i=0}\Delta w_i$};
+    
+    \node[wkrsty,below=2cm of svr.193] (w0) {$w_0$};
+    \node[wkrsty, right=of w0] (w1) {$w_1$};
+    \node[right=of w1] (dots) {...};
+    \node[wkrsty, right=of dots] (wn) {$w_n$};
+
+    \draw[arrowsty] (w0.110) -- node[msgsty,left] {$\Delta w$} (svr.195);
+    \draw[arrowsty] (svr.198) -- node[msgsty,right] {$w$} (w0.70);
+    
+    \draw[arrowsty] (svr.272) -- node[msgsty,right] {$w$} (w1.70);
+    \draw[arrowsty] (w1.110) -- node[msgsty,left] {$\Delta w$} (svr.240);
+    
+    \draw[arrowsty] (wn.110) -- node[msgsty,left] {$\Delta w$} (svr.342);
+    \draw[arrowsty] (svr.345) -- node[msgsty,right] {$w$} (wn.70);
+
+    \end{tikzpicture}
+    
+    \caption[Paramater Server Architecture]{
+    Outline of a parameter server architecture for data parallelism.
+    Blue squares represent workers who perform training, and green squares represent the parameter server that manages the ground truth of the model.
+    Workers receive a set of weights from the server, perform SGD to calculate weight updates, and contribute their updates to the parameter server.
+    Adapted from \cite{Dean2012DistBelif}}
+    \label{fig:param_svr_arch}
+\end{figure}
+
