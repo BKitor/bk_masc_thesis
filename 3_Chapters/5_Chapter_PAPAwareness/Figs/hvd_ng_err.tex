@@ -1,0 +1,70 @@
+% \begin{table}
+%     \centering
+%     \caption[PAP-Aware Horovod Error on Narval]{
+%         The margin of error for Horovod synthetic benchmark on Narval.
+%         The throughput results in Table \ref{tbl:pap_hvd_narval_full} can deviate by ± the results presented in this table. 
+%     }
+%     \begin{tabular}{lllllll}
+%     4 nodes    & \textbf{PAP 4MB} & \textbf{PAP} & \textbf{RSA} & \textbf{UCC} & \textbf{NCCL} & \textbf{OMPI} \\
+%     MobileNet   & 243     & 218.5 & 138.1 & 153.4 & 106.3 & 160.4  \\
+%     DenseNet121 & 30.3    & 28.4  & 51.4  & 257.4 & 87.6  & 117    \\
+%     Densenet169 & 26.7    & 83.7  & 21.5  & 73.5  & 97.9  & 219.7  \\
+%     DenseNet201 & 49.6    & 119.4 & 50.1  & 105.1 & 114.2 & 50     \\
+%     ResNet50    & 26.7    & 26.3  & 56    & 279.9 & 121.5 & 60.4   \\
+%     Resnet101   & 22.4    & 7.7   & 40.5  & 71.1  & 52.1  & 28.1   \\
+%     ResNet152   & 8.8     & 3.8   & 11    & 44.5  & 43.2  & 12.6   \\ \hline
+%     8 Nodes     & ~       & ~     & ~     & ~     & ~     & ~      \\
+%     MobileNet   & 306.8   & 189.7 & 259.8 & 239.3 & 132   & 206.7  \\
+%     DenseNet121 & 114.7   & 339.6 & 139.9 & 394.7 & 252.1 & 641.3  \\
+%     Densenet169 & 86      & 178   & 155.7 & 189   & 244.9 & 381.6  \\
+%     DenseNet201 & 76.7    & 43.8  & 103.5 & 197.4 & 917.6 & 131.2  \\
+%     ResNet50    & 66.3    & 24.2  & 66.3  & 247.7 & 252   & 52.2   \\
+%     Resnet101   & 33.9    & 11.2  & 55.9  & 168.1 & 107.9 & 20     \\
+%     ResNet152   & 18.3    & 4.4   & 42.2  & 84    & 62.7  & 21.5   \\ \hline
+%     16 Nodes    & ~       & ~     & ~     & ~     & ~     & ~      \\
+%     MobileNet   & 561.3   & 567.2 & 319.3 & 549.3 & 169.1 & 480    \\
+%     DenseNet121 & 189.3   & 213.4 & 169   & 634.2 & 544.6 & 1376.5 \\
+%     Densenet169 & 75.6    & 179.7 & 319.9 & 699.7 & 526.8 & 1166.3 \\
+%     DenseNet201 & 239.9   & 43.4  & 251.3 & 278.9 & 336.5 & 371.7  \\
+%     ResNet50    & 59      & 29.4  & 438.1 & 514.1 & 580.2 & 204.1  \\
+%     Resnet101   & 40.7    & 19.6  & 163.5 & 747.7 & 372.5 & 27.7   \\
+%     ResNet152   & 24.1    & 10.4  & 270.8 & 149.3 & 422.6 & 49.3   \\
+%     ~           & ~       & ~     & ~     & ~     & ~     & ~      \\
+%     \end{tabular}
+%     \label{tbl:pap_hvd_narval_err}
+% \end{table}
+
+\begin{table}
+    \centering
+    \caption[PAP-Aware Horovod Error on Narval]{
+        The margin of error for Horovod synthetic benchmark on Narval.
+        The throughput results in Table \ref{tbl:pap_hvd_narval_full} can deviate by ± the percentages presented in this table. 
+    }
+    \begin{tabular}{lllllll}
+    4 nodes    & \textbf{PAP 4MB} & \textbf{PAP} & \textbf{RSA} & \textbf{UCC} & \textbf{NCCL} & \textbf{OMPI} \\
+    MobileNet   & 5.90\%  & 5.13\% & 3.42\% & 4.26\% & 3.04\%  & 3.97\% \\
+    DenseNet121 & 0.42\%  & 0.40\% & 0.71\% & 4.80\% & 1.68\%  & 1.69\% \\
+    Densenet169 & 0.48\%  & 1.44\% & 0.39\% & 1.79\% & 2.39\%  & 4.53\% \\
+    DenseNet201 & 1.20\%  & 2.85\% & 1.22\% & 3.15\% & 3.38\%  & 1.41\% \\
+    ResNet50    & 0.42\%  & 0.48\% & 0.93\% & 6.92\% & 2.92\%  & 1.65\% \\
+    Resnet101   & 0.57\%  & 0.24\% & 1.12\% & 2.81\% & 2.11\%  & 1.30\% \\
+    ResNet152   & 0.31\%  & 0.16\% & 0.41\% & 2.31\% & 2.35\%  & 0.80\% \\ \hline
+    8 Nodes     & ~       & ~      & ~      & ~      & ~       & ~      \\
+    MobileNet   & 3.72\%  & 2.21\% & 3.22\% & 3.45\% & 1.85\%  & 2.65\% \\
+    DenseNet121 & 1.04\%  & 2.86\% & 0.99\% & 3.84\% & 2.46\%  & 4.69\% \\
+    Densenet169 & 0.93\%  & 2.32\% & 1.44\% & 2.30\% & 3.01\%  & 4.01\% \\
+    DenseNet201 & 1.10\%  & 0.76\% & 1.27\% & 3.14\% & 15.01\% & 1.91\% \\
+    ResNet50    & 0.84\%  & 0.42\% & 0.62\% & 2.96\% & 3.01\%  & 0.80\% \\
+    Resnet101   & 0.73\%  & 0.33\% & 0.86\% & 3.58\% & 2.28\%  & 0.53\% \\
+    ResNet152   & 0.52\%  & 0.18\% & 0.88\% & 2.40\% & 1.86\%  & 0.71\% \\ \hline
+    16 Nodes    & ~       & ~      & ~      & ~      & ~       & ~      \\
+    MobileNet   & 3.62\%  & 3.82\% & 2.13\% & 4.16\% & 1.29\%  & 3.13\% \\
+    DenseNet121 & 1.07\%  & 1.45\% & 0.61\% & 3.51\% & 3.03\%  & 5.24\% \\
+    Densenet169 & 0.64\%  & 1.98\% & 1.49\% & 4.75\% & 3.58\%  & 6.28\% \\
+    DenseNet201 & 2.71\%  & 0.66\% & 1.58\% & 2.42\% & 2.97\%  & 2.95\% \\
+    ResNet50    & 0.67\%  & 0.51\% & 2.29\% & 3.60\% & 4.03\%  & 1.66\% \\
+    Resnet101   & 0.79\%  & 0.59\% & 1.60\% & 9.75\% & 4.83\%  & 0.40\% \\
+    ResNet152   & 0.63\%  & 0.42\% & 3.64\% & 2.59\% & 7.35\%  & 0.94\% \\
+    \end{tabular}
+    \label{tbl:pap_hvd_narval_err}
+\end{table}

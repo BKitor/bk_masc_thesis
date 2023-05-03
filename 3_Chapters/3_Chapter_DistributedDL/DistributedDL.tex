@@ -153,7 +153,7 @@ Noel and Osindero extend this idea to a distributed environment with Dogwild \ci
 
 Asynchronous training was initially proposed for, and is implemented on, parameter server architectures, but they do not entirely mitigate the scaling issue of centralized systems.
 Adapting asynchronous training methods to decentralized training is more difficult, as existing allreduce methods only support synchronous training, however this has not stopped researchers from trying.
-Using an \gls{MPI}-based distributed training library, Kurth et al. proposed gradient lag, a method where weight updates are an iteration behind, i.e. Line 7 in Algorithm \ref{alg:MinibatchSGD} becomes $w^{(t+1)}\leftarrow w_{mb} + \Delta w^{(t-1)}$, to increases computation/communication overlap, and allow training to utilize large scale systems fully \cite{Kurth2018ExascaleDLClimate}.
+Using an \gls{MPI}-based distributed training library, Kurth et al. proposed gradient lag, a method where weight updates are an iteration behind, i.e. Line 7 in Algorithm \ref{alg:MinibatchSGD} becomes $w^{(t+1)}\leftarrow w_{mb} + \Delta w^{(t-1)}$, to increase computation/communication overlap, and allow training to utilize large scale systems fully \cite{Kurth2018ExascaleDLClimate}.
 Li et al. propose the concept of partial collectives, which require a subset of the processes to synchronize instead of the entire communicator \cite{Li2020DLPartialColl}.
 If any process takes too long to arrive, its values from the previous allreduce are used, this lessens the required synchronization while maintaining enough training stability to promote convergence.
 

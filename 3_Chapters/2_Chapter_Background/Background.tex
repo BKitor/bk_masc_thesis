@@ -124,20 +124,20 @@ A non-blocking fat-tree can afford to have all nodes send data across the root s
 In \gls{HPC} communities, the most widely adopted type of network is InfiniBand. 
 InfiniBand is a networking standard published by the \gls{IBTA} \cite{IBSpec}.
 The first InfiniBand spec was published in 2001 with hardware that could support speeds around two Gb/s, but over time the standard and technology have evolved, and now modern InfiniBand networks can transfer data at 400 Gb/s.
-The other key characteristic of an \gls{HPC} network is tremendously low latency, and network designers have poured years into removing any possible overhead from the communication code path, 
+The other key characteristic of an \gls{HPC} network is tremendously low latency, and network designers have poured years into removing any possible overhead from the communication code path. 
 Key technologies include, but are not limited to, kernel bypass, hardware tag matching, and network offload.
-The InfiniBand specification outlines both the physical characteristics of the network hardware, as well as the InfiniBand verbs programming interface \cite{IBSpec}.
+The InfiniBand specification outlines both the network hardware's physical characteristics and the InfiniBand verbs programming interface \cite{IBSpec}.
 InfiniBand is not the only programming interface, though, and many players have moved in and out of the \gls{HPC} networking market.
 Cornelis Networks develops OmniPath \cite{Birrittella2015OmniPath}, and Cray has their line of SlingShot networks \cite{DDeSensi2020InDepthAnalysisOfSlingshot}, all of which share similar performance and foundational ideas in their design but differ enough to fall across a diverse price/performance spectrum.
 
 \section{Communication libraries} 
 \input{3_Chapters/2_Chapter_Background/Figs/fig_com_libs}
 There are limits to how applications can interact with the network.
-Modern networks have message latencies on the order of microseconds, but with L1 cache latency being on the order of nanoseconds, network transfers are excruciatingly slow.
+Modern networks have message latencies on the order of microseconds, but compared to L1 cache latencies being on the order of nanoseconds, network transfers are excruciatingly slow.
 With drastic performance limits that need to be designed around and a diverse set of network hardware to choose from, a unique set of programming tools are required to expose network resources. 
 There are vast differences in vendor technology as well, different networks have different software layers built on top of them, and portability between networks is an essential requirement for many applications. 
 So over time, a series of \gls{API}s have formed, each targeting different types of users, exposing more/less granularity of the hardware and various types of convenience functions designed to help write code for each layer.
-Figure \ref{fig:hpc_software_arch} outlined the common structure and division of responsibilities found in HPC software.
+Figure \ref{fig:hpc_software_arch} outlines the common structure and division of responsibilities found in HPC software.
 The lowest layer would be device-specific libraries, these are vendor-specific data structures and functions designed to interact directly with hardware on the network card.
 Above the device layer would be the transport layer, these are \gls{API}s designed to wrap around different communication endpoints; they are still not that user-friendly, but they provide more portability and can more easily manage different sets of resources.
 The transport layer is used to build programming models, with the most common model being \gls{MPI}.
@@ -196,7 +196,7 @@ Point-to-point messages can be extended to a collective model where multiple pro
 Collective communication routines are extremely powerful and heavily relied upon in practice.
 Further, understanding the one-sided model is also essential, as it provides tools for managing communication without peer involvement.
 
-\subsection{Two-Sided Communications}
+\subsection{Two-Sided Communication}
 The two-sided model is built around sending and receiving messages across a communicator.
 Messages are specified as a vector of \gls{MPI} datatypes, which can vary from a simple array of integers to complex structures of derived datatypes.
 \texttt{MPI\_Send()} specifies a segment of data to send to a remote process, and the remote process must post a corresponding \texttt{MPI\_Recv()} indicating where the data will be placed. 
@@ -214,7 +214,7 @@ These endpoints return immediately but do not complete communication; instead, t
 The programmer needs to progress the \texttt{MPI\_Request} object to ensure completion, and this can be done with \texttt{MPI\_Test} to check if it is done and \texttt{MPI\_Wait} to block communication until completion.
 Non-blocking communications provide more flexibility and freedom in setting up complex communication patterns, as well as more opportunities to establish computation communication overlap.
 
-\subsection{One-sided Communication}
+\subsection{One-Sided Communication}
 The term two-sided exists because both processes have to actively be involved in communication (a send needs a matching receive), the model is popular because it is easy to understand and learn quickly but is limited by the tightly coupled nature of the communication model.
 Certain applications do not map well to the two-side model, there are codes where processes need to send/receive data between iterations but do not necessarily know who they will need to exchange with, and while solutions can be coded using a two-sided model, it requires the use of global synchronizations, heavily impacting performance.
 The one-sided model, also known as \gls{RMA}, provides a model where only one process needs to provide the communication information, message data, message destination, and participating ranks.
@@ -359,6 +359,6 @@ This is often delegated to the root in one-to-many or many-to-one collectives, b
 Further, this adds overhead and worsens workload imbalance as one process spends considerably more cycles orchestrating process arrival information.
 There is also the issue of processes stalling before the root has arrived, as no work can be done before \gls{PAP} information is exchanged.
 Some proposed work fixes this by delegating \gls{PAP} management to a background thread \cite{Proficz2018ImprvAllReduceForImbPAP, Proficz2020PAPAwareScatterGather, Proficz2021AllGatherResilientToImbPAP, Faraj2008StudyProcArrivalMPIColl}, but this solution can add more imbalance due to thread scheduling, as well as a burden on application developers to manage resources of background threads.
-Other internode solutions rely on non-portable interfaces like \gls{RDMA} on InfiniBand \cite{Qian2009ProcArrivalSHMA2AIB}.
-Since one-sided operations do not require remote host invovlement, they alow early processes to exchange data with late processes, but locking the solution into spcecific hardware is not ideal.
+Other internode solutions rely on non-portable interfaces like \gls{RDMA} verbs on InfiniBand \cite{Qian2009ProcArrivalSHMA2AIB}.
+Since one-sided operations do not require remote host involvement, they allow early processes to exchange data with late processes, but locking the solution into specific hardware is not ideal.
 

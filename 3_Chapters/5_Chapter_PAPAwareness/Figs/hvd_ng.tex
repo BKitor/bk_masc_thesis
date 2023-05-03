@@ -1,9 +1,10 @@
 \begin{table}
     \centering
     \caption[PAP-Aware Horovod Performance on Narval]{
-        Horovod performance on Narval with different models and allreduce algorithm.
-        All values are measured in images/second.
-        Highest throuput results are in bold.
+        Horovod performance on Narval with different models and allreduce algorithms.
+        The benchmark performs ten iterations, and the average throughput in images/second is presented.
+        The highest throughput results are in bold.
+        The margin for error is given in Table \ref{tbl:pap_hvd_narval_err}.
     }
     \begin{tabular}{lllllll}
      4 nodes    & \textbf{PAP 4MB} & \textbf{PAP} & \textbf{RSA} & \textbf{UCC} & \textbf{NCCL} & \textbf{OMPI} \\

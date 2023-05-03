@@ -30,7 +30,7 @@ The performance limits of Horovod strongly influenced design decisions made in C
 Topology Awareness is a commonly used tool in \gls{HPC} codes where the software runtime dynamically adapts to hardware characteristics to maximize performance.
 We extended an existing method for topology-aware rank reordering where a new process-to-core mapping is calculated to adapt specific collective algorithms to hardware.
 New mapping heuristics were proposed for \gls{RSA} allreduce, knomial broadcast, and binary tree broadcast, and existing heuristics were adapted to ring allreduce, recursive doubling allreduce, and scatter-allgather broadcast.
-In microbenchmarks, the remapping methods could see up to 80\% improved performance over stock OpenMPI, however, the performance improvements did not translate to the synthetic Horovod benchmark.
+In micro-benchmarks, the remapping methods could see up to 80\% improved performance over stock OpenMPI, however, the performance improvements did not translate to the synthetic Horovod benchmark.
 Tree-based broadcast algorithms, like bin-tree and knomial, tended to see the best improvements.
 In contrast, algorithms with more distributed communication patterns (\gls{RSA} and recursive doubling) tended to make good use of initial mappings already.
 Remappings that moved large chunks of communication off the network showed the best performance, often this consisted of remapping a by-node initial mapping (ring, \gls{RSA}, knomial), but this also applied to binary-tree with a by-core/by-socket initial mapping.
@@ -44,11 +44,11 @@ Our proposed algorithm leverages the \gls{PAP} to minimize the amount of work th
 To distribute \gls{PAP} information, we define a network-exposed data structure modified with \gls{UCX}-atomics to arbitrate arrival information.
 Thanks to \gls{UCX}'s low-latency \gls{RMA} operations and precise synchronization model, the cost of control messages is negligible compared to the large messages the algorithm targets.
 The proposed allreduce algorithm is based on a hierarchical chain, where \gls{PAP}-Awareness is only applied to leader processes.
-To evaluate different imbalance factors, we developed a microbenchmark that enforces a \gls{MIF}, and experiments using said benchmark showed strong performance gains.
+To evaluate different imbalance factors, we developed a micro-benchmark that enforces a \gls{MIF}, and experiments using said benchmark showed strong performance gains.
 With large \gls{MIF} values, the \gls{PAP}-aware algorithm tended to outperform non-\gls{PAP}-aware algorithms, however, this was only at small node counts.
 Narval showed the best performance, the \gls{PAP}-aware algorithms outperformed \gls{GPU}-based \gls{RSA} by 70\% and even showed a 15\% performance improvement over \gls{NCCL}.
 Further, evaluation with Horovod showed throughput improvements of 5\% for the \gls{PAP}-aware algorithm over the next best non-\gls{PAP}-aware algorithm.
-While using a chain reduce as the foundation of the algorithm made implementation easier, however, it limited the scalability of the algorithm, and this was evident when trying to scale both the microbenchmark and Horovod.
+While using a chain reduce as the foundation of the algorithm made implementation easier, however, it limited the scalability of the algorithm, and this was evident when trying to scale both the micro-benchmark and Horovod.
 
 \section{Future Work}
 Both proposed allreduce methods have shortcomings, however, there are future directions which could address them.
@@ -57,10 +57,24 @@ Evaluating the remapped collectives on a more diverse set of hardware could reve
 For example, Nvidia's \gls{PCIe}-based \gls{GPU} only have 1 NVLink port per card and cannot support fully connected NVLink topologies, furthermore, early generations of \gls{GPU} nodes would use \gls{PCIe} switches to build trees, these unique topologies might benefit from appropriate collective remapping.
 Furthermore, there are more collective algorithms that remapping can be extended to, like generalized k-ary trees, reduce collective or all-to-all collectives.
 
-In terms of \gls{PAP} awareness, the focus of future work would address the scalability issues.
-Adding pipelining to the internode reduce would improve scalability through overlap, however, it does not address the linear scaling fundamental to the chain algorithm.
+In terms of \gls{PAP} awareness, the most obvious issue to address would be scalability.
+It's possible to add pipelining to the internode reduce, which could improve scalability through overlap, however, it does not address the linear scaling fundamental to the chain algorithm.
 Using a tree-based algorithm, such as k-ary or knomial, would provide logarithmic scalability, or a more complicated solution could dynamically adapt the structure of the reduction tree based on the \gls{PAP}. 
 Furthermore, \gls{PAP}-awareness could be applied to the intranode stage extending the adaptability of the algorithm.
+There are also tradeoffs in portability that can be addressed. 
+Not all systems support \gls{UCX}, so it would be best if the \gls{PAP}-distribution mechanism was built using \gls{MPI}.
+Investigating some \gls{MPI} optimizatoin mechanisms like \texttt{MPI\_Win\_lock\_all}/\texttt{MPI\_Win\_unlock\_all} and \texttt{MPI\_Flush} are worth pursuing. 
+% One other direction out multi-node \gls{PAP}-aware could pursue are small message sizes.
+% Since small messages are latency bound, we would to need to stick with transport layer \gls{API}s, however, this could let us pressure lower-latency fully one-sided algorithms. 
+% By writing the m
+
+There are also opportunities to evaluate our proposed methods across a more diverse set of applications.  
+In this thesis, data-parallel \gls{DL} evaluations used Horovod synthetic benchmarks with Tensorflow, however, other data-parallel \gls{DL} benchmarks could be used.
+Cosmoflow \cite{Mathuriya2019Cosmoflow} is a \gls{DL} model designed to estimate cosmological properties, and MiniGan \cite{MiniGan} is a proxy app simulating a generative adversarial network.
+Both of these applications target large-scale systems and rely on Horovod for data parallelism, but there are also other data parallelism libraries like LBANN \cite{VanEssen2015LBANN} that are of interest.
+Furthermore, the proposed methods can be applied to more traditional \gls{HPC} applications.
+\texttt{MPI\_Allreduce} has been a target for acceleration for a long time, and studies have shown that production supercomputers heavily rely upon it \cite{Chunduri2018CharacterizeMPIonProd}.
+There are likely applications that can benefit from the performance improvements provided by our topology aware and \gls{PAP} aware algorithms.
 
 In terms of general research direction, there are a lot of opportunities to pursue other types of parallelism in \gls{DL}.
 While data parallelism is a mature and well-studied form of \gls{DL} parallelism, model parallelism is not as well-studied, and there are plenty of opportunities.
@@ -69,7 +83,7 @@ Topology-aware rank reordering can be applied to the Bruck or store-and-forward 
 \gls{PAP}-Aware alltoall algorithms have been previously proposed, but the \gls{UCX}-based PAP arbitration mechanism can unlock new capabilities.
 
 There is still room to apply \gls{HPC} techniques to \gls{DL} libraries at the application level.
-For example, topology awareness can be applied to the internal DAG used in \gls{DL} frameworks, the neural network graph encodes communication between layers and can this information can be leveraged to improve application performance at scale.
+For example, topology awareness can be applied to the internal \gls{DAG} used in \gls{DL} frameworks, the neural network graph encodes communication between layers and this information can be leveraged to improve application performance at scale.
 If we can predict model communication ahead of time, this would remove the need to profile applications ahead of time, solving one of the issues with ahead-of-time topology mapping.
 These challenges compound when considering tools that use model parallelism and data parallelism in tandem as future tools will generate complicated mixtures of allreduce and all-to-all during training.
 Future \gls{DL} frameworks will use more complicated strategies to build more powerful models, and all possible \gls{HPC} techniques will need to be used in order to achieve this goal.

@@ -29,7 +29,7 @@ So, in reality, the hardware topology of the system has an outsized impact on me
 
 Performance improvements with topology awareness involve combining topology information with communication information.
 We have tools for collective topology information at runtime, and the collective's communication pattern is implicit to whichever algorithm they use.  
-Different algorithms (ring, recursive doubling, binary tree, binomial tree, etc...) have predefined data-transfer patterns, we know ahead of time how ranks will send and receive messages, and we can trivially model these relationships for different sizes of communicators.
+Different algorithms (e.g., ring, recursive doubling, binary tree, binomial tree) have predefined data-transfer patterns, we know ahead of time how ranks will send and receive messages, and we can trivially model these relationships for different sizes of communicators.
 There are existing methods for topology-aware collectives, like hierarchical collectives, but they tend to add extra communication steps and complexity than standard flat algorithms.
 So this work evaluates and extends an existing method for adding topology awareness to flat algorithms by rank reordering.
 
@@ -45,7 +45,7 @@ There are multiple research fronts with this strategy, and efforts have gone int
 
 Hoefler and Snir \cite{Hoefler2011GenericTopoMappingStrats} propose a general process mapping tool targeting \gls{CPU} clusters.
 They evaluate three algorithms, a greedy algorithm based on vertex weights, a recursive bisecting that makes minimum weighted edge-cuts, and a graph similarity mapping using the Reverse Cuthill McKee algorithm. 
-They use these algorithms and a \textit{Threshold Accepting} optimization step to minimize congestion and dilation on large-scale \gls{SMP}, clusters.
+They use these algorithms and a \textit{Threshold Accepting} optimization step to minimize congestion and dilation on large-scale \gls{SMP} clusters.
 
 Mirsadeghi and Afsahi \cite{Mirsadeghi2016PTRAM} propose a system targeting large-scale InfiniBand clusters.
 Their system leverages the network topology plus InfiniBand's static routing tables to further reduce congestion.
@@ -62,7 +62,7 @@ Galvez et al. \cite{Galvez2017AutoTopoMap} identify this problem and propose a p
 Their system leverages a parallel algorithm that uses the communication classes, along with a set of weighted metrics, to calculate a near-ideal mapping.
 While a step in the right direction, their solution still treats collective communications as a black box, focusing on the collective's communicator and not disassembling the collective into its constituent point-to-point messages.
 
-To decompose collectives into point-to-point messages, Bosilica et al. \cite{Bosilica2017OnlineMonitoringMPI} implemented a monitoring layer in OpenMPI that is accessible through the \gls{MPI} Tools interface.
+To decompose collectives into point-to-point messages, Bosilica et al. \cite{Bosilica2017OnlineMonitoringMPI} implemented a monitoring layer in Open MPI that is accessible through the \gls{MPI} Tools interface.
 This provides much more granular profiling for point-to-point messages, which allowed Jeannot and Sartori \cite{Jeannot2020ImprvMPICommMonitoring} to propose a rank reordering method for applications with iterative compute, but their solution is required to be implemented within the user's application. 
 While it is possible to apply topology awareness to all communication, including collectives, their solution places a significant burden on application developers to implement it within their software.
 
@@ -90,7 +90,7 @@ While their work focuses on minimizing synchronization dependencies within colle
 Awan et al. \cite{Awan2016NCCLBcast} build a \gls{GPU}-aware hierarchical broadcast algorithm.
 Their work leverages the \gls{NCCL} for optimal intra-node communication for large messages and relies on existing algorithms in MVAPICH2 for inter-node communication.
 Subramoni et al. \cite{Subramoni2011SpeedAwareBcast} designed a broadcast algorithm that can take InfiniBand topology and network speeds into account.
-They gather network information using \gls{OFED} management tools like ibnetdiscover and ibroute and use the information to build a reordered communicator using either a depth-first traversal or a breath-first traversal.
+They gather network information using \gls{OFED} management tools like ibnetdiscover and ibroute \cite{linuxrdmacore} and use the information to build a reordered communicator using either a depth-first traversal or a breath-first traversal.
 They only evaluate knomial and scatter-allgather collectives.
 
 Hierarchical algorithms segment the system topology and structure the collective to use appropriate resources accordingly, but the increased complexity has drawbacks.
@@ -212,7 +212,7 @@ The ring heuristic targets nearest neighbour ranks, it starts at rank 0 and walk
 Since both ring allreduce and ring allgather only communicate with immediate neighbours (i.e., rank $r+1$ and $r-1$), the intuition of this heuristic is portable across collectives.
 
 The recursive doubling heuristic targets the last two stages of the algorithm, as message sizes are the largest during those phases (of allgather). 
-It is similar to our proposed \gls{RSA}, heuristic but focuses on the last rounds of communication instead of the first. 
+It is similar to our proposed \gls{RSA} heuristic but focuses on the last rounds of communication instead of the first. 
 Recursive doubling allreduce and allgather share the same communication pattern, but while the message sizes double each round in allgather, it remains fixed in allreduce.
 So migrating the heuristic to allreduce might not see the same performance gains, but it will ensure that most communications take an efficient path.
 
@@ -240,13 +240,13 @@ The critical difference between Beluga and Cedar's \gls{GPU} nodes is the \gls{P
 On Beluga, all the \gls{GPU}s are connected to socket 0 through a \gls{PCIe} switch, while Cedar has \gls{GPU}s split between sockets 0 and 1, each directly connected to the socket.
 
 Both clusters are Linux-based, running CentOS-7. 
-All software was compiled using GCC v9.3.0, and all experiments were based on OpenMPI v4.0.5 built with \gls{UCX} v1.8.0.
+All software was compiled using GCC v9.3.0, and all experiments were based on Open MPI v4.0.5 built with \gls{UCX} v1.8.0.
 When evaluating \gls{GPU} collectives, the \gls{CUDA} v11.0 toolchain was used.
 
 \subsection{Implementation Details}\label{sec:CH4-impl-details}
-We implemented our method by modifying OpenMPI v4.0.5 \cite{gabriel2004OpenMPI}.
-Building on top of OpenMPI lets us leverage the existing collective implementations as well as the algorithm selection mechanism.
-OpenMPI also has internal support for Hwloc \cite{Broquedis2010hwloc}, which makes gathering topology information easier.
+We implemented our method by modifying Open MPI v4.0.5 \cite{gabriel2004OpenMPI}.
+Building on top of Open MPI lets us leverage the existing collective implementations as well as the algorithm selection mechanism.
+Open MPI also has internal support for Hwloc \cite{Broquedis2010hwloc}, which makes gathering topology information easier.
 
 There are some caveats with collective rank reordering, as not all collectives can support it seamlessly.
 By default, \texttt{MPI\_Allreduce()} algorithms assume operations are commutative with respect to the ranks, but users can specify operations as non-commutative.
@@ -257,7 +257,7 @@ So when rank 0 is not the root, it needs to receive the data from the real root 
 % (In retrospect, a more intelligent design would have been to assign virtual ranks by shifting each rank according to the root's value, this would make the root 0, but I last looked at the code for remapping a year ago, and the performance difference provided by this step would be negligible; furthermore, OMB only calls broadcast with root 0, and Horovod rarely uses broadcast.)
 
 We leverage existing system topology detection tools to gather topology information for the node-local topology and the network topology.
-Inra-node hardware info was gathered through Hwloc \cite{Broquedis2010hwloc}, a tool that repackages information provided by the operating system and presents it in a user-friendly way.
+Hardware info was gathered through Hwloc \cite{Broquedis2010hwloc}, a tool that repackages information provided by the operating system and presents it in a user-friendly way.
 Hwloc is a runtime library that can efficiently provide information on \gls{NUMA} domains and cache hierarchies during job execution.
 Thankfully, Hwloc is system agnostic as it mainly relies on endpoints standardized by the operating system, but conversely, network monitoring/management tools are vendor specific.
 To extract the network topology, we leveraged \texttt{ibnetdiscover} for InfiniBand and \texttt{opareport} for OmniPath, both tools scan the entire network and require admin privileges to run, so integrating them at runtime is not a viable option.
@@ -267,18 +267,18 @@ Topology information is represented as a matrix at runtime, and each node is res
 Within each row, values represent the cost of sending data to other ranks, and an allgather is used to combine all processes' node information and generate the final results.
 (This method is not that scalable as the memory requirements are on the order of $O(n^2)$ with respect to the number of processes, but it is viable for the scale we are evaluating.)
 
-OpenMPI does support allredce with \gls{CUDA} memory, but their implementation is pretty naive.
-When allreduce is called on \gls{GPU} memory, the data is copied to a temporary host buffer, then a \gls{CPU}-based allreudce is performed, and the final result is copied back up to the \gls{GPU}.
+Open MPI does support allreduce with \gls{CUDA} memory, but their implementation is pretty naive.
+When allreduce is called on \gls{GPU} memory, the data is copied to a temporary host buffer, then a \gls{CPU}-based allreudce is performed, and the final result is copied back to the \gls{GPU}.
 While this does fulfill the \gls{MPI} specification, it neglects to use the available \gls{GPU} hardware like compute kernel reduction or \gls{GPU} to \gls{GPU} data transfers with NVLinks.
 This implementation has benefits in terms of code maintenance (introducing \gls{CUDA} kernels would be a nightmare to manage in terms of compiler toolchains), but the performance is abysmal. 
-So we modified OpenMPI's allreduce algorithms to use \gls{GPU} hardware, this technique is more in line with how modern collective libraries like \gls{NCCL} and \gls{UCC} implement allreduce \cite{UCC, NCCL}.
+So we modified Open MPI's allreduce algorithms to use \gls{GPU} hardware, this technique is more in line with how modern collective libraries like \gls{NCCL} and \gls{UCC} implement allreduce \cite{UCC, NCCL}.
 
 The rank reordering strategy finds performance improvements by rearranging the process to core bindings, implying that any performance improvements depend on the initial process to core bindings.
 \gls{MPI} implementations provide flags for users to specify how processes should be distributed at job launch. 
 While not exhaustive, this interface does provide a starting point for users to start optimizing process to core mappings.
 However, our method can calculate more complicated mappings and apply mappings to subsets of \texttt{MPI\_COMM\_WORLS} on a per-communicator level.
 
-In OpenMPI, users can specify a resource and processes are bound to that resource in a round-robin fashion.
+In Open MPI, users can specify a resource and processes are bound to that resource in a round-robin fashion.
 Figure \ref{fig:init-mappings} provides an example outlining the three initial mappings we evaluated.
 The default mapping is by-package, this takes a node and fills it with processes alternating between sockets until the node is full, it then repeats this on the next node until all processes are bound.
 By-core mapping places processes to consecutively numbered cores filling up a node before moving to the next, and by-node scatters processes across nodes by cycling through nodes and placing processes one at a time.
@@ -287,16 +287,15 @@ By-core mapping places processes to consecutively numbered cores filling up a no
 
 To compare our proposed heuristics against an established topology mapping tool, we also integrated the SCOTCH graph embedding tool \cite{Pellegrini2012SCOTCH} into the rank reordering method.
 SCOTCH uses a graph bisecting method to perform graph partitioning and embedding, and it has been used in previous work to incorporate topology awareness \cite{Mirsadeghi2016TopoAwareCollRR, Bordage2018Netloc, Deveci2015FastHQTopoAwareTaskMapping}.
-Out of the box, OpenMPI relies on a static tuning table to choose a collective algorithm based on the communicator size and message size, so we applied SCOTCH to whichever algorithm the tuning table selected.
-Due to technical reasons, we could only evaluate SCOTCH on Beluga.
-
+Out of the box, Open MPI relies on a static tuning table to choose a collective algorithm based on the communicator size and message size, so we applied SCOTCH to whichever algorithm the tuning table selected.
+Due to technical reasons, we could not get SCOTCH to work on Cedar, therefore we only present SCOTCH results on Beluga.
 
 \subsection{Performance Results and Analysis}
 
 \subsubsection{Micro-benchmark Results}
 
-We used OSU-Microbenchamrks v5.7 \cite{Bureddy2012OMB} to evaluate the performance of our proposed method. 
-The microbenchmark loops over \texttt{MPI\_Allreduce()} measuring the runtime of each function call and outputs the average latency. 
+We used OSU Micro-Benchamrks v5.7 \cite{Bureddy2012OMB} to evaluate the performance of our proposed method. 
+The micro-benchmark loops over \texttt{MPI\_Allreduce()} measuring the runtime of each function call and outputs the average latency. 
 It also provides the option to locate the data buffer in either \gls{CPU} or \gls{GPU} memory.
 GPU allocations were evaluated with four processes per node (since there are only 4 \gls{GPU}s per node), and \gls{CPU} allocations were evaluated with 32 processes per node because that is the largest power of two that can fit on a node without oversubscribing resources.
 We evaluated large jobs on Beluga using 128 ndoes at a time, giving 512 processes for \gls{GPU} jobs and 4096 ranks for \gls{CPU} jobs.
@@ -310,7 +309,7 @@ Experiments on Cedar were a bit smaller, with \gls{GPU} allocations of 32 nodes 
 The results for allreduce are similar across both clusters, with results on Beluga given in Figure \ref{fig:beluga-ar-128}, and results on Cedar in Figure \ref{fig:cedar-ar-32g64c}.
 While results on Cedar are not identical to Beluga due to differences in computer architecture and the number of processes, the benefits of our proposed methods are consistent across both clusters.
 Across all evaluated examples, at least one of the remapped algorithms performs better, or on par, with the default mapping. 
-There would be an opportunity to restructure OpenMPI's tuning table to select the most optimal remapped algorithm, providing a more performant \texttt{MPI\_Allreduce()}.
+There would be an opportunity to restructure Open MPI's tuning table to select the most optimal remapped algorithm, providing a more performant \texttt{MPI\_Allreduce()}.
 There are scenarios where SCOTCH can improve performance, like small message \gls{GPU} allreduce, but it is most often the case that it negatively impacts performance.
 
 For allreduce, the most impactful results are \gls{CPU}s remapped from by-node.
@@ -326,8 +325,8 @@ The knomial and binary tree results both see 80\% performance improvements for a
 
 The benefits of remapping are often most prevalent on a by-node initial mapping. 
 For example, in Figure \ref{fig:cedar-ar-32g64c}, ring allreduce on \gls{GPU}s can beat the default by 3\%-7\% for large messages on by-socket and by-core mappings but sees a 30\%-60\% improvement for the same message range on a by-node mapping.
-OpenMPI's collective algorithms tend to be structured so that processes exchange most of their data with nearby ranks, this design characteristic is most pronounced in algorithms like \gls{RSA}, ring, and knomial.
-This design decision tends to perform well on by-socket and by-core mappings, which reflects our results where default OpenMPI performs similarly to many of our remapped algorithms on by-core and by-socket initial mappings.
+Open MPI's collective algorithms tend to be structured so that processes exchange most of their data with nearby ranks, this design characteristic is most pronounced in algorithms like \gls{RSA}, ring, and knomial.
+This design decision tends to perform well on by-socket and by-core mappings, which reflects our results where default Open MPI performs similarly to many of our remapped algorithms on by-core and by-socket initial mappings.
 But, the same algorithms tend to struggle with by-node initial mappings because each process's nearby ranks are off-node, which leads to a lot more data traversing the network.
 The binary-tree mapping is an exception to this pattern as child ranks are often much further away than parent ranks, therefore, binary tree remapping has much more potential than other algorithms.
 The topology awareness of our remapping method solves this issue. 
@@ -354,22 +353,31 @@ We also evaluated the effects of remapping allreduce on data-parallel \gls{DL} t
 We tested a series of models using Horovod's synthetic benchmarks across \gls{CPU} and \gls{GPU} resources on Beluga and Cedar, we also evaluated the same set of initial mappings. 
 Still, there was no discernible difference in performance between remapped and non-remapped collectives.
 
-There are many reasons why the micro-benchmark performance improvements do not translate to the application.
-The percent improvement in micro-benchmark performance is not large enough to measurably impact Horovod's performance.
-For example, the 128-node \gls{GPU} allreduce on Beluga only shows a 1-5 \% improvement over stock OpenMPI on large messages, and that minuscule improvement will not affect application performance.
-The allreduce message sizes that saw strong performance improvements are not being used by Horovod.
-On Cedar, the 32-node \gls{GPU} allreduce with 8MB and 16MB messages have strong performance, yet if Horovod is not sending messages in that range there is no benefit. 
+There are many possible reasons why the micro-benchmark performance improvements do not translate to the application.
+One possibility is that the percent improvement in micro-benchmark performance is not significant enough to impact Horovod's performance.
+Allreduce micro-benchmarks on Beluga saw a negligible impact in allreduce improvement for the message sizes, so no improvements there are understandable.
+Even though ring and \gls{RSA} can see a 68\% improvement on Cedar, sadly, there are no performance measurable improvements observed in Horovod.
 
-The \gls{CPU} benchmarks might not be as performance-bound by communication as \gls{GPU} benchmarks, and Horovod has been shown to scale well on \gls{CPU} \cite{Jain2019ScaleTFPTMXNonFrontera}.
-Since \gls{CPU}s are much slower than \gls{GPU}s, a larger fraction of the benchmark's runtime is spent in computation.
-While \gls{CPU} allreduce remapped from by-node outperforms default OMPI by 85\%, if the application is only spending 1\% of time in Allreduce, then the performance improvements will not be measurable.
+There is also the possibility that any performance gains are hidden by compute-communication overlap.
+Horovod is designed so that the \gls{GPU} communications happen on a background thread concurrently with the \gls{GPU} computations. 
+During the backwards pass of the \gls{SGD} algorithm, Horovod effectively pipelines the large message \texttt{MPI\_Allreduce} and weight update steps to hide latency at the application level.
+This means that performance gains could be lost due to time spent performing weight updates or managing the pipeline. 
+
+There is also the challenge that the allreduce message sizes that see the strongest improvements are not being used by Horovod.
+Horovod tends to send large messages, specifically 64MB, the default setting of the \texttt{TENSOR\_FUSION\_THRESHOLD}.
+However, the strongest results, like the 90\% improvement for ring and \gls{RSA} with 8MB and 16MB on Cedar, are most likely not being used, so they are not reflected in application performance.
+
+The \gls{CPU} benchmarks might not be as performance-bound by communication as \gls{GPU} benchmarks.
+Horovod has been shown to have good strong scaling properties on \gls{CPU} clusters \cite{Jain2019ScaleTFPTMXNonFrontera}.
+Since \gls{CPU}s are much slower than \gls{GPU}s, it is likely that a larger fraction of the benchmark's runtime is spent in computation.
+So while \gls{CPU} allreduce remapped from by-node outperforms default Open MPI by 85\%, the performance improvements are not reflected in Horovod. 
 
 \section{Conclusion}
 This chapter adapts topology-aware collective rank reordering to allreduce and new broadcast algorithms.
 We show that this method can be applied to \gls{RSA}, ring, and recursive doubling allreduce, along with binary-tree, knomial, and scatter-allgather broadcast.
 It works across different initial mappings but sees the best results on a by-node mapping.
 While this work is best applied to dense \gls{CPU} allocations, it can also be applied to \gls{GPU} allocations. 
-While not explicitly demonstrated, at least one of our proposed remappings consistently performs on par or better than default OpenMPI, so we could theoretically build a tuning table to provide better overall \texttt{MPI\_Allreduce()} performance. 
+While not explicitly demonstrated, at least one of our proposed remappings consistently performs on par or better than default Open MPI, so we could theoretically build a tuning table to provide better overall \texttt{MPI\_Allreduce()} performance. 
 
 The idea of this work was to accelerate allreduce through the topology-aware algorithms, with the motivation of decreasing deep learning training time.
 Topology awareness has been exhaustively evaluated by many researchers, with a plethora of ideas existing in the literature.

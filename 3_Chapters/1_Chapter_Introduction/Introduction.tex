@@ -6,53 +6,71 @@
 
 
 \section{Motivation}
-Practically all \gls{HPC} research is built on top of John Gustafson's idea of weak scaling \cite{Gustafson1988GustafsonLaw}.
+The field of \gls{HPC} research is built on top of John Gustafson's idea of weak scaling \cite{Gustafson1988GustafsonLaw}.
 Gustafson's Law states that if you can solve a parallelized problem on a computer in a fixed amount of time, you should be able to scale the problem size and the parallelized compute to solve a larger problem in the same amount of time.
 In other words, the larger the computer, the larger the problems it can solve.
 This foundational idea makes up the bedrock of \gls{HPC}, and many decades of research have been poured into building larger and more parallel systems to solve bigger and more challenging problems.
 
 The world's most powerful computers have been growing at an exponential pace for the past decade, with each generation providing more parallelism and being able to solve larger problems \cite{Top500}.
 Recently the world's most powerful supercomputer, Frontier \cite{Frontier}, broke the exascale barrier with the ability to calculate $1.68*10^{18}$ 64-bit \gls{FLOPS}.
-While breaking the exascale barrier is a monumental achievement, with over a decade of planning and research funded through the \gls{ECP}, large numbers like $10^{18}$ are hard to understand without context.
+While breaking the exascale barrier is a monumental achievement, with over a decade of planning and research funded through the \gls{ECP}, among others, large numbers like $10^{18}$ are hard to understand without context.
 ExaWind \cite{ExaWind} is an \gls{ECP} project aiming to develop large-scale wind farm simulations.
 Scientists and engineers have always been able to use \gls{CFD} to evaluate their designs, but the deployment of larger computers is crucial to unlocking larger and higher fidelity simulations.
 For example, in the mid-2000s, high-end systems would only have the capability to simulate a single wind turbine blade, systems deployed in the 2010s let researchers scale their simulations to an entire turbine with three blades rotating, modelling turbulence.
 Exascale is projected to enable simulations at wind-farm scale so that designers can account for turbine-to-turbine turbulence, the impact of terrain, be it land or off the coast, and atmospheric conditions like weather patterns.
 But \gls{CFD} is not the only field where extreme scale systems are unlocking new capabilities, many other fields rely on \gls{HPC}, including molecular dynamics, cosmology, quantum chemistry, drug discovery and even \gls{AI}/\gls{DL}. 
 
-The other consistent innovation over the past decade has been \gls{ML}, and specifically \gls{DL}.
+The other resurgence over the past decade has been \gls{ML}, and specifically \gls{DL}.
 These techniques have performed extremely well on problems that were thought to only be possible for humans, including natural language processing \cite{Vaswani2017AttentionTransformer} and image recognition \cite{Krizhevsky2012AlexNet}.
 \gls{ML} flips conventional programming on its head, instead of procedurally defining what a program should do, \gls{ML} uses a dataset and a training algorithm to essentially teach the program how to perform its task.
 \gls{DL} is a flavour of \gls{ML} that leverages exceedingly large datasets and model sizes, and there is a strong correlation between model size and model performance.
 Recent work has shown that larger models, trained on larger datasets, outperform smaller models \cite{Brown2020GPT3}.
 This makes \gls{DL} a fantastic candidate for training on \gls{HPC} systems, as large machines are often purpose-built for solving large problems. 
 
-\section{Problem Statement}
-The consequence of relentless innovation in \gls{HPC} systems is that current systems are incredibly complicated.
+However, the consequence of relentless innovation in \gls{HPC} systems is that current systems are incredibly complicated.
 To achieve massive scale within a reasonable power budget, modern \gls{HPC} systems consist of a high-performance fabric connecting compute nodes densely packed with \gls{GPU}s and multi-core \gls{CPU}s.
-This leads to complex memory hierarchies with technologies like \gls{NUMA}, \gls{CPU} caches, and \gls{GPU} memory, all of which are tied together with high-performance interconnects like \gls{PCIe} \cite{PCIeV5Spec}, Intel's \gls{UPI} \cite{XeonTechOverview}, NVLink \cite{Foley2017PascaleAndNVLink}, and InfiniBand \cite{IBSpec}.
+This leads to complex memory hierarchies with technologies like \gls{NUMA} domains, \gls{CPU} caches, and \gls{GPU} memory, all of which are tied together with high-performance interconnects like \gls{PCIe} \cite{PCIeV5Spec}, Intel's \gls{UPI} \cite{XeonTechOverview}, NVLink \cite{Foley2017PascaleAndNVLink}, and InfiniBand \cite{IBSpec}.
 To squeeze the most performance out of these expensive machines, domain scientists need to account for all this complexity and map it to whatever insanely difficult grand challenge they are trying to solve.
 In other words, writing efficient code for these massive systems is very hard.
 
 This is where scientific programming libraries come in.
 Over the years, academics and industry have congealed on a set of standards and abstractions for the hardware so that it can be more easily manipulated at a high level.
-Within a node, the most popular programming models include OepnMP \cite{OpenMP} for multi-core \gls{CPU}s, and CUDA for \gls{GPU}s, but to make full use of a cluster, programmers need productive abstractions for the fabric.
+Within a node, the most popular programming models include OpenMP \cite{OpenMP} for multi-core \gls{CPU}s, and CUDA for \gls{GPU}s, but to make full use of a cluster, programmers need productive abstractions for the fabric.
 Driving the network can be done using shared-memory inspired libraries based on \gls{PGAS}, with popular models including SHMEM \cite{OpenSHMEM}, \gls{UPC} \cite{UPC}, and Chapel \cite{Chapel}. 
-Still, the point-to-point based \gls{MPI} \cite{mpi40} is by far the most prevalent programming model for managing distributed memory systems.
-Part of \gls{MPI}'s dominance can be attributed to its well-established and respected standardizing body, but it is mostly used because it is easy to understand and provides a powerful yet simple programming model for domain scientists to scale their problems to the largest machines. 
+Still, the point-to-point programming model from the \gls{MPI} \cite{mpi40} is by far the most prevalent programming model for driving distributed memory systems.
+Part of \gls{MPI}'s dominance can be attributed to its well-established and respected standardizing body, but it is mainly used because it is easy to understand and provides a simple yet powerful programming model for domain scientists to scale their problems to the largest machines. 
 
+\section{Problem Statement}
 \gls{MPI} is a critical piece of \gls{HPC} infrastructure, since its inception in the early 90s, developers have been adopting it as the distributed memory library of choice.
 Being such a fundamental piece of scientific computing leads to many codes relying on the \gls{MPI}'s implementation to be as performant as possible.  
-It is not uncommon for application performance to be bound by the time spent \gls{MPI}, with many applications able to spend over 50\% of their time processing \gls{MPI} calls \cite{Chunduri2018CharacterizeMPIonProd}.
+It is not uncommon for application performance to be bound by the time spent in \gls{MPI}, with many applications able to spend over 50\% of their time processing \gls{MPI} calls \cite{Chunduri2018CharacterizeMPIonProd}.
 Collective communications, an \gls{MPI} primitive that organizes simultaneous data exchanges among groups of processes, tend to consume large amounts of core hours and can become a bottleneck of many large-scale applications.
 \gls{DL} is an excellent example of an application that can be performance bound by \gls{MPI} collective communication.
 \gls{DL} frameworks heavily rely on \texttt{MPI\_Allreduce} collective communications to implement model parallelism, and applications like Horovod frequently issue large message Allreduce on \gls{GPU} buffers to exchange weight updates \cite{Awan2019CommProfDLonClusters, Jain2019PerfCharDNNTFPT, Alizadeh2022PAPCollDL}.
-Therefore, it is paramount that \gls{MPI} latency is as minimal as possible because time spent in \gls{MPI} is time wasted not calculating science, and often the pace of innovation is bound by the speed of \gls{MPI}.
+Therefore, it is paramount that the latency of \gls{MPI} operations are as minimal as possible because time spent in \gls{MPI} is time wasted not calculating science, and often the pace of innovation is bound by the speed of \gls{MPI}.
+
+% Consider adding a few questions at the end of this section to say what questions/problems this thesis addresses
+This thesis aims to improve the performance of distributed \gls{DL} training through more efficient communication.
+However, when building communication libraries, there are countless factors and tradeoffs to consider during development.
+To guide our research process, this thesis attempts to answer several questions.
+To start, we must understand the \gls{SOTA} in distributed \gls{DL}, this raises questions including:
+\begin{itemize}
+    \item What are the methods of training \gls{DL} models in a distributed environment? How is the problem decomposed and distributed across resources?
+    \item What are their communication characteristics and performance requirements of distributed \gls{DL}? 
+    \item Is \gls{DL} performance bound by \gls{MPI}? Which \gls{MPI} functions does it spend the most time in?
+\end{itemize}
+Once the problem of distributed \gls{DL} is understood, we need to investigate how time is spent in \gls{MPI} and think about ways to accelerate it, and this leads to questions like:
+\begin{itemize}
+    \item Are \gls{MPI} libraries using the underlying hardware optimally? 
+    \item Which communication algorithms make the best use of the hardware, and which do not? And can we modify them to ensure all available resources are used to their full potential? 
+    \item Within \gls{MPI}, how much time is spent doing actual work versus waiting for other processes to arrive?
+    \item What are the techniques and methods for minimizing idle time during process synchronization?
+    \item How can we determine if a process is idle and dynamically assign it extra work? 
+\end{itemize}
 
 \section{Contributions}
-The overarching goal of this thesis is to improve the performance of distributed \gls{DL} training through more efficient communication.
-To achieve this, we first start by outlining the state of the art for large-scale \gls{DL} in order to identify where there is room for improvement.
-Once the foundation in \gls{DL} is established, we design and propose two new methods of accelerating \texttt{MPI\_Allreduce} leveraging \gls{HPC} techniques.
+To address the questions stated above, we perform a literature review on modern practices of distributed \gls{DL} and use the knowledge gained to propose two new \texttt{MPI\_Allreduce} algorithms designed to improve \gls{DL} training performance.
+Our proposed algorithms leverage \gls{HPC} techniques, including topology awareness and \gls{PAP} awareness. 
 
 \subsection{Distributed Deep Learning}
 To gain a better understanding of existing \gls{DL} practice, a literature review is undertaken. 
@@ -61,7 +79,7 @@ Fundamentally, \gls{DL} training applies the \gls{SGD} algorithm to neural netwo
 We outline methods that have been deployed at scale, including hyperparameter search, model parallelism and data parallelism.
 We identify that data parallelism is the most mature technique for large-scale training and conduct a deep-dive into Horovod, a commonly used \gls{MPI}-based tool for performing data parallelism at scale, which is often bottlenecked by \texttt{MPI\_Allreduce}.
 Since Horovod is a popular tool, we survey existing works that propose optimized \texttt{MPI\_Allreduce} techniques targeting Horovod and identify their shortcomings.
-The understandings developed in chapter \ref{ch:CH3-DistributedDL} are used to inform design decisions taken in chapters \ref{ch:CH4-TopologyAwareness} and \ref{ch:CH5-PAPAwareness}, where new \texttt{MPI\_Allreduce} methods are proposed.
+The understandings developed in chapter \ref{ch:CH3-DistributedDL} are used to inform design decisions taken in Chapter \ref{ch:CH4-TopologyAwareness} and Chapter \ref{ch:CH5-PAPAwareness}, where new \texttt{MPI\_Allreduce} methods are proposed.
 
 \subsection{Topology Aware Allreduce and Broadcast}
 The first proposed method leverages topology awareness to perform rank reordering for several allreduce and broadcast algorithms.
@@ -72,7 +90,7 @@ We evaluate our proposed algorithms on \gls{CPU} and \gls{GPU} partitions of two
 The micro-benchmark evaluations show that there is potential for up to 80\% improvement in certain scenarios, depending on the message size and initial rank-to-core mapping.
 
 \subsection{Process Arrival Pattern Aware Allreduce}
-The second approach for accelerating \texttt{MPI\_Allreduce} was \gls{PAP} awareness.
+The second approach for accelerating \texttt{MPI\_Allreduce} is \gls{PAP} awareness.
 When designing collective algorithms, it is typically assumed that all processes start executing the collective at the same time, however, this is often not the case.
 \gls{PAP}s are used to define how/when ranks arrive at a collective, and \gls{PAP}-aware collectives attempt to use the arrival information to improve collective performance. 
 In order to distribute \gls{PAP} awareness across a \gls{GPU} cluster, we propose a novel mechanism for \gls{PAP} distribution and an accompanying \texttt{MPI\_Allreduce} algorithm that leverages it.
@@ -82,6 +100,6 @@ Micro-benchmarks evaluation demonstrates that our proposed method can outperform
 In Chapter \ref{ch:CH2-Background}, we establish current practices in \gls{HPC}, covering the hardware used to build modern systems and the software packages they rely on.
 Chapter \ref{ch:CH3-DistributedDL} explores the world of distributed \gls{DL}, outlining the strategies used to run \gls{DL} at large scale, the communication characteristics generated by different strategies, and a deep dive on Horovod, a commonly used library for training \gls{DL} models at scale.
 % Through communication requirements established in Chapter \ref{ch:CH3-DistributedDL}, Chapters \ref{ch:CH4-TopologyAwareness} and \ref{ch:CH5-PAPAwareness} propose new communication techniques for \texttt{MPI\_Allreuce} designed to accelerate Horovod.
-Chapter \ref{ch:CH4-TopologyAwareness} proposes a topology-aware rank reordering method, this uses information about the structure of the underlying hardware to ensure communication uses the most efficient resources possible.
+Chapter \ref{ch:CH4-TopologyAwareness} proposes a topology-aware rank reordering method that uses information about the structure of the underlying hardware to ensure communication uses the most efficient resources possible.
 Chapter \ref{ch:CH5-PAPAwareness} proposes a \gls{PAP}-aware technique, this technique lets the allreduce algorithm introspect on which processes are participating in the algorithm, and which have yet to arrive.
 The last chapter, Chapter \ref{ch:CH6-Conclusion}, recaps the proposed ideas, and addresses the shortcomings, outlining the next steps that could be taken to further improve \gls{DL} performance at scale.

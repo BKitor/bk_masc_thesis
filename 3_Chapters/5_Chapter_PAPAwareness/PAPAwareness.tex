@@ -16,7 +16,7 @@ Our method performs better than existing \gls{SOTA} allreduce algorithm under im
 There are previously proposed methods and algorithms that leverage \gls{PAP} awareness to accelerate collectives, this chapter starts by surveying existing work.
 We provide some analysis on how \gls{PAP} affects collectives and describe our approach to accelerating allreduce.
 The main contribution is a novel cluster-wide method of sharing \gls{PAP} information with an accompanying allreduce algorithm designed to perform better than existing algorithms under a processes arrival imbalance.
-We evaluate our work using an imbalance factor-inducing microbenchmark, which can see a 60\% improvement over default \gls{MPI} implementations and 19\% over \gls{SOTA} algorithms.
+We evaluate our work using an imbalance factor-inducing micro-benchmark, which can see a 60\% improvement over default \gls{MPI} implementations and 19\% over \gls{SOTA} algorithms.
 We also use our method to evaluate Horovod throughput and see that synthetic benchmarks can improve 40\% over default and 7\% over \gls{SOTA}.
 
 \subsection{Related Work}
@@ -78,7 +78,7 @@ Their method only detects \gls{PAP} at an intranode level, but they evaluate the
 \subsection{PAP Arbitration Mechanims}
 For ranks to determine the arrival order, we took inspiration from the small message synchronization method used by Alizadeh et al. \cite{Alizadeh2022PAPCollDL} and extended it to a multi-node setting.
 Synchronization depends on a data structure consisting of a counter for arrival position and an array for arrival-to-rank translations, an outline of the structure and how it is used is provided in Figure \ref{fig:fig_sync_structur}.
-In order to target a distributed memory environment, the data structure resides in network-exposed memory on a predetermined process and is accessed through \gls{RMA} operations.
+In order to target a distributed memory environment, the data structure resides in network-exposed memory on a predetermined process and is accessed through one-sided network operations.
 When a process arrives at the collective, it fetch-and-increments the counter to determine its arrival position and then writes its rank into the arrival array indexed at its arrival position.
 Accessing the counter creates a critical section, potentially adding overhead if not accounted for.
 When a process arrives, it can determine which ranks have arrived before it by indexing their arrival position in the arrival-to-rank translation array.
@@ -98,7 +98,7 @@ The counter can be incremented through \texttt{MPI\_Fetch\_and\_op()}, but atomi
 Active target communication is out of the question as one of our goals is to minimize the amount of synchronization, and \texttt{MPI\_Win\_Fence()} is a collective, so it also defeats the purpose.
 This leaves \texttt{MPI\_Win\_lock()}/\texttt{MPI\_Win\_unlock()} as the only viable synchronization mechanism.
 Alternatively, we could go deeper down the stack and use a transport layer API since they provide the desired portability with an acceptable performance penalty.
-Specifically, we use \gls{UCX}'s \gls{RMA} and Atomic operations.
+Specifically, we use \gls{UCX}'s \gls{RMA} and atomic operations \cite{shamis2015ucx}.
 \texttt{ucp\_atomic\_op\_nbx()} is specified to be atomic with respect to all other \gls{UCX} operations allowing us to increment the counter variable atomically, and operation completion is guaranteed on a per-message level, removing the requirements for the heavy barrier-like synchronization \gls{MPI} enforces.
 
 In deciding to use \gls{UCX} over \gls{MPI}, we wrote a benchmark to evaluate the overhead of one-sided operations and synchronization, the structure of which is provided in Algorithm \ref{alg:sync_struct_bmark}.
@@ -109,7 +109,7 @@ The most performance-critical parts of the benchmarks would be the remote synchr
 \input{3_Chapters/5_Chapter_PAPAwareness/Figs/alg_sync_struct_mbark}
 
 We built two implementations of this benchmark, one with \gls{MPI} and the other with \gls{UCX}. 
-To ensure memory completion in \gls{MPI}, users need to open and close an access epoch, this is done by blocking calls to \texttt{MPI\_Win\_lock()}/\texttt{MPI\_Win\_unlock()} before and after each remote memory call.
+To ensure memory completion in \gls{MPI}, we open and close an access epoch through calls to \texttt{MPI\_Win\_lock()}/\texttt{MPI\_Win\_unlock()} before and after each remote memory call.
 On the other hand, completion in \gls{UCX} is guaranteed at a per-operation level. 
 Every communication call returns a pointer to a structure which indicates the status of the operation, and at some point in the future (during a call to \texttt{ucp\_progress()}), the \gls{UCX} runtime will trigger a callback which modifies the pointer to indicate completion.
 So to wait for remote memory completion, the \gls{UCX} benchmark polls the pointer while calling \texttt{ucp\_progress()} until completion.
@@ -129,13 +129,13 @@ For a ring or \gls{RSA} collective, when the last process arrives, it must send 
 Therefore, the last process in our collective algorithm must be able to complete its work with a bandwidth term smaller than $2n(\beta+\gamma)$. 
 We can simplify the problem and look at a two-process allreduce, where the minimum amount of work involves receiving a message, performing a local reduction and sending a message, i.e., $2(\alpha+n\beta)+n\gamma$ \cite{Marendic2016Clairvoyant}.
 We can remove the initial receive by sending the data ahead of time to a preallocated buffer, and the final send will need to become a broadcast, $n\gamma+T_{bcast}(n)$. 
-If we use a pipelined chain broadcast algorithm, the last process only needs to reduce and send one message divided across $k$ segments, lowing the time to $T_{last\_proc\_reduce}=k\alpha+n(\beta+\gamma)$.
+If we use a pipelined chain broadcast algorithm, the last process only needs to reduce and send one message divided across $k$ segments, lowering the time to $T_{last\_proc\_reduce}=k\alpha+n(\beta+\gamma)$.
 Every other process sends and receives $k$ messages of totalling $n$ bytes, given them a broadcast time of $k\alpha+n\beta$.
 This is roughly half of the ring and \gls{RSA} bandwidth requirements for large messages.
 
 A detailed outline of the proposed method is given in Algorithm \ref{alg:heir_pipe_chain}.
 We embed our method in a hierarchical algorithm, this adds some implicit topology awareness and improves scalability.
-The starts with an intranode reduction to a local leader process (Line 1), then the leader processes perform the \gls{PAP}-aware inter-node reduce (Lines 2-17), and the data is redistributed through internode and intranode broadcasts (Lines 18-27).
+The algorithm starts with an intranode reduction to a local leader process (Line 1), then the leader processes perform the \gls{PAP}-aware inter-node reduce (Lines 2-17), and the data is redistributed through internode and intranode broadcasts (Lines 18-27).
 To improve pipeline efficiency, we overlap the internode broadcast and intranode broadcasts, which improves efficiency by overlapping the two stages of communication.
 
 \input{3_Chapters/5_Chapter_PAPAwareness/Figs/alg_heir_pipe_chain}
@@ -160,9 +160,9 @@ By changing the segment size we can tune the algorithm to optimize performance.
 If the segment size is larger than the message size, it is essentially 'turns of' pipelining, since there is only one pipeline segment, the algorithm collapses into two broadcasts.
 This can be ideal in some scenarios, as pipelining can increase software overhead if the segment size is too small.
 
-\section{Evaluation and Analysis}
+\section{Experimental Evaluation and Analysis}
 \subsection{Experimental Platform}
-We evaluated our proposed methods with a microbenchmark and a synthetic Horovod benchmark on two clusters, Beluga and Narval.
+We evaluated our proposed methods with a micro-benchmark and a synthetic Horovod benchmark on two clusters, Beluga and Narval.
 We only focus on the \gls{GPU} resources this time.
 Beluga's architecture is defined in Section \ref{sec:CH4-experimental-platform}.
 Narval is very similar to Beluga but is made up of newer-generation hardware.
@@ -173,26 +173,26 @@ One crucial detail in the \gls{PCIe} architecture is that the Epyc 7413 \gls{CPU
 
 In terms of software, Narval runs Rocky Linux v8.6.
 On both clusters, code was compiled using GCC v9.3 and \gls{CUDA} v11.0.
-The proposed \gls{PAP}-aware algorithm and other MPI-based algorithms were implemented in OpenMPI 5.0.0-rc6 leveraging \gls{UCX} v1.13.0. 
-We compare our results to \gls{SOTA} collective libraries, including \gls{UCC} v1.0.0 and \gls{NCCL} v2.7.8.
+The proposed \gls{PAP}-aware algorithm and other MPI-based algorithms were implemented in Open MPI 5.0.0-rc6 leveraging \gls{UCX} v1.13.0. 
+We compare our results to \gls{SOTA} collective libraries, including \gls{UCC} v1.0.0 \cite{UCC} and \gls{NCCL} v2.7.8 \cite{NCCL}.
 
 \subsection{Implementation Detials}
 Two variations of the algorithm are presented, a pipelined version with a segment size of 4MB and a non-pipelined version.
 Multiple pipeline segment sizes were evaluated, but it was found that they tend to perform similarly, so only the 4MB size is presented.
-We present the default OpenMPI's results, however as outlined in Section \ref{sec:CH4-impl-details}, OpenMPI's \gls{GPU} support is lacklustre, so we also provide a modified version of OpenMPI's \gls{RSA} algorithm that leverages a \gls{GPU} kernel reduction. 
-We also present results from two contemporary collective libraries, \gls{UCC} \cite{UCC} and \gls{NCCL} \cite{NCCL}.
+We present the default Open MPI's results, however as outlined in Section \ref{sec:CH4-impl-details}, Open MPI's \gls{GPU} support is lacklustre, so we also provide a modified version of Open MPI's \gls{RSA} algorithm that leverages a \gls{GPU} kernel reduction. 
+We also present results from two contemporary collective libraries, \gls{UCC}  and \gls{NCCL}.
 \gls{NCCL} is a high-performance collective library provided by Nvidia, it uses a multi-ring communication pattern specifically designed for Nvidia hardware.
 \gls{UCC} is a portable, high-performance collective interface designed to support multiple collective implementations.
-The default implementation is built on top of \gls{UCX}, and they can also perform \gls{GPU} collectives by wrapping \gls{NCCL}; this is how we evaluated OpenMPI with \gls{NCCL} by leveraging \gls{UCC} as a frontend.
+The default implementation is built on top of \gls{UCX}, and they can also perform \gls{GPU} collectives by wrapping \gls{NCCL}; this is how we evaluated Open MPI with \gls{NCCL} by leveraging \gls{UCC} as a frontend.
 
 \subsection{Micro-Benchmark Study}
-We evaluated the \gls{PAP} impact using a microbenchmark similar to \cite{Faraj2008StudyProcArrivalMPIColl}, and \cite{Li2020DLPartialColl}, which we outline in Algorithm \ref{alg:mif_microbmark}.
-The benchmark evaluates the time to perform an allreduce with a specified maximum imbalance factor applied.
+We evaluated the \gls{PAP} impact using a micro-benchmark similar to \cite{Faraj2008StudyProcArrivalMPIColl}, and \cite{Li2020DLPartialColl}, which we outline in Algorithm \ref{alg:mif_microbmark}.
+The benchmark evaluates the time to perform an allreduce with a specified \gls{MIF} applied.
 It does this by applying a random delay to each process (Line 14), with process zero receiving no delay (Line 10) and process $n-1$ receiving the maximum delay (Line 12).
 The delay is a factor of the message size, so each rank is assigned a number between zero and the specified MIF.
 When each rank has a delay factor, it is multiplied with the message latency to calculate the delay time.
 Since the benchmark can evaluate any message size, ranks 0 and $p-1$ perform a ping-pong test to determine the latency of the current message size, and the result is distributed among all ranks with a broadcast (Lines 2-6).
-Once the delay is calculated, is is applied through a call to usleep (Line 17).
+Once the delay is calculated, it is applied through a call to usleep (Line 17).
 We present results with no imbalance (0 \gls{MIF}), with a \gls{MIF} of 6 since this value was identified as a common imbalance for multi-node Horovod by Alizadeh et al. \cite{Alizadeh2022PAPCollDL}, and a \gls{MIF} of 20 to represent large imbalances.
 
 \input{3_Chapters/5_Chapter_PAPAwareness/Figs/alg_mif_bmark}
@@ -200,7 +200,7 @@ We present results with no imbalance (0 \gls{MIF}), with a \gls{MIF} of 6 since 
 Results on Beluga are presented in Figure \ref{fig:beluga_omb_pap}.
 Since we based our work on a chain algorithm, the best results are with four nodes.
 The pipelined version of the algorithm does not perform that well, there is a noticeable loss in performance when the pipelining kicks in at 8MB, and performance loss can be as bad as 130\%.
-This is likely due to increased software overhead added by the pipeline, however, even though microbenchmark results are poor, the pipelining still manages to provide a noticeable speedup within Horovod, we cover this in Section \ref{sec:CH5-eval-horovod}.
+This is likely due to increased software overhead added by the pipeline, however, even though micro-benchmark results are poor, the pipelining still manages to provide a noticeable speedup within Horovod, we cover this in Section \ref{sec:CH5-eval-horovod}.
 
 The non-pipelined version has a lacklustre performance when there is no imbalance.
 Compared to the outright fastest algorithm, \gls{NCCL}, performance drags from -28\% to -39\%.
@@ -211,14 +211,13 @@ At eight nodes with a \gls{MIF} of 20, non-pipelined \gls{PAP}-aware is still th
 \input{3_Chapters/5_Chapter_PAPAwareness/Figs/omb_beluga}
 \input{3_Chapters/5_Chapter_PAPAwareness/Figs/omb_narval}
 
-The non-pipelined \gls{PAP}-aware algorithm beats the default OpenMPI across the board, but this is most likely due to OpenMPI's inability to use \gls{GPU} resources.
+The non-pipelined \gls{PAP}-aware algorithm beats the default Open MPI across the board, but this is most likely due to Open MPI's inability to use \gls{GPU} resources.
 A more comparable baseline would be the \gls{GPU}-kernel \gls{RSA}.
 Performance without imbalance is comparable at four nodes, with \gls{PAP}-aware being 24\% faster at 8MB but -18\% slower at 128MB, and \gls{GPU}-\gls{RSA} is faster for every larger node count.
 For \gls{MIF} 6, the \gls{PAP}-aware is more performant at 4 and 8 nodes, with a maximum improvement of 35\% and 13\%, respectively, and at \gls{MIF} 20, \gls{PAP}-aware beats \gls{GPU}-\gls{RSA} on 16 nodes, with a max of 21\% at 8MB, and 4.5\% at 128MB.
 Frankly, the \gls{PAP}-aware algorithm does not scale well past 16 nodes as the performance leaves much to be desired  on 32 nodes, however, if the \gls{MIF} were to be increased past 20, there is still a likelihood that the \gls{PAP}-aware algorithm would be competitive, however, we are not targeting exceptionally large \gls{MIF}s. 
 
-
-The \gls{PAP}-aware algorithm on Narval, who's results are presented in Figure \ref{fig:narval_omb_pap}, has similar characteristics relative to the preexisting methods, however, the performance difference is more prominent.
+The \gls{PAP}-aware algorithm on Narval, whose results are presented in Figure \ref{fig:narval_omb_pap}, has similar characteristics relative to the preexisting methods, however, the performance difference is more prominent.
 The pipelined version presents similar performance issues, and with no imbalance, \gls{NCCL} is still the fastest, but the performance gap between \gls{NCCL} and the non-pipelined \gls{PAP}-aware algorithm is smaller.
 On four nodes, the non-pipelined \gls{PAP} aware algorithm's performance gap shrinks from -30\% on Beluga to -20\% on Narval, and when we scale up to a \gls{MIF} of 6, the performance gain jumps from 10\% on Beluga to 15\% on Narval.
 
@@ -229,7 +228,7 @@ However, the scalability issues are still present, non-pipelined \gls{PAP}-aware
 \subsection{Application Results}\label{sec:CH5-eval-horovod}
 Horovod's synthetic benchmark loads a predefined model into memory and simulates several iterations of a training run using randomly generated data.
 While this benchmark does not stress the file system, which is often a bottleneck in practice, it provides a realistic measure of the computation and communication requirements of using Horovod in production.
-Experiments were run useing Horovod v0.20.3 and Tensorflow v2.4.1.
+Experiments were run using Horovod v0.20.3 and Tensorflow v2.4.1.
 
 \input{3_Chapters/5_Chapter_PAPAwareness/Figs/hvd_model_chars}
 
@@ -243,7 +242,7 @@ A diagram outlining ResNet's skip connection is given in Figure \ref{fig:ResNet-
 
 \input{3_Chapters/5_Chapter_PAPAwareness/Figs/hvd_bg}
 
-The \gls{PAP}-aware algorithms' microbenchmark performance gains seen on Beluga do not translate to Horovod, as demonstrated in Table \ref{tbl:pap_hvd_beluga_full}.
+The \gls{PAP}-aware algorithms' micro-benchmark performance gains seen on Beluga do not translate to Horovod, as demonstrated in Table \ref{tbl:pap_hvd_beluga_full}.
 \gls{NCCL} and \gls{UCC} have the greatest model throughput for most models.
 Some insights can be gained from the model characteristics, though.
 The small model sizes do not show much variation between different collective implementations, there is only a 1\% difference between the minimum and maximum throughput for MobileNet and DenseNt121 across all node sizes. 
@@ -251,16 +250,20 @@ However, as we scale up the model size, \gls{NCCL} and \gls{UCC} tend to run awa
 
 However, the \gls{PAP}-aware collective has potential on Narval, as demonstrated in Table \ref{tbl:pap_hvd_narval_full}.
 When running on four nodes, the two strongest algorithms are the pipelined and non-pipelined \gls{PAP}-aware algorithms, either \gls{PAP}-aware algorithm has a 5\% advantage over any non-\gls{PAP}-aware algorithm.
+We also present the margin of error generated by the benchmark in Table \ref{tbl:pap_hvd_narval_err}.
+The performance variance for MobileNet is quite large, yet in all scenarios for ResNet and DenseNet where the \gls{PAP}-aware algorithms are strongest, they outperform non \gls{PAP}-aware algorithms by more than the margin for error.
 Scaling to larger node counts is still an issue, as the \gls{PAP}-aware algorithms perform the strongest at four nodes.
 
 \input{3_Chapters/5_Chapter_PAPAwareness/Figs/hvd_ng}
+\input{3_Chapters/5_Chapter_PAPAwareness/Figs/hvd_ng_err}
 
 The pipelined algorithm provides more throughput than the non-pipelined version in many scenarios, which contradicts the micro-benchmark experiments.
-In mico-benchmark testing, the non-pipelined algorithm consistently outperformed the pipelined version, we are not sure why the non-pipelined algorithm provides the best performance under Horovod.
+In mico-benchmark testing, the non-pipelined algorithm consistently outperformed the pipelined version, we are investigating why the non-pipelined algorithm provides the best performance under Horovod.
 Table \ref{tbl:pap_hvd_narval_shift_seg} compares the effect of different pipeline segment sizes on model training.
-The segment size does not face much effect on the smaller models with a 1-5\% difference between the min and max throughput, however, both ResNet models show a 15\% gap in favour of the pipelined algorithm, in both cases, 1MB and 4MB perform the same, 16MB is a step slower and performance plateaus at 64MB and 128Mb.
+The segment size does not face much effect on the smaller models with a 1-5\% difference between the min and max throughput, however, both ResNet models show a 15\% gap in favour of the pipelined algorithm.
+In both cases, 1MB and 4MB perform the same, 16MB is a step slower and performance plateaus at 64MB and 128Mb.
 The effect of pipelining also correlates to the node count, as scaling results in Table \ref{tbl:pap_hvd_narval_full} show a tangible performance difference for pipelining DenseNet at eight nodes, which was not apparent at four nodes.
-The amount of loss also scales with node size, a 17\% difference with ResNet152 on four nodes becomes a 56\% difference on 16 nodes, yet the microbenchmark does not capture this relationship at all.
+The amount of loss also scales with node size, a 17\% difference with ResNet152 on four nodes becomes a 56\% difference on 16 nodes, yet the micro-benchmark does not capture this relationship at all.
 
 \input{3_Chapters/5_Chapter_PAPAwareness/Figs/hvd_ng_bkpap_shift.tex}
 

@@ -41,9 +41,9 @@
         \MPIBarrier{$comm$} \;
         $t\_start =$ \MPIWtime{} \;
         remote\_fetch\_and\_add(\&$m[0]$, 1, \&$fadd\_val$) \;
-        wait\_preverous\_remote\_mem\_op() \;
+        wait\_previous\_remote\_mem\_op() \;
         remote\_write(\&$m[fadd\_val+1]$, $rand\_val$) \;
-        wait\_preverous\_remote\_mem\_op() \;
+        wait\_previous\_remote\_mem\_op() \;
         $t\_sum += (i-w >= 0)$ ? 0 : \MPIWtime{} - $t\_start$ \;
     }
     \MPIReduce{$t\_sum$, MPI\_SUM, 0} \;
